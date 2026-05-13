@@ -13,7 +13,7 @@ export function MainTabs({ householdId, onLogout }: { householdId: string; onLog
 
       <Tab.Screen name="Ausgaben">{() => <ExpensesScreen householdId={householdId} />}</Tab.Screen>
 
-      <Tab.Screen name="Kalender" component={CalendarScreen} />
+      <Tab.Screen name="Kalender">{() => <CalendarScreen householdId={householdId} />}</Tab.Screen>
 
       <Tab.Screen name="Profil">{() => <ProfileScreen onLogout={onLogout} />}</Tab.Screen>
     </Tab.Navigator>
