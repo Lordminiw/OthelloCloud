@@ -1,2 +1,7 @@
 # OthelloCould
-WG app
+# WG App
+
+Features:
+- gemeinsame Einkaufsliste
+- gemeinsame Ausgaben
+- gemeinsamer Kalender
