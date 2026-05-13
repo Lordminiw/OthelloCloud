@@ -1,0 +1,93 @@
+# =========================
+# Node / Expo / React Native
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+.expo/
+.expo-shared/
+dist/
+web-build/
+build/
+
+# Metro / React Native
+.metro-cache/
+*.jsbundle
+
+# Expo local config
+.env
+.env.local
+.env.*.local
+
+# Keep example env files
+!.env.example
+
+# =========================
+# TypeScript / tooling
+# =========================
+*.tsbuildinfo
+
+# =========================
+# PocketBase
+# =========================
+# PocketBase executable can be re-downloaded
+backend/pocketbase/pocketbase
+backend/pocketbase/pocketbase.exe
+
+# PocketBase runtime data: database, logs, uploaded files
+backend/pocketbase/pb_data/
+backend/pocketbase/pb_migrations/
+
+# Optional PocketBase hooks, keep if you start writing custom backend code
+# backend/pocketbase/pb_hooks/
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Editors / IDEs
+# =========================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+.idea/
+*.iml
+
+# =========================
+# Android build artifacts
+# =========================
+android/.gradle/
+android/app/build/
+android/build/
+*.apk
+*.aab
+
+# =========================
+# iOS build artifacts
+# =========================
+ios/Pods/
+ios/build/
+*.xcworkspace
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# Temporary files
+# =========================
+tmp/
+temp/
+.cache/
