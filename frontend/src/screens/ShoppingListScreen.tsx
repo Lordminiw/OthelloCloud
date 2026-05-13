@@ -9,16 +9,17 @@ type ShoppingItem = {
   checked: boolean;
 };
 
-const HOUSEHOLD_ID = "y6qkyd15kvxu7r8";
+const householdId = "y6qkyd15kvxu7r8";
 
-export function ShoppingListScreen() {
+export function ShoppingListScreen({ householdId }: { householdId: string }) {
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [name, setName] = useState("");
+  const [quantity, setQuantity] = useState("");
 
   async function loadItems() {
     const records = await pb.collection("shopping_items").getFullList<ShoppingItem>({
-      filter: `household = "${HOUSEHOLD_ID}"`,
-      sort: "-created",
+      filter: `household = "${householdId}"`,
+      sort: "checked,-created",
     });
 
     setItems(records);
@@ -28,12 +29,24 @@ export function ShoppingListScreen() {
     if (!name.trim()) return;
 
     await pb.collection("shopping_items").create({
-      household: HOUSEHOLD_ID,
+      household: householdId,
       name: name.trim(),
+      quantity: quantity.trim(),
       checked: false,
+      addedBy: pb.authStore.model?.id,
     });
 
     setName("");
+    setQuantity("");
+  }
+
+  async function deleteItem(item: ShoppingItem) {
+    try {
+      await pb.collection("shopping_items").delete(item.id);
+    } catch (error: any) {
+      console.log("DELETE ITEM ERROR:", error);
+      alert(JSON.stringify(error?.response, null, 2));
+    }
   }
 
   async function toggleItem(item: ShoppingItem) {
@@ -63,9 +76,7 @@ export function ShoppingListScreen() {
         gap: 12,
       }}
     >
-      <Text style={{ color: "black", fontSize: 24, fontWeight: "bold" }}>
-        Einkaufsliste
-      </Text>
+      <Text style={{ color: "black", fontSize: 24, fontWeight: "bold" }}>Einkaufsliste</Text>
 
       <View style={{ flexDirection: "row", gap: 8 }}>
         <TextInput
@@ -82,6 +93,20 @@ export function ShoppingListScreen() {
             flex: 1,
           }}
         />
+        <TextInput
+          placeholder="Menge"
+          placeholderTextColor="#666"
+          value={quantity}
+          onChangeText={setQuantity}
+          style={{
+            borderWidth: 1,
+            borderColor: "#999",
+            color: "black",
+            backgroundColor: "white",
+            padding: 8,
+            width: 90,
+          }}
+        />
         <Button title="+" onPress={addItem} />
       </View>
 
@@ -89,18 +114,30 @@ export function ShoppingListScreen() {
         data={items}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <Text
-            onPress={() => toggleItem(item)}
+          <View
             style={{
-              color: "black",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
               padding: 12,
-              fontSize: 18,
-              textDecorationLine: item.checked ? "line-through" : "none",
             }}
           >
-            {item.checked ? "✅" : "⬜"} {item.name}
-          </Text>
+            <Text
+              onPress={() => toggleItem(item)}
+              style={{
+                color: "black",
+                fontSize: 18,
+                textDecorationLine: item.checked ? "line-through" : "none",
+              }}
+            >
+              {item.checked ? "✅" : "⬜"} {item.name}
+              {item.quantity ? ` (${item.quantity})` : ""}
+            </Text>
+
+            <Button title="Löschen" onPress={() => deleteItem(item)} />
+          </View>
         )}
+        F
       />
     </View>
   );

@@ -1,3 +1,9 @@
 import PocketBase from "pocketbase";
 
-export const pb = new PocketBase("http://192.168.178.30:8090");
+const pocketBaseUrl = process.env.EXPO_PUBLIC_POCKETBASE_URL;
+
+if (!pocketBaseUrl) {
+  throw new Error("Missing EXPO_PUBLIC_POCKETBASE_URL");
+}
+
+export const pb = new PocketBase(pocketBaseUrl);
