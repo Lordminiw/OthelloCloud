@@ -1,62 +1,122 @@
 import { useEffect, useState } from "react";
-import { Button, FlatList, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { calculateBalances, createExpense, Expense, loadExpenses } from "../lib/expenses";
+import { ScrollView, View } from "react-native";
+import {
+  Button,
+  Card,
+  Checkbox,
+  Dialog,
+  Divider,
+  List,
+  Portal,
+  RadioButton,
+  Text,
+  TextInput,
+} from "react-native-paper";
+import {
+  calculateBalances,
+  createExpense,
+  createSettlement,
+  deleteExpense,
+  deleteSettlement,
+  Expense,
+  loadExpenses,
+  loadSettlements,
+  Settlement,
+  suggestPayments,
+} from "../lib/expenses";
 import { HouseholdMember, loadHouseholdMembers } from "../lib/members";
 import { pb } from "../lib/pocketbase";
 
 export function ExpensesScreen({ householdId }: { householdId: string }) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [members, setMembers] = useState<HouseholdMember[]>([]);
+
   const [description, setDescription] = useState("");
   const [amountText, setAmountText] = useState("");
-  const [splitBetween, setSplitBetween] = useState<string[]>([]);
-  const [memberModalVisible, setMemberModalVisible] = useState(false);
+
   const [paidBy, setPaidBy] = useState<string | null>(null);
-  const [payerModalVisible, setPayerModalVisible] = useState(false);
+  const [splitBetween, setSplitBetween] = useState<string[]>([]);
+
+  const [payerDialogVisible, setPayerDialogVisible] = useState(false);
+  const [splitDialogVisible, setSplitDialogVisible] = useState(false);
+  const [settlementDialogVisible, setSettlementDialogVisible] = useState(false);
+
+  const [settlementFromUser, setSettlementFromUser] = useState<string | null>(
+    null
+  );
+  const [settlementToUser, setSettlementToUser] = useState<string | null>(null);
+  const [settlementAmountText, setSettlementAmountText] = useState("");
 
   async function reload() {
     try {
-      console.log("Loading expenses...");
-      const expenseRecords = await loadExpenses(householdId);
-      console.log("Expenses loaded:", expenseRecords);
-
-      console.log("Loading household members...");
-      const memberRecords = await loadHouseholdMembers(householdId);
-      console.log("Members loaded:", memberRecords);
+      const [expenseRecords, settlementRecords, memberRecords] =
+        await Promise.all([
+          loadExpenses(householdId),
+          loadSettlements(householdId),
+          loadHouseholdMembers(householdId),
+        ]);
 
       setExpenses(expenseRecords);
+      setSettlements(settlementRecords);
       setMembers(memberRecords);
+
+      if (splitBetween.length === 0) {
+        setSplitBetween(memberRecords.map((member) => member.userId));
+      }
 
       if (!paidBy) {
         setPaidBy(pb.authStore.model?.id ?? memberRecords[0]?.userId ?? null);
       }
 
-      if (splitBetween.length === 0) {
-        setSplitBetween(memberRecords.map((member) => member.userId));
+      if (!settlementFromUser) {
+        setSettlementFromUser(memberRecords[0]?.userId ?? null);
+      }
+
+      if (!settlementToUser) {
+        setSettlementToUser(memberRecords[1]?.userId ?? null);
       }
     } catch (error: any) {
       console.log("EXPENSE LOAD ERROR:", error);
-      console.log("STATUS:", error?.status);
-      console.log("MESSAGE:", error?.message);
       console.log("RESPONSE:", error?.response);
-
-      alert(
-        "Fehler beim Laden:\n\n" +
-          "Status: " +
-          error?.status +
-          "\n" +
-          "Message: " +
-          error?.message +
-          "\n" +
-          "Response: " +
-          JSON.stringify(error?.response, null, 2),
-      );
+      alert(JSON.stringify(error?.response, null, 2));
     }
   }
+
+  useEffect(() => {
+    reload();
+  }, [householdId]);
+
+  function getMemberLabel(userId: string) {
+    const member = members.find((member) => member.userId === userId);
+    return member?.name || member?.email || userId;
+  }
+
+  function toggleSplitMember(userId: string) {
+    setSplitBetween((current) => {
+      if (current.includes(userId)) {
+        return current.filter((id) => id !== userId);
+      }
+
+      return [...current, userId];
+    });
+  }
+
+  function selectAllMembers() {
+    setSplitBetween(members.map((member) => member.userId));
+  }
+
+  function clearSelectedMembers() {
+    setSplitBetween([]);
+  }
+
   async function addExpense() {
     const amount = Number(amountText.replace(",", "."));
 
-    if (!description.trim()) return;
+    if (!description.trim()) {
+      alert("Bitte Beschreibung eingeben.");
+      return;
+    }
 
     if (!Number.isFinite(amount) || amount <= 0) {
       alert("Bitte gültigen Betrag eingeben.");
@@ -94,207 +154,373 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
       alert(JSON.stringify(error?.response, null, 2));
     }
   }
-  useEffect(() => {
-    reload();
-  }, [householdId]);
 
-  const balances = calculateBalances(expenses);
+  async function addSettlement() {
+    const amount = Number(settlementAmountText.replace(",", "."));
 
-  function getMemberLabel(userId: string) {
-    const member = members.find((member) => member.userId === userId);
+    if (!settlementFromUser || !settlementToUser) {
+      alert("Bitte beide Personen auswählen.");
+      return;
+    }
 
-    return member?.name || member?.email || userId;
+    if (settlementFromUser === settlementToUser) {
+      alert("Sender und Empfänger dürfen nicht gleich sein.");
+      return;
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      alert("Bitte gültigen Betrag eingeben.");
+      return;
+    }
+
+    try {
+      await createSettlement({
+        householdId,
+        fromUser: settlementFromUser,
+        toUser: settlementToUser,
+        amount,
+      });
+
+      setSettlementAmountText("");
+      setSettlementDialogVisible(false);
+
+      await reload();
+    } catch (error: any) {
+      console.log("ADD SETTLEMENT ERROR:", error);
+      console.log("RESPONSE:", error?.response);
+      alert(JSON.stringify(error?.response, null, 2));
+    }
   }
 
-  function toggleSplitMember(userId: string) {
-    setSplitBetween((current) => {
-      if (current.includes(userId)) {
-        return current.filter((id) => id !== userId);
-      }
-
-      return [...current, userId];
-    });
+  function openSettlementFromSuggestion(suggestion: {
+    fromUser: string;
+    toUser: string;
+    amount: number;
+  }) {
+    setSettlementFromUser(suggestion.fromUser);
+    setSettlementToUser(suggestion.toUser);
+    setSettlementAmountText(suggestion.amount.toFixed(2));
+    setSettlementDialogVisible(true);
   }
 
-  function selectAllMembers() {
-    setSplitBetween(members.map((member) => member.userId));
-  }
+  const balances = calculateBalances({
+    expenses,
+    settlements,
+  });
 
-  function clearSelectedMembers() {
-    setSplitBetween([]);
-  }
+  const paymentSuggestions = suggestPayments(balances);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "white", padding: 24, gap: 12 }}>
-      <Text style={{ color: "black", fontSize: 24, fontWeight: "bold" }}>Ausgaben</Text>
-
-      <TextInput
-        placeholder="Beschreibung"
-        placeholderTextColor="#666"
-        value={description}
-        onChangeText={setDescription}
-        style={{
-          borderWidth: 1,
-          borderColor: "#999",
-          color: "black",
-          backgroundColor: "white",
-          padding: 8,
+    <View style={{ flex: 1, backgroundColor: "#f6f6f6" }}>
+      <ScrollView
+        contentContainerStyle={{
+          padding: 16,
+          gap: 12,
         }}
-      />
+      >
+        <Text variant="headlineMedium">Ausgaben</Text>
 
-      <TextInput
-        placeholder="Betrag, z.B. 12.50"
-        placeholderTextColor="#666"
-        value={amountText}
-        onChangeText={setAmountText}
-        keyboardType="decimal-pad"
-        style={{
-          borderWidth: 1,
-          borderColor: "#999",
-          color: "black",
-          backgroundColor: "white",
-          padding: 8,
-        }}
-      />
+        <Card>
+          <Card.Title title="Neue Ausgabe" />
+          <Card.Content style={{ gap: 12 }}>
+            <TextInput
+              label="Beschreibung"
+              value={description}
+              onChangeText={setDescription}
+              mode="outlined"
+            />
 
-      <Button title={`Bezahlt von: ${paidBy ? getMemberLabel(paidBy) : "auswählen"}`} onPress={() => setPayerModalVisible(true)} />
+            <TextInput
+              label="Betrag"
+              value={amountText}
+              onChangeText={setAmountText}
+              keyboardType="decimal-pad"
+              mode="outlined"
+              placeholder="z.B. 12.50"
+            />
 
-      <Button title={`Mitglieder auswählen (${splitBetween.length}/${members.length})`} onPress={() => setMemberModalVisible(true)} />
+            <Button mode="outlined" onPress={() => setPayerDialogVisible(true)}>
+              Bezahlt von: {paidBy ? getMemberLabel(paidBy) : "auswählen"}
+            </Button>
 
-      <Text style={{ color: "black" }}>Split zwischen: {splitBetween.length > 0 ? splitBetween.map(getMemberLabel).join(", ") : "niemand ausgewählt"}</Text>
+            <Button mode="outlined" onPress={() => setSplitDialogVisible(true)}>
+              Mitglieder auswählen ({splitBetween.length}/{members.length})
+            </Button>
 
-      <Button title="Ausgabe hinzufügen" onPress={addExpense} />
+            <Text variant="bodyMedium">
+              Split zwischen:{" "}
+              {splitBetween.length > 0
+                ? splitBetween.map(getMemberLabel).join(", ")
+                : "niemand ausgewählt"}
+            </Text>
 
-      <Text style={{ color: "black", fontSize: 20, fontWeight: "bold" }}>Salden</Text>
+            <Button mode="contained" onPress={addExpense}>
+              Ausgabe hinzufügen
+            </Button>
+          </Card.Content>
+        </Card>
 
-      {balances.map((balance) => (
-        <Text key={balance.userId} style={{ color: "black" }}>
-          {getMemberLabel(balance.userId)}: {balance.amount.toFixed(2)} €
-        </Text>
-      ))}
+        <Card>
+          <Card.Title title="Salden" />
+          <Card.Content>
+            {balances.length === 0 && (
+              <Text variant="bodyMedium">Alles ausgeglichen.</Text>
+            )}
 
-      <Text style={{ color: "black", fontSize: 20, fontWeight: "bold" }}>Letzte Ausgaben</Text>
+            {balances.map((balance) => (
+              <List.Item
+                key={balance.userId}
+                title={getMemberLabel(balance.userId)}
+                description={`${balance.amount.toFixed(2)} €`}
+                left={(props) => <List.Icon {...props} icon="account" />}
+              />
+            ))}
+          </Card.Content>
+        </Card>
 
-      <FlatList
-        data={expenses}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <Text style={{ color: "black", padding: 8 }}>
-            {item.description}: {item.amount.toFixed(2)} € bezahlt von {getMemberLabel(item.paidBy)}
-            {"\n"}
-            Split: {item.splitBetween.map(getMemberLabel).join(", ")}
-          </Text>
-        )}
-      />
-      <Modal visible={memberModalVisible} transparent animationType="slide" onRequestClose={() => setMemberModalVisible(false)}>
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.4)",
-            justifyContent: "center",
-            padding: 24,
-          }}
+        <Card>
+          <Card.Title title="Zahlungsvorschläge" />
+          <Card.Content>
+            {paymentSuggestions.length === 0 && (
+              <Text variant="bodyMedium">Keine offenen Zahlungen.</Text>
+            )}
+
+            {paymentSuggestions.map((suggestion, index) => (
+              <View
+                key={`${suggestion.fromUser}-${suggestion.toUser}-${index}`}
+              >
+                <List.Item
+                  title={`${getMemberLabel(suggestion.fromUser)} zahlt ${suggestion.amount.toFixed(
+                    2
+                  )} €`}
+                  description={`an ${getMemberLabel(suggestion.toUser)}`}
+                  left={(props) => (
+                    <List.Icon {...props} icon="cash-fast" />
+                  )}
+                  right={() => (
+                    <Button
+                      mode="text"
+                      onPress={() => openSettlementFromSuggestion(suggestion)}
+                    >
+                      Bezahlt
+                    </Button>
+                  )}
+                />
+                <Divider />
+              </View>
+            ))}
+
+            <Button
+              mode="outlined"
+              onPress={() => setSettlementDialogVisible(true)}
+              style={{ marginTop: 8 }}
+            >
+              Ausgleich manuell eintragen
+            </Button>
+          </Card.Content>
+        </Card>
+
+        <Card>
+          <Card.Title title="Letzte Ausgaben" />
+          <Card.Content>
+            {expenses.length === 0 && (
+              <Text variant="bodyMedium">Noch keine Ausgaben.</Text>
+            )}
+
+            {expenses.map((expense) => (
+              <View key={expense.id}>
+                <List.Item
+                  title={`${expense.description}: ${expense.amount.toFixed(
+                    2
+                  )} €`}
+                  description={`Bezahlt von ${getMemberLabel(
+                    expense.paidBy
+                  )}\nSplit: ${expense.splitBetween
+                    .map(getMemberLabel)
+                    .join(", ")}`}
+                  left={(props) => (
+                    <List.Icon {...props} icon="receipt" />
+                  )}
+                  right={() => (
+                    <Button
+                      mode="text"
+                      onPress={async () => {
+                        await deleteExpense(expense.id);
+                        await reload();
+                      }}
+                    >
+                      Löschen
+                    </Button>
+                  )}
+                />
+                <Divider />
+              </View>
+            ))}
+          </Card.Content>
+        </Card>
+
+        <Card>
+          <Card.Title title="Ausgleichszahlungen" />
+          <Card.Content>
+            {settlements.length === 0 && (
+              <Text variant="bodyMedium">Noch keine Ausgleichszahlungen.</Text>
+            )}
+
+            {settlements.map((settlement) => (
+              <View key={settlement.id}>
+                <List.Item
+                  title={`${getMemberLabel(
+                    settlement.fromUser
+                  )} zahlte ${settlement.amount.toFixed(2)} €`}
+                  description={`an ${getMemberLabel(settlement.toUser)}`}
+                  left={(props) => (
+                    <List.Icon {...props} icon="bank-transfer" />
+                  )}
+                  right={() => (
+                    <Button
+                      mode="text"
+                      onPress={async () => {
+                        await deleteSettlement(settlement.id);
+                        await reload();
+                      }}
+                    >
+                      Löschen
+                    </Button>
+                  )}
+                />
+                <Divider />
+              </View>
+            ))}
+          </Card.Content>
+        </Card>
+      </ScrollView>
+
+      <Portal>
+        <Dialog
+          visible={payerDialogVisible}
+          onDismiss={() => setPayerDialogVisible(false)}
         >
-          <View
-            style={{
-              backgroundColor: "white",
-              borderRadius: 12,
-              padding: 20,
-              maxHeight: "80%",
-              gap: 12,
-            }}
-          >
-            <Text style={{ color: "black", fontSize: 22, fontWeight: "bold" }}>Wer zahlt mit?</Text>
+          <Dialog.Title>Wer hat bezahlt?</Dialog.Title>
+          <Dialog.ScrollArea>
+            <ScrollView>
+              <RadioButton.Group
+                onValueChange={(value) => setPaidBy(value)}
+                value={paidBy ?? ""}
+              >
+                {members.map((member) => (
+                  <RadioButton.Item
+                    key={member.userId}
+                    label={member.name || member.email}
+                    value={member.userId}
+                  />
+                ))}
+              </RadioButton.Group>
+            </ScrollView>
+          </Dialog.ScrollArea>
+          <Dialog.Actions>
+            <Button onPress={() => setPayerDialogVisible(false)}>
+              Übernehmen
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
 
-            <Text style={{ color: "#666" }}>Wähle alle Personen aus, auf die diese Ausgabe aufgeteilt werden soll.</Text>
-
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <Button title="Alle" onPress={selectAllMembers} />
-              <Button title="Keine" onPress={clearSelectedMembers} />
+        <Dialog
+          visible={splitDialogVisible}
+          onDismiss={() => setSplitDialogVisible(false)}
+        >
+          <Dialog.Title>Wer zahlt mit?</Dialog.Title>
+          <Dialog.Content>
+            <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
+              <Button mode="outlined" onPress={selectAllMembers}>
+                Alle
+              </Button>
+              <Button mode="outlined" onPress={clearSelectedMembers}>
+                Keine
+              </Button>
             </View>
-
+          </Dialog.Content>
+          <Dialog.ScrollArea>
             <ScrollView>
-              {members.map((member) => {
-                const selected = splitBetween.includes(member.userId);
-
-                return (
-                  <Pressable
-                    key={member.userId}
-                    onPress={() => toggleSplitMember(member.userId)}
-                    style={{
-                      paddingVertical: 12,
-                      borderBottomWidth: 1,
-                      borderBottomColor: "#ddd",
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text style={{ color: "black", fontSize: 18 }}>{member.name || member.email}</Text>
-
-                    <Text style={{ color: "black", fontSize: 22 }}>{selected ? "☑️" : "⬜"}</Text>
-                  </Pressable>
-                );
-              })}
+              {members.map((member) => (
+                <Checkbox.Item
+                  key={member.userId}
+                  label={member.name || member.email}
+                  status={
+                    splitBetween.includes(member.userId)
+                      ? "checked"
+                      : "unchecked"
+                  }
+                  onPress={() => toggleSplitMember(member.userId)}
+                />
+              ))}
             </ScrollView>
+          </Dialog.ScrollArea>
+          <Dialog.Actions>
+            <Button onPress={() => setSplitDialogVisible(false)}>
+              Übernehmen
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
 
-            <Button title="Auswahl übernehmen" onPress={() => setMemberModalVisible(false)} />
-          </View>
-        </View>
-      </Modal>
-
-      <Modal visible={payerModalVisible} transparent animationType="slide" onRequestClose={() => setPayerModalVisible(false)}>
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.4)",
-            justifyContent: "center",
-            padding: 24,
-          }}
+        <Dialog
+          visible={settlementDialogVisible}
+          onDismiss={() => setSettlementDialogVisible(false)}
         >
-          <View
-            style={{
-              backgroundColor: "white",
-              borderRadius: 12,
-              padding: 20,
-              maxHeight: "80%",
-              gap: 12,
-            }}
-          >
-            <Text style={{ color: "black", fontSize: 22, fontWeight: "bold" }}>Wer hat bezahlt?</Text>
-
+          <Dialog.Title>Ausgleichszahlung</Dialog.Title>
+          <Dialog.ScrollArea>
             <ScrollView>
-              {members.map((member) => {
-                const selected = paidBy === member.userId;
+              <Text variant="titleMedium" style={{ marginVertical: 8 }}>
+                Von
+              </Text>
 
-                return (
-                  <Pressable
-                    key={member.userId}
-                    onPress={() => {
-                      setPaidBy(member.userId);
-                      setPayerModalVisible(false);
-                    }}
-                    style={{
-                      paddingVertical: 12,
-                      borderBottomWidth: 1,
-                      borderBottomColor: "#ddd",
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text style={{ color: "black", fontSize: 18 }}>{member.name || member.email}</Text>
+              <RadioButton.Group
+                onValueChange={(value) => setSettlementFromUser(value)}
+                value={settlementFromUser ?? ""}
+              >
+                {members.map((member) => (
+                  <RadioButton.Item
+                    key={`from-${member.userId}`}
+                    label={member.name || member.email}
+                    value={member.userId}
+                  />
+                ))}
+              </RadioButton.Group>
 
-                    <Text style={{ color: "black", fontSize: 22 }}>{selected ? "✅" : ""}</Text>
-                  </Pressable>
-                );
-              })}
+              <Text variant="titleMedium" style={{ marginVertical: 8 }}>
+                An
+              </Text>
+
+              <RadioButton.Group
+                onValueChange={(value) => setSettlementToUser(value)}
+                value={settlementToUser ?? ""}
+              >
+                {members.map((member) => (
+                  <RadioButton.Item
+                    key={`to-${member.userId}`}
+                    label={member.name || member.email}
+                    value={member.userId}
+                  />
+                ))}
+              </RadioButton.Group>
+
+              <TextInput
+                label="Betrag"
+                value={settlementAmountText}
+                onChangeText={setSettlementAmountText}
+                keyboardType="decimal-pad"
+                mode="outlined"
+                style={{ marginTop: 12 }}
+              />
             </ScrollView>
-
-            <Button title="Abbrechen" onPress={() => setPayerModalVisible(false)} />
-          </View>
-        </View>
-      </Modal>
+          </Dialog.ScrollArea>
+          <Dialog.Actions>
+            <Button onPress={() => setSettlementDialogVisible(false)}>
+              Abbrechen
+            </Button>
+            <Button onPress={addSettlement}>Speichern</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 }

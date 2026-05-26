@@ -1,35 +1,79 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, Modal, ScrollView, Text, TextInput, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { Calendar, DateData, LocaleConfig } from "react-native-calendars";
-import { CalendarEvent, createCalendarEvent, deleteCalendarEvent, loadCalendarEventsForMonth } from "../lib/calendar";
+import {
+  Button,
+  Card,
+  Dialog,
+  Divider,
+  List,
+  Portal,
+  Text,
+  TextInput,
+} from "react-native-paper";
+import {
+  CalendarEvent,
+  createCalendarEvent,
+  deleteCalendarEvent,
+  loadCalendarEventsForMonth,
+} from "../lib/calendar";
 
 LocaleConfig.locales.de = {
-  monthNames: ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"],
-  monthNamesShort: ["Jan.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", "Sept.", "Okt.", "Nov.", "Dez."],
-  dayNames: ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"],
+  monthNames: [
+    "Januar",
+    "Februar",
+    "März",
+    "April",
+    "Mai",
+    "Juni",
+    "Juli",
+    "August",
+    "September",
+    "Oktober",
+    "November",
+    "Dezember",
+  ],
+  monthNamesShort: [
+    "Jan.",
+    "Feb.",
+    "März",
+    "Apr.",
+    "Mai",
+    "Juni",
+    "Juli",
+    "Aug.",
+    "Sept.",
+    "Okt.",
+    "Nov.",
+    "Dez.",
+  ],
+  dayNames: [
+    "Sonntag",
+    "Montag",
+    "Dienstag",
+    "Mittwoch",
+    "Donnerstag",
+    "Freitag",
+    "Samstag",
+  ],
   dayNamesShort: ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
   today: "Heute",
 };
 
 LocaleConfig.defaultLocale = "de";
 
+type CalendarScreenProps = {
+  householdId: string;
+};
+
 function pad2(value: number) {
   return String(value).padStart(2, "0");
 }
 
 function toDateKey(date: Date) {
-  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
-}
-
-function getEventDateKey(event: CalendarEvent) {
-  return event.start.slice(0, 10);
-}
-
-function getEventTimeLabel(event: CalendarEvent) {
-  return new Date(event.start).toLocaleTimeString("de-DE", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(
+    date.getDate()
+  )}`;
 }
 
 function makeLocalIso(dateKey: string, time: string) {
@@ -39,18 +83,114 @@ function makeLocalIso(dateKey: string, time: string) {
   return new Date(year, month - 1, day, hour, minute).toISOString();
 }
 
-export function CalendarScreen({ householdId }: { householdId: string }) {
+function getEventDateKey(event: CalendarEvent) {
+  return event.start.slice(0, 10);
+}
+
+function getEventEndDateKey(event: CalendarEvent) {
+  if (!event.end) {
+    return getEventDateKey(event);
+  }
+
+  return event.end.slice(0, 10);
+}
+
+function getEventTimeLabel(event: CalendarEvent) {
+  return new Date(event.start).toLocaleTimeString("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getEventEndTimeLabel(event: CalendarEvent) {
+  if (!event.end) {
+    return "";
+  }
+
+  return new Date(event.end).toLocaleTimeString("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function addDays(dateKey: string, days: number) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + days);
+  return toDateKey(date);
+}
+
+function getDateKeysBetween(startDateKey: string, endDateKey: string) {
+  const keys: string[] = [];
+
+  let current = startDateKey;
+
+  while (current <= endDateKey) {
+    keys.push(current);
+    current = addDays(current, 1);
+  }
+
+  return keys;
+}
+
+function eventTouchesDate(event: CalendarEvent, dateKey: string) {
+  const startKey = getEventDateKey(event);
+  const endKey = getEventEndDateKey(event);
+
+  return dateKey >= startKey && dateKey <= endKey;
+}
+
+function getEffectiveEndDateKey(selectedDateKey: string, newEndDate: string) {
+  return newEndDate.trim() || selectedDateKey;
+}
+
+function formatDateKeyGerman(dateKey: string) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+
+  return new Date(year, month - 1, day).toLocaleDateString("de-DE", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function getEventDateRangeLabel(event: CalendarEvent) {
+  const startKey = getEventDateKey(event);
+  const endKey = getEventEndDateKey(event);
+
+  const startTime = getEventTimeLabel(event);
+  const endTime = getEventEndTimeLabel(event);
+
+  if (startKey === endKey) {
+    if (endTime) {
+      return `${startTime} – ${endTime}`;
+    }
+
+    return startTime;
+  }
+
+  return `${formatDateKeyGerman(startKey)} ${startTime} – ${formatDateKeyGerman(
+    endKey
+  )}${endTime ? ` ${endTime}` : ""}`;
+}
+
+export function CalendarScreen({ householdId }: CalendarScreenProps) {
   const [visibleMonth, setVisibleMonth] = useState(() => new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(new Date()));
-  const [modalVisible, setModalVisible] = useState(false);
+
+  const [selectedDateKey, setSelectedDateKey] = useState(() =>
+    toDateKey(new Date())
+  );
+
+  const [createDialogVisible, setCreateDialogVisible] = useState(false);
+  const [endDatePickerVisible, setEndDatePickerVisible] = useState(false);
 
   const [newTitle, setNewTitle] = useState("");
   const [newTime, setNewTime] = useState("19:00");
   const [newEndDate, setNewEndDate] = useState("");
   const [newEndTime, setNewEndTime] = useState("20:00");
   const [newLocation, setNewLocation] = useState("");
-  const [endDatePickerVisible, setEndDatePickerVisible] = useState(false);
 
   async function reloadEvents(date = visibleMonth) {
     try {
@@ -63,6 +203,8 @@ export function CalendarScreen({ householdId }: { householdId: string }) {
       setEvents(records);
     } catch (error: any) {
       console.log("CALENDAR LOAD ERROR:", error);
+      console.log("STATUS:", error?.status);
+      console.log("MESSAGE:", error?.message);
       console.log("RESPONSE:", error?.response);
       alert(JSON.stringify(error?.response, null, 2));
     }
@@ -82,7 +224,6 @@ export function CalendarScreen({ householdId }: { householdId: string }) {
     for (const event of events) {
       const startKey = getEventDateKey(event);
       const endKey = getEventEndDateKey(event);
-
       const dateKeys = getDateKeysBetween(startKey, endKey);
 
       for (const key of dateKeys) {
@@ -104,80 +245,21 @@ export function CalendarScreen({ householdId }: { householdId: string }) {
   }, [events, selectedDateKey]);
 
   function handleMonthChange(month: DateData) {
-    setVisibleMonth(new Date(month.year, month.month - 1, 1));
+    const nextVisibleMonth = new Date(month.year, month.month - 1, 1);
+    setVisibleMonth(nextVisibleMonth);
   }
 
   function handleDayPress(day: DateData) {
     setSelectedDateKey(day.dateString);
   }
 
-  function addDays(dateKey: string, days: number) {
-    const [year, month, day] = dateKey.split("-").map(Number);
-    const date = new Date(year, month - 1, day);
-    date.setDate(date.getDate() + days);
-    return toDateKey(date);
-  }
-
-  function getEffectiveEndDateKey(selectedDateKey: string, newEndDate: string) {
-    return newEndDate.trim() || selectedDateKey;
-  }
-
-  function formatDateKeyGerman(dateKey: string) {
-    const [year, month, day] = dateKey.split("-").map(Number);
-
-    return new Date(year, month - 1, day).toLocaleDateString("de-DE", {
-      weekday: "short",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  }
-
-  function getDateKeysBetween(startDateKey: string, endDateKey: string) {
-    const keys: string[] = [];
-
-    let current = startDateKey;
-
-    while (current <= endDateKey) {
-      keys.push(current);
-      current = addDays(current, 1);
-    }
-
-    return keys;
-  }
-
-  function getEventEndDateKey(event: CalendarEvent) {
-    if (!event.end) {
-      return getEventDateKey(event);
-    }
-
-    return event.end.slice(0, 10);
-  }
-
-  function eventTouchesDate(event: CalendarEvent, dateKey: string) {
-    const startKey = getEventDateKey(event);
-    const endKey = getEventEndDateKey(event);
-
-    return dateKey >= startKey && dateKey <= endKey;
-  }
-
-  function getEventDateRangeLabel(event: CalendarEvent) {
-    const startKey = getEventDateKey(event);
-    const endKey = getEventEndDateKey(event);
-
-    if (startKey === endKey) {
-      return `${startKey}, ${getEventTimeLabel(event)}`;
-    }
-
-    const startTime = getEventTimeLabel(event);
-    const endTime = event.end
-      ? new Date(event.end).toLocaleTimeString("de-DE", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : "";
-
-    return `${startKey} ${startTime} – ${endKey}${endTime ? ` ${endTime}` : ""}`;
+  function openCreateDialog() {
+    setNewTitle("");
+    setNewTime("19:00");
+    setNewEndDate("");
+    setNewEndTime("20:00");
+    setNewLocation("");
+    setCreateDialogVisible(true);
   }
 
   async function addEvent() {
@@ -191,12 +273,12 @@ export function CalendarScreen({ householdId }: { householdId: string }) {
       return;
     }
 
-    const endDateKey = newEndDate.trim() || selectedDateKey;
-
     if (!/^\d\d:\d\d$/.test(newEndTime)) {
       alert("Bitte End-Uhrzeit im Format HH:MM eingeben.");
       return;
     }
+
+    const endDateKey = getEffectiveEndDateKey(selectedDateKey, newEndDate);
 
     const startIso = makeLocalIso(selectedDateKey, newTime);
     const endIso = makeLocalIso(endDateKey, newEndTime);
@@ -222,9 +304,11 @@ export function CalendarScreen({ householdId }: { householdId: string }) {
       setNewLocation("");
 
       await reloadEvents();
-      setModalVisible(false);
+      setCreateDialogVisible(false);
     } catch (error: any) {
       console.log("CALENDAR ADD ERROR:", error);
+      console.log("STATUS:", error?.status);
+      console.log("MESSAGE:", error?.message);
       console.log("RESPONSE:", error?.response);
       alert(JSON.stringify(error?.response, null, 2));
     }
@@ -236,162 +320,161 @@ export function CalendarScreen({ householdId }: { householdId: string }) {
       await reloadEvents();
     } catch (error: any) {
       console.log("CALENDAR DELETE ERROR:", error);
+      console.log("STATUS:", error?.status);
+      console.log("MESSAGE:", error?.message);
       console.log("RESPONSE:", error?.response);
       alert(JSON.stringify(error?.response, null, 2));
     }
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "white", padding: 16, gap: 12 }}>
-      <Text style={{ color: "black", fontSize: 24, fontWeight: "bold" }}>Kalender</Text>
+    <View style={{ flex: 1, backgroundColor: "#f6f6f6" }}>
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
+        <Text variant="headlineMedium">Kalender</Text>
 
-      <Calendar firstDay={1} markedDates={markedDates} onDayPress={handleDayPress} onMonthChange={handleMonthChange} enableSwipeMonths />
+        <Card>
+          <Card.Content>
+            <Calendar
+              firstDay={1}
+              markedDates={markedDates}
+              onDayPress={handleDayPress}
+              onMonthChange={handleMonthChange}
+              enableSwipeMonths
+              theme={{
+                calendarBackground: "#ffffff",
+                textSectionTitleColor: "#111827",
+                dayTextColor: "#111827",
+                monthTextColor: "#111827",
+                arrowColor: "#2563eb",
+                todayTextColor: "#2563eb",
+                selectedDayBackgroundColor: "#2563eb",
+              }}
+            />
+          </Card.Content>
+        </Card>
 
-      <Text style={{ color: "black", fontSize: 18, fontWeight: "bold" }}>Termine am {selectedDateKey}</Text>
+        <Card>
+          <Card.Title
+            title={`Termine am ${formatDateKeyGerman(selectedDateKey)}`}
+          />
+          <Card.Content>
+            {selectedEvents.length === 0 && (
+              <Text variant="bodyMedium">Keine Termine an diesem Tag.</Text>
+            )}
 
-      <ScrollView>
-        {selectedEvents.length === 0 && <Text style={{ color: "#777" }}>Keine Termine an diesem Tag.</Text>}
+            {selectedEvents.map((event) => (
+              <View key={event.id}>
+                <List.Item
+                  title={event.title}
+                  description={`${getEventDateRangeLabel(event)}${
+                    event.location ? `\nOrt: ${event.location}` : ""
+                  }`}
+                  left={(props) => (
+                    <List.Icon {...props} icon="calendar-clock" />
+                  )}
+                  right={() => (
+                    <Button mode="text" onPress={() => removeEvent(event)}>
+                      Löschen
+                    </Button>
+                  )}
+                />
+                <Divider />
+              </View>
+            ))}
 
-        {selectedEvents.map((event) => (
-          <View
-            key={event.id}
-            style={{
-              paddingVertical: 8,
-              borderBottomWidth: 1,
-              borderBottomColor: "#ddd",
-            }}
-          >
-            <Text style={{ color: "black", fontSize: 16 }}>
-              {getEventDateRangeLabel(event)} — {event.title}
-            </Text>
-
-            {!!event.location && <Text style={{ color: "#666" }}>{event.location}</Text>}
-
-            <Button title="Löschen" onPress={() => removeEvent(event)} />
-          </View>
-        ))}
+            <Button
+              mode="contained"
+              onPress={openCreateDialog}
+              style={{ marginTop: 12 }}
+            >
+              Termin hinzufügen
+            </Button>
+          </Card.Content>
+        </Card>
       </ScrollView>
 
-      <Button
-        title={`Termin am ${selectedDateKey} hinzufügen`}
-        onPress={() => {
-          setNewTitle("");
-          setNewTime("19:00");
-          setNewEndDate("");
-          setNewEndTime("20:00");
-          setNewLocation("");
-          setModalVisible(true);
-        }}
-      />
-
-      <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.4)",
-            justifyContent: "center",
-            padding: 24,
-          }}
+      <Portal>
+        <Dialog
+          visible={createDialogVisible}
+          onDismiss={() => setCreateDialogVisible(false)}
         >
-          <View
-            style={{
-              backgroundColor: "white",
-              borderRadius: 12,
-              padding: 20,
-              gap: 12,
-            }}
-          >
-            <Text style={{ color: "black", fontSize: 22, fontWeight: "bold" }}>Neuer Termin am {selectedDateKey}</Text>
+          <Dialog.Title>
+            Neuer Termin am {formatDateKeyGerman(selectedDateKey)}
+          </Dialog.Title>
 
-            <TextInput
-              placeholder="Titel"
-              placeholderTextColor="#666"
-              value={newTitle}
-              onChangeText={setNewTitle}
-              style={{
-                borderWidth: 1,
-                borderColor: "#999",
-                color: "black",
-                backgroundColor: "white",
-                padding: 8,
-              }}
-            />
+          <Dialog.ScrollArea>
+            <ScrollView contentContainerStyle={{ paddingVertical: 12 }}>
+              <TextInput
+                label="Titel"
+                value={newTitle}
+                onChangeText={setNewTitle}
+                mode="outlined"
+                style={{ marginBottom: 12 }}
+              />
 
-            <TextInput
-              placeholder="Uhrzeit, z.B. 19:00"
-              placeholderTextColor="#666"
-              value={newTime}
-              onChangeText={setNewTime}
-              style={{
-                borderWidth: 1,
-                borderColor: "#999",
-                color: "black",
-                backgroundColor: "white",
-                padding: 8,
-              }}
-            />
+              <TextInput
+                label="Startzeit"
+                value={newTime}
+                onChangeText={setNewTime}
+                mode="outlined"
+                placeholder="19:00"
+                style={{ marginBottom: 12 }}
+              />
 
-            <TextInput
-              placeholder="Ort optional"
-              placeholderTextColor="#666"
-              value={newLocation}
-              onChangeText={setNewLocation}
-              style={{
-                borderWidth: 1,
-                borderColor: "#999",
-                color: "black",
-                backgroundColor: "white",
-                padding: 8,
-              }}
-            />
+              <TextInput
+                label="Endzeit"
+                value={newEndTime}
+                onChangeText={setNewEndTime}
+                mode="outlined"
+                placeholder="20:00"
+                style={{ marginBottom: 12 }}
+              />
 
-            <View style={{ gap: 6 }}>
-              <Text style={{ color: "black", fontWeight: "bold" }}>Enddatum</Text>
+              <Button
+                mode="outlined"
+                onPress={() => setEndDatePickerVisible(true)}
+                style={{ marginBottom: 12 }}
+              >
+                Enddatum:{" "}
+                {newEndDate
+                  ? formatDateKeyGerman(newEndDate)
+                  : `gleicher Tag (${formatDateKeyGerman(selectedDateKey)})`}
+              </Button>
 
-              <Text style={{ color: "black" }}>{newEndDate ? formatDateKeyGerman(newEndDate) : `Gleicher Tag (${formatDateKeyGerman(selectedDateKey)})`}</Text>
+              {newEndDate !== "" && (
+                <Button
+                  mode="text"
+                  onPress={() => setNewEndDate("")}
+                  style={{ marginBottom: 12 }}
+                >
+                  Enddatum zurücksetzen
+                </Button>
+              )}
 
-              <Button title="Enddatum auswählen" onPress={() => setEndDatePickerVisible(true)} />
+              <TextInput
+                label="Ort optional"
+                value={newLocation}
+                onChangeText={setNewLocation}
+                mode="outlined"
+              />
+            </ScrollView>
+          </Dialog.ScrollArea>
 
-              {newEndDate !== "" && <Button title="Enddatum zurücksetzen" onPress={() => setNewEndDate("")} />}
-            </View>
+          <Dialog.Actions>
+            <Button onPress={() => setCreateDialogVisible(false)}>
+              Abbrechen
+            </Button>
+            <Button onPress={addEvent}>Speichern</Button>
+          </Dialog.Actions>
+        </Dialog>
 
-            <TextInput
-              placeholder="End-Uhrzeit, z.B. 20:00"
-              placeholderTextColor="#666"
-              value={newEndTime}
-              onChangeText={setNewEndTime}
-              style={{
-                borderWidth: 1,
-                borderColor: "#999",
-                color: "black",
-                backgroundColor: "white",
-                padding: 8,
-              }}
-            />
-            <Button title="Speichern" onPress={addEvent} />
-            <Button title="Schließen" onPress={() => setModalVisible(false)} />
-          </View>
-        </View>
-      </Modal>
-      <Modal visible={endDatePickerVisible} transparent animationType="slide" onRequestClose={() => setEndDatePickerVisible(false)}>
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.4)",
-            justifyContent: "center",
-            padding: 24,
-          }}
+        <Dialog
+          visible={endDatePickerVisible}
+          onDismiss={() => setEndDatePickerVisible(false)}
         >
-          <View
-            style={{
-              backgroundColor: "white",
-              borderRadius: 12,
-              padding: 20,
-              gap: 12,
-            }}
-          >
-            <Text style={{ color: "black", fontSize: 22, fontWeight: "bold" }}>Enddatum auswählen</Text>
+          <Dialog.Title>Enddatum auswählen</Dialog.Title>
 
+          <Dialog.Content>
             <Calendar
               firstDay={1}
               current={newEndDate || selectedDateKey}
@@ -407,32 +490,38 @@ export function CalendarScreen({ householdId }: { householdId: string }) {
                 },
               }}
               onDayPress={(day) => {
-                setNewEndDate(day.dateString === selectedDateKey ? "" : day.dateString);
+                setNewEndDate(
+                  day.dateString === selectedDateKey ? "" : day.dateString
+                );
                 setEndDatePickerVisible(false);
               }}
               theme={{
-                calendarBackground: "white",
-                textSectionTitleColor: "black",
-                dayTextColor: "black",
-                monthTextColor: "black",
+                calendarBackground: "#ffffff",
+                textSectionTitleColor: "#111827",
+                dayTextColor: "#111827",
+                monthTextColor: "#111827",
                 arrowColor: "#2563eb",
                 todayTextColor: "#2563eb",
                 selectedDayBackgroundColor: "#2563eb",
               }}
             />
+          </Dialog.Content>
 
+          <Dialog.Actions>
             <Button
-              title="Gleicher Tag"
               onPress={() => {
                 setNewEndDate("");
                 setEndDatePickerVisible(false);
               }}
-            />
-
-            <Button title="Abbrechen" onPress={() => setEndDatePickerVisible(false)} />
-          </View>
-        </View>
-      </Modal>
+            >
+              Gleicher Tag
+            </Button>
+            <Button onPress={() => setEndDatePickerVisible(false)}>
+              Abbrechen
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 }

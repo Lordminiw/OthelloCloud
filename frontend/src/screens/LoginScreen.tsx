@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Alert, Button, Text, TextInput, View } from "react-native";
+import { View } from "react-native";
+import { Button, Card, Text, TextInput } from "react-native-paper";
 import { pb } from "../lib/pocketbase";
 
 export function LoginScreen({ onLogin }: { onLogin: () => void }) {
@@ -8,11 +9,23 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
   async function login() {
     try {
-      await pb.collection("users").authWithPassword(email, password);
+      await pb.collection("users").authWithPassword(email.trim(), password);
       onLogin();
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Login fehlgeschlagen", "Bitte E-Mail und Passwort prüfen.");
+    } catch (error: any) {
+      console.log("LOGIN ERROR:", error);
+      console.log("RESPONSE:", error?.response);
+
+      alert(
+        "Login fehlgeschlagen:\n\n" +
+          "Status: " +
+          error?.status +
+          "\n" +
+          "Message: " +
+          error?.message +
+          "\n" +
+          "Response: " +
+          JSON.stringify(error?.response, null, 2)
+      );
     }
   }
 
@@ -20,46 +33,40 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
     <View
       style={{
         flex: 1,
-        backgroundColor: "white",
-        padding: 24,
-        gap: 12,
+        backgroundColor: "#f6f6f6",
+        justifyContent: "center",
+        padding: 16,
       }}
     >
-      <Text style={{ color: "black", fontSize: 24, fontWeight: "bold" }}>
-        WG App Login
-      </Text>
+      <Card>
+        <Card.Title title="WG App Login" />
+        <Card.Content style={{ gap: 12 }}>
+          <Text variant="bodyMedium">
+            Melde dich mit deinem WG-Account an.
+          </Text>
 
-      <TextInput
-        placeholder="E-Mail"
-        placeholderTextColor="#666"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        style={{
-          borderWidth: 1,
-          borderColor: "#999",
-          color: "black",
-          backgroundColor: "white",
-          padding: 8,
-        }}
-      />
+          <TextInput
+            label="E-Mail"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            mode="outlined"
+          />
 
-      <TextInput
-        placeholder="Passwort"
-        placeholderTextColor="#666"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        style={{
-          borderWidth: 1,
-          borderColor: "#999",
-          color: "black",
-          backgroundColor: "white",
-          padding: 8,
-        }}
-      />
+          <TextInput
+            label="Passwort"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            mode="outlined"
+          />
 
-      <Button title="Einloggen" onPress={login} />
+          <Button mode="contained" onPress={login}>
+            Einloggen
+          </Button>
+        </Card.Content>
+      </Card>
     </View>
   );
 }
