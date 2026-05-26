@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ScrollView, useWindowDimensions, View } from "react-native";
+import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import {
   Button,
   Card,
@@ -26,6 +26,7 @@ import {
   Settlement,
   SplitMode,
   suggestPayments,
+  updateExpense,
 } from "../lib/expenses";
 import { HouseholdMember, loadHouseholdMembers } from "../lib/members";
 import { pb } from "../lib/pocketbase";
@@ -40,6 +41,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
 
   const [description, setDescription] = useState("");
   const [amountText, setAmountText] = useState("");
+  const [notes, setNotes] = useState("");
 
   const [paidBy, setPaidBy] = useState<string | null>(null);
   const [splitBetween, setSplitBetween] = useState<string[]>([]);
@@ -57,6 +59,17 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
   );
   const [settlementToUser, setSettlementToUser] = useState<string | null>(null);
   const [settlementAmountText, setSettlementAmountText] = useState("");
+
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [editDescription, setEditDescription] = useState("");
+  const [editAmountText, setEditAmountText] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [editPaidBy, setEditPaidBy] = useState<string | null>(null);
+  const [editSplitBetween, setEditSplitBetween] = useState<string[]>([]);
+  const [editSplitMode, setEditSplitMode] = useState<SplitMode>("equal");
+  const [editSplitSharesText, setEditSplitSharesText] = useState<
+    Record<string, string>
+  >({});
 
   async function reload() {
     try {
@@ -127,15 +140,27 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
     }));
   }
 
-  function buildSplitShares(amount: number) {
-    if (splitMode === "equal") {
+  function updateEditSplitShare(userId: string, value: string) {
+    setEditSplitSharesText((current) => ({
+      ...current,
+      [userId]: value,
+    }));
+  }
+
+  function buildSplitShares(input: {
+    amount: number;
+    mode: SplitMode;
+    participants: string[];
+    sharesText: Record<string, string>;
+  }) {
+    if (input.mode === "equal") {
       return undefined;
     }
 
     const splitShares = Object.fromEntries(
-      splitBetween.map((userId) => [
+      input.participants.map((userId) => [
         userId,
-        Number((splitSharesText[userId] ?? "").replace(",", ".")),
+        Number((input.sharesText[userId] ?? "").replace(",", ".")),
       ])
     );
 
@@ -153,14 +178,14 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
       0
     );
 
-    if (splitMode === "amount" && Math.abs(total - amount) >= 0.01) {
+    if (input.mode === "amount" && Math.abs(total - input.amount) >= 0.01) {
       alert(
-        `Die Einzelbeträge müssen zusammen ${amount.toFixed(2)} € ergeben.`
+        `Die Einzelbeträge müssen zusammen ${input.amount.toFixed(2)} € ergeben.`
       );
       return null;
     }
 
-    if (splitMode === "percent" && Math.abs(total - 100) >= 0.01) {
+    if (input.mode === "percent" && Math.abs(total - 100) >= 0.01) {
       alert("Die Prozentwerte müssen zusammen 100 % ergeben.");
       return null;
     }
@@ -175,9 +200,62 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
   }
 
   function getExpenseSplitDescription(expense: Expense) {
-    return `Bezahlt von ${getMemberLabel(expense.paidBy)}\n${getSplitModeLabel(
-      expense.splitMode
-    )}: ${expense.splitBetween.map(getMemberLabel).join(", ")}`;
+    const lines = [
+      `Bezahlt von ${getMemberLabel(expense.paidBy)}`,
+      `${getSplitModeLabel(expense.splitMode)}: ${expense.splitBetween
+        .map(getMemberLabel)
+        .join(", ")}`,
+    ];
+
+    if (expense.notes?.trim()) {
+      lines.push(`Notiz: ${expense.notes.trim()}`);
+    }
+
+    return lines.join("\n");
+  }
+
+  function parseSharesText(expense: Expense) {
+    try {
+      const parsed = expense.splitShares ? JSON.parse(expense.splitShares) : {};
+
+      return Object.fromEntries(
+        (expense.splitBetween ?? []).map((userId) => [
+          userId,
+          parsed[userId] !== undefined ? String(parsed[userId]) : "",
+        ])
+      );
+    } catch {
+      return {};
+    }
+  }
+
+  function openEditExpense(expense: Expense) {
+    setEditingExpense(expense);
+    setEditDescription(expense.description);
+    setEditAmountText(String(expense.amount));
+    setEditNotes(expense.notes ?? "");
+    setEditPaidBy(expense.paidBy);
+    setEditSplitBetween(expense.splitBetween ?? []);
+    setEditSplitMode(expense.splitMode ?? "equal");
+    setEditSplitSharesText(parseSharesText(expense));
+  }
+
+  function toggleEditSplitMember(userId: string) {
+    setEditSplitBetween((current) => {
+      if (current.includes(userId)) {
+        return current.filter((id) => id !== userId);
+      }
+
+      return [...current, userId];
+    });
+  }
+
+  function selectAllEditMembers() {
+    setEditSplitBetween(members.map((member) => member.userId));
+  }
+
+  function clearSelectedEditMembers() {
+    setEditSplitBetween([]);
   }
 
   async function addExpense() {
@@ -203,7 +281,12 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
       return;
     }
 
-    const splitShares = buildSplitShares(amount);
+    const splitShares = buildSplitShares({
+      amount,
+      mode: splitMode,
+      participants: splitBetween,
+      sharesText: splitSharesText,
+    });
 
     if (splitShares === null) {
       return;
@@ -218,10 +301,12 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
         splitBetween,
         splitMode,
         splitShares,
+        notes: notes.trim(),
       });
 
       setDescription("");
       setAmountText("");
+      setNotes("");
       setSplitMode("equal");
       setSplitSharesText({});
       selectAllMembers();
@@ -272,6 +357,65 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
     }
   }
 
+  async function saveEditedExpense() {
+    if (!editingExpense) {
+      return;
+    }
+
+    const amount = Number(editAmountText.replace(",", "."));
+
+    if (!editDescription.trim()) {
+      alert("Bitte Beschreibung eingeben.");
+      return;
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      alert("Bitte gültigen Betrag eingeben.");
+      return;
+    }
+
+    if (!editPaidBy) {
+      alert("Bitte auswählen, wer bezahlt hat.");
+      return;
+    }
+
+    if (editSplitBetween.length === 0) {
+      alert("Bitte mindestens eine Person auswählen, die mitzahlt.");
+      return;
+    }
+
+    const splitShares = buildSplitShares({
+      amount,
+      mode: editSplitMode,
+      participants: editSplitBetween,
+      sharesText: editSplitSharesText,
+    });
+
+    if (splitShares === null) {
+      return;
+    }
+
+    try {
+      await updateExpense({
+        expenseId: editingExpense.id,
+        description: editDescription.trim(),
+        amount,
+        paidBy: editPaidBy,
+        splitBetween: editSplitBetween,
+        splitMode: editSplitMode,
+        splitShares,
+        notes: editNotes.trim(),
+      });
+
+      setEditingExpense(null);
+      await reload();
+    } catch (error: any) {
+      console.log("UPDATE EXPENSE ERROR:", error);
+      console.log("RESPONSE:", error?.response);
+      alert(JSON.stringify(error?.response, null, 2));
+    }
+  }
+
   function openSettlementFromSuggestion(suggestion: {
     fromUser: string;
     toUser: string;
@@ -310,6 +454,14 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
               keyboardType="decimal-pad"
               mode="outlined"
               placeholder="z.B. 12.50"
+            />
+
+            <TextInput
+              label="Notiz optional"
+              value={notes}
+              onChangeText={setNotes}
+              mode="outlined"
+              multiline
             />
 
             <Button mode="outlined" onPress={() => setPayerDialogVisible(true)}>
@@ -371,14 +523,21 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
               </Text>
             )}
 
-            {balances.map((balance) => (
-              <List.Item
-                key={balance.userId}
-                title={getMemberLabel(balance.userId)}
-                description={`${balance.amount.toFixed(2)} €`}
-                left={(props) => <List.Icon {...props} icon="account" />}
-              />
-            ))}
+            {balances.length > 0 && (
+              <ScrollView
+                nestedScrollEnabled
+                style={!isWide && styles.mobileCardList}
+              >
+                {balances.map((balance) => (
+                  <List.Item
+                    key={balance.userId}
+                    title={getMemberLabel(balance.userId)}
+                    description={`${balance.amount.toFixed(2)} €`}
+                    left={(props) => <List.Icon {...props} icon="account" />}
+                  />
+                ))}
+              </ScrollView>
+            )}
           </Card.Content>
         </Card>
 
@@ -391,35 +550,42 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
               </Text>
             )}
 
-            {paymentSuggestions.map((suggestion, index) => (
-              <View
-                key={`${suggestion.fromUser}-${suggestion.toUser}-${index}`}
+            {paymentSuggestions.length > 0 && (
+              <ScrollView
+                nestedScrollEnabled
+                style={!isWide && styles.paymentSuggestionList}
               >
-                <List.Item
-                  title={`${getMemberLabel(suggestion.fromUser)} zahlt ${suggestion.amount.toFixed(
-                    2
-                  )} €`}
-                  description={`an ${getMemberLabel(suggestion.toUser)}`}
-                  left={(props) => (
-                    <List.Icon {...props} icon="cash-fast" />
-                  )}
-                  right={() => (
-                    <Button
-                      mode="text"
-                      onPress={() => openSettlementFromSuggestion(suggestion)}
-                    >
-                      Bezahlt
-                    </Button>
-                  )}
-                />
-                <Divider />
-              </View>
-            ))}
+                {paymentSuggestions.map((suggestion, index) => (
+                  <View
+                    key={`${suggestion.fromUser}-${suggestion.toUser}-${index}`}
+                  >
+                    <List.Item
+                      title={`${getMemberLabel(suggestion.fromUser)} zahlt ${suggestion.amount.toFixed(
+                        2
+                      )} €`}
+                      description={`an ${getMemberLabel(suggestion.toUser)}`}
+                      left={(props) => (
+                        <List.Icon {...props} icon="cash-fast" />
+                      )}
+                      right={() => (
+                        <Button
+                          mode="text"
+                          onPress={() => openSettlementFromSuggestion(suggestion)}
+                        >
+                          Bezahlt
+                        </Button>
+                      )}
+                    />
+                    <Divider />
+                  </View>
+                ))}
+              </ScrollView>
+            )}
 
             <Button
               mode="outlined"
               onPress={() => setSettlementDialogVisible(true)}
-              style={{ marginHorizontal: 16, marginTop: 8 }}
+              style={styles.paymentManualButton}
             >
               Ausgleich manuell eintragen
             </Button>
@@ -437,31 +603,43 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
               </Text>
             )}
 
-            {expenses.map((expense) => (
-              <View key={expense.id}>
-                <List.Item
-                  title={`${expense.description}: ${expense.amount.toFixed(
-                    2
-                  )} €`}
-                  description={getExpenseSplitDescription(expense)}
-                  left={(props) => (
-                    <List.Icon {...props} icon="receipt" />
-                  )}
-                  right={() => (
-                    <Button
-                      mode="text"
-                      onPress={async () => {
-                        await deleteExpense(expense.id);
-                        await reload();
-                      }}
-                    >
-                      Löschen
-                    </Button>
-                  )}
-                />
-                <Divider />
-              </View>
-            ))}
+            {expenses.length > 0 && (
+              <ScrollView
+                nestedScrollEnabled
+                style={!isWide && styles.mobileCardList}
+              >
+                {expenses.map((expense) => (
+                  <View key={expense.id}>
+                    <List.Item
+                      title={`${expense.description}: ${expense.amount.toFixed(
+                        2
+                      )} €`}
+                      description={getExpenseSplitDescription(expense)}
+                      left={(props) => (
+                        <List.Icon {...props} icon="receipt" />
+                      )}
+                      right={() => (
+                        <View>
+                          <Button mode="text" onPress={() => openEditExpense(expense)}>
+                            Bearbeiten
+                          </Button>
+                          <Button
+                            mode="text"
+                            onPress={async () => {
+                              await deleteExpense(expense.id);
+                              await reload();
+                            }}
+                          >
+                            Löschen
+                          </Button>
+                        </View>
+                      )}
+                    />
+                    <Divider />
+                  </View>
+                ))}
+              </ScrollView>
+            )}
           </Card.Content>
         </Card>
 
@@ -474,31 +652,38 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
               </Text>
             )}
 
-            {settlements.map((settlement) => (
-              <View key={settlement.id}>
-                <List.Item
-                  title={`${getMemberLabel(
-                    settlement.fromUser
-                  )} zahlte ${settlement.amount.toFixed(2)} €`}
-                  description={`an ${getMemberLabel(settlement.toUser)}`}
-                  left={(props) => (
-                    <List.Icon {...props} icon="bank-transfer" />
-                  )}
-                  right={() => (
-                    <Button
-                      mode="text"
-                      onPress={async () => {
-                        await deleteSettlement(settlement.id);
-                        await reload();
-                      }}
-                    >
-                      Löschen
-                    </Button>
-                  )}
-                />
-                <Divider />
-              </View>
-            ))}
+            {settlements.length > 0 && (
+              <ScrollView
+                nestedScrollEnabled
+                style={!isWide && styles.mobileCardList}
+              >
+                {settlements.map((settlement) => (
+                  <View key={settlement.id}>
+                    <List.Item
+                      title={`${getMemberLabel(
+                        settlement.fromUser
+                      )} zahlte ${settlement.amount.toFixed(2)} €`}
+                      description={`an ${getMemberLabel(settlement.toUser)}`}
+                      left={(props) => (
+                        <List.Icon {...props} icon="bank-transfer" />
+                      )}
+                      right={() => (
+                        <Button
+                          mode="text"
+                          onPress={async () => {
+                            await deleteSettlement(settlement.id);
+                            await reload();
+                          }}
+                        >
+                          Löschen
+                        </Button>
+                      )}
+                    />
+                    <Divider />
+                  </View>
+                ))}
+              </ScrollView>
+            )}
           </Card.Content>
         </Card>
         </View>
@@ -573,6 +758,121 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
         </Dialog>
 
         <Dialog
+          visible={editingExpense !== null}
+          onDismiss={() => setEditingExpense(null)}
+          style={styles.mobileDialog}
+        >
+          <Dialog.Title>Ausgabe bearbeiten</Dialog.Title>
+          <Dialog.ScrollArea style={styles.editDialogScrollArea}>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.editDialogContent}
+            >
+              <TextInput
+                label="Beschreibung"
+                value={editDescription}
+                onChangeText={setEditDescription}
+                mode="outlined"
+                style={{ marginBottom: 12 }}
+              />
+
+              <TextInput
+                label="Betrag"
+                value={editAmountText}
+                onChangeText={setEditAmountText}
+                keyboardType="decimal-pad"
+                mode="outlined"
+                style={{ marginBottom: 12 }}
+              />
+
+              <TextInput
+                label="Notiz optional"
+                value={editNotes}
+                onChangeText={setEditNotes}
+                mode="outlined"
+                multiline
+                style={{ marginBottom: 12 }}
+              />
+
+              <Text variant="titleMedium" style={{ marginBottom: 8 }}>
+                Bezahlt von
+              </Text>
+
+              <RadioButton.Group
+                onValueChange={(value) => setEditPaidBy(value)}
+                value={editPaidBy ?? ""}
+              >
+                {members.map((member) => (
+                  <RadioButton.Item
+                    key={`edit-paid-${member.userId}`}
+                    label={member.name || member.email}
+                    value={member.userId}
+                  />
+                ))}
+              </RadioButton.Group>
+
+              <Text variant="titleMedium" style={{ marginVertical: 8 }}>
+                Split
+              </Text>
+
+              <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
+                <Button mode="outlined" onPress={selectAllEditMembers}>
+                  Alle
+                </Button>
+                <Button mode="outlined" onPress={clearSelectedEditMembers}>
+                  Keine
+                </Button>
+              </View>
+
+              {members.map((member) => (
+                <Checkbox.Item
+                  key={`edit-split-${member.userId}`}
+                  label={member.name || member.email}
+                  status={
+                    editSplitBetween.includes(member.userId)
+                      ? "checked"
+                      : "unchecked"
+                  }
+                  onPress={() => toggleEditSplitMember(member.userId)}
+                />
+              ))}
+
+              <SegmentedButtons
+                value={editSplitMode}
+                onValueChange={(value) => setEditSplitMode(value as SplitMode)}
+                buttons={[
+                  { value: "equal", label: "Gleich" },
+                  { value: "amount", label: "Betrag" },
+                  { value: "percent", label: "%" },
+                ]}
+                style={{ marginTop: 12 }}
+              />
+
+              {editSplitMode !== "equal" && (
+                <View style={{ gap: 12, marginTop: 12 }}>
+                  {editSplitBetween.map((userId) => (
+                    <TextInput
+                      key={`edit-share-${userId}`}
+                      label={`${getMemberLabel(userId)} ${
+                        editSplitMode === "percent" ? "in %" : "in €"
+                      }`}
+                      value={editSplitSharesText[userId] ?? ""}
+                      onChangeText={(value) => updateEditSplitShare(userId, value)}
+                      keyboardType="decimal-pad"
+                      mode="outlined"
+                    />
+                  ))}
+                </View>
+              )}
+            </ScrollView>
+          </Dialog.ScrollArea>
+          <Dialog.Actions>
+            <Button onPress={() => setEditingExpense(null)}>Abbrechen</Button>
+            <Button onPress={saveEditedExpense}>Speichern</Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        <Dialog
           visible={settlementDialogVisible}
           onDismiss={() => setSettlementDialogVisible(false)}
         >
@@ -634,4 +934,29 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  mobileCardList: {
+    height: 240,
+    overflow: "hidden",
+  },
+  paymentSuggestionList: {
+    height: 206,
+    overflow: "hidden",
+  },
+  paymentManualButton: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 12,
+  },
+  mobileDialog: {
+    maxHeight: "90%",
+  },
+  editDialogScrollArea: {
+    maxHeight: 520,
+  },
+  editDialogContent: {
+    paddingVertical: 12,
+  },
+});
 

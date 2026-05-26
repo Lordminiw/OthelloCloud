@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useWindowDimensions, View } from "react-native";
+import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { Button, Card, Divider, List, Text, TextInput } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
 import { HouseholdDropdown } from "@/components/household-dropdown";
@@ -155,17 +155,24 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
                 </Text>
               )}
 
-              {openItems.map((item) => (
-                <View key={item.id}>
-                  <List.Item
-                    title={item.name}
-                    description={itemDescription(item)}
-                    left={(props) => <List.Icon {...props} icon="checkbox-blank-outline" />}
-                    onPress={() => toggleItem(item)}
-                  />
-                  <Divider />
-                </View>
-              ))}
+              {openItems.length > 0 && (
+                <ScrollView
+                  nestedScrollEnabled
+                  style={!isWide && styles.mobileCardList}
+                >
+                  {openItems.map((item) => (
+                    <View key={item.id}>
+                      <List.Item
+                        title={item.name}
+                        description={itemDescription(item)}
+                        left={(props) => <List.Icon {...props} icon="checkbox-blank-outline" />}
+                        onPress={() => toggleItem(item)}
+                      />
+                      <Divider />
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
             </Card.Content>
           </Card>
 
@@ -178,18 +185,25 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
                 </Text>
               )}
 
-              {checkedItems.map((item) => (
-                <View key={item.id}>
-                  <List.Item
-                    title={item.name}
-                    description={itemDescription(item)}
-                    titleStyle={{ textDecorationLine: "line-through" }}
-                    left={(props) => <List.Icon {...props} icon="checkbox-marked" />}
-                    onPress={() => toggleItem(item)}
-                  />
-                  <Divider />
-                </View>
-              ))}
+              {checkedItems.length > 0 && (
+                <ScrollView
+                  nestedScrollEnabled
+                  style={!isWide && styles.mobileCardList}
+                >
+                  {checkedItems.map((item) => (
+                    <View key={item.id}>
+                      <List.Item
+                        title={item.name}
+                        description={itemDescription(item)}
+                        titleStyle={{ textDecorationLine: "line-through" }}
+                        left={(props) => <List.Icon {...props} icon="checkbox-marked" />}
+                        onPress={() => toggleItem(item)}
+                      />
+                      <Divider />
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
             </Card.Content>
           </Card>
         </View>
@@ -197,3 +211,9 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  mobileCardList: {
+    maxHeight: 360,
+  },
+});

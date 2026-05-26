@@ -9,6 +9,7 @@ export type Expense = {
   splitBetween: string[];
   splitMode?: SplitMode;
   splitShares?: string;
+  notes?: string;
   createdBy?: string;
 };
 
@@ -49,6 +50,7 @@ export async function createExpense(input: {
   splitBetween: string[];
   splitMode?: SplitMode;
   splitShares?: Record<string, number>;
+  notes?: string;
 }) {
   return await pb.collection("expenses").create({
     household: input.householdId,
@@ -58,7 +60,29 @@ export async function createExpense(input: {
     splitBetween: input.splitBetween,
     splitMode: input.splitMode ?? "equal",
     splitShares: input.splitShares ? JSON.stringify(input.splitShares) : "",
+    notes: input.notes ?? "",
     createdBy: pb.authStore.model?.id,
+  });
+}
+
+export async function updateExpense(input: {
+  expenseId: string;
+  description: string;
+  amount: number;
+  paidBy: string;
+  splitBetween: string[];
+  splitMode?: SplitMode;
+  splitShares?: Record<string, number>;
+  notes?: string;
+}) {
+  return await pb.collection("expenses").update(input.expenseId, {
+    description: input.description,
+    amount: input.amount,
+    paidBy: input.paidBy,
+    splitBetween: input.splitBetween,
+    splitMode: input.splitMode ?? "equal",
+    splitShares: input.splitShares ? JSON.stringify(input.splitShares) : "",
+    notes: input.notes ?? "",
   });
 }
 

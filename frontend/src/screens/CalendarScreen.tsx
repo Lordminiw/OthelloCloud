@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ScrollView, useWindowDimensions, View } from "react-native";
+import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { Calendar, DateData, LocaleConfig } from "react-native-calendars";
 import {
   Button,
@@ -372,25 +372,32 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
               </Text>
             )}
 
-            {selectedEvents.map((event) => (
-              <View key={event.id}>
-                <List.Item
-                  title={event.title}
-                  description={`${getEventDateRangeLabel(event)}${
-                    event.location ? `\nOrt: ${event.location}` : ""
-                  }`}
-                  left={(props) => (
-                    <List.Icon {...props} icon="calendar-clock" />
-                  )}
-                  right={() => (
-                    <Button mode="text" onPress={() => removeEvent(event)}>
-                      Löschen
-                    </Button>
-                  )}
-                />
-                <Divider />
-              </View>
-            ))}
+            {selectedEvents.length > 0 && (
+              <ScrollView
+                nestedScrollEnabled
+                style={!isWide && styles.mobileCardList}
+              >
+                {selectedEvents.map((event) => (
+                  <View key={event.id}>
+                    <List.Item
+                      title={event.title}
+                      description={`${getEventDateRangeLabel(event)}${
+                        event.location ? `\nOrt: ${event.location}` : ""
+                      }`}
+                      left={(props) => (
+                        <List.Icon {...props} icon="calendar-clock" />
+                      )}
+                      right={() => (
+                        <Button mode="text" onPress={() => removeEvent(event)}>
+                          Löschen
+                        </Button>
+                      )}
+                    />
+                    <Divider />
+                  </View>
+                ))}
+              </ScrollView>
+            )}
 
             <Button
               mode="contained"
@@ -539,3 +546,9 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  mobileCardList: {
+    maxHeight: 360,
+  },
+});
