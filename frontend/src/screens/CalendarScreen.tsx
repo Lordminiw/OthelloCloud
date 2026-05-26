@@ -10,6 +10,7 @@ import {
   Portal,
   Text,
   TextInput,
+  useTheme,
 } from "react-native-paper";
 import {
   CalendarEvent,
@@ -17,6 +18,7 @@ import {
   deleteCalendarEvent,
   loadCalendarEventsForMonth,
 } from "../lib/calendar";
+import { HouseholdDropdown } from "@/components/household-dropdown";
 
 LocaleConfig.locales.de = {
   monthNames: [
@@ -176,6 +178,7 @@ function getEventDateRangeLabel(event: CalendarEvent) {
 }
 
 export function CalendarScreen({ householdId }: CalendarScreenProps) {
+  const theme = useTheme();
   const [visibleMonth, setVisibleMonth] = useState(() => new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
 
@@ -230,7 +233,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
         marked[key] = {
           ...(marked[key] ?? {}),
           marked: true,
-          dotColor: "#2563eb",
+          dotColor: theme.colors.primary,
         };
       }
     }
@@ -238,11 +241,11 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
     marked[selectedDateKey] = {
       ...(marked[selectedDateKey] ?? {}),
       selected: true,
-      selectedColor: "#2563eb",
+      selectedColor: theme.colors.primary,
     };
 
     return marked;
-  }, [events, selectedDateKey]);
+  }, [events, selectedDateKey, theme.colors.primary]);
 
   function handleMonthChange(month: DateData) {
     const nextVisibleMonth = new Date(month.year, month.month - 1, 1);
@@ -328,26 +331,33 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f6f6f6" }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
-        <Text variant="headlineMedium">Kalender</Text>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Text variant="headlineMedium">Kalender</Text>
+          <HouseholdDropdown />
+        </View>
 
         <Card>
           <Card.Content>
             <Calendar
+              key={theme.dark ? "dark" : "light"}
               firstDay={1}
               markedDates={markedDates}
               onDayPress={handleDayPress}
               onMonthChange={handleMonthChange}
               enableSwipeMonths
               theme={{
-                calendarBackground: "#ffffff",
-                textSectionTitleColor: "#111827",
-                dayTextColor: "#111827",
-                monthTextColor: "#111827",
-                arrowColor: "#2563eb",
-                todayTextColor: "#2563eb",
-                selectedDayBackgroundColor: "#2563eb",
+                calendarBackground: theme.colors.surface,
+                textSectionTitleColor: theme.colors.onSurface,
+                dayTextColor: theme.colors.onSurface,
+                monthTextColor: theme.colors.onSurface,
+                arrowColor: theme.colors.primary,
+                todayTextColor: theme.colors.primary,
+                selectedDayBackgroundColor: theme.colors.primary,
+                selectedDayTextColor: theme.colors.onPrimary,
+                textDisabledColor: theme.dark ? "#555" : "#d9e1e8",
+                selectedDotColor: theme.colors.onPrimary,
               }}
             />
           </Card.Content>
@@ -476,17 +486,18 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
 
           <Dialog.Content>
             <Calendar
+              key={theme.dark ? "dark" : "light"}
               firstDay={1}
               current={newEndDate || selectedDateKey}
               minDate={selectedDateKey}
               markedDates={{
                 [selectedDateKey]: {
                   marked: true,
-                  dotColor: "#2563eb",
+                  dotColor: theme.colors.primary,
                 },
                 [newEndDate || selectedDateKey]: {
                   selected: true,
-                  selectedColor: "#2563eb",
+                  selectedColor: theme.colors.primary,
                 },
               }}
               onDayPress={(day) => {
@@ -496,13 +507,16 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                 setEndDatePickerVisible(false);
               }}
               theme={{
-                calendarBackground: "#ffffff",
-                textSectionTitleColor: "#111827",
-                dayTextColor: "#111827",
-                monthTextColor: "#111827",
-                arrowColor: "#2563eb",
-                todayTextColor: "#2563eb",
-                selectedDayBackgroundColor: "#2563eb",
+                calendarBackground: theme.colors.surface,
+                textSectionTitleColor: theme.colors.onSurface,
+                dayTextColor: theme.colors.onSurface,
+                monthTextColor: theme.colors.onSurface,
+                arrowColor: theme.colors.primary,
+                todayTextColor: theme.colors.primary,
+                selectedDayBackgroundColor: theme.colors.primary,
+                selectedDayTextColor: theme.colors.onPrimary,
+                textDisabledColor: theme.dark ? "#555" : "#d9e1e8",
+                selectedDotColor: theme.colors.onPrimary,
               }}
             />
           </Dialog.Content>

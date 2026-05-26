@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
-import { Button, Card, Divider, List, Text, TextInput } from "react-native-paper";
+import { Button, Card, Divider, List, Text, TextInput, useTheme } from "react-native-paper";
 import { pb } from "../lib/pocketbase";
+import { HouseholdDropdown } from "@/components/household-dropdown";
 
 type ShoppingItem = {
   id: string;
@@ -18,6 +19,7 @@ type ShoppingListScreenProps = {
 const MAX_CHECKED_ITEMS = 10;
 
 export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
+  const theme = useTheme();
   const [openItems, setOpenItems] = useState<ShoppingItem[]>([]);
   const [checkedItems, setCheckedItems] = useState<ShoppingItem[]>([]);
   const [name, setName] = useState("");
@@ -115,9 +117,12 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f6f6f6" }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
-        <Text variant="headlineMedium">Einkaufsliste</Text>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Text variant="headlineMedium">Einkaufsliste</Text>
+          <HouseholdDropdown />
+        </View>
 
         <Card>
           <Card.Title title="Neuer Artikel" />

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View } from "react-native";
-import { Button, Card, Text, TextInput } from "react-native-paper";
+import { Button, Card, Text, TextInput, useTheme } from "react-native-paper";
 import { createHousehold, joinHousehold } from "../lib/household";
 
 export function HouseholdSetupScreen({
@@ -8,6 +8,7 @@ export function HouseholdSetupScreen({
 }: {
   onHouseholdReady: () => void;
 }) {
+  const theme = useTheme();
   const [newHouseholdName, setNewHouseholdName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -75,7 +76,7 @@ export function HouseholdSetupScreen({
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f6f6f6", padding: 16, gap: 12 }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background, padding: 16, gap: 12 }}>
       <Text variant="headlineMedium">WG einrichten</Text>
 
       <Card>

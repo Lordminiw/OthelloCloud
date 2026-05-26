@@ -11,6 +11,7 @@ import {
   RadioButton,
   Text,
   TextInput,
+  useTheme,
 } from "react-native-paper";
 import {
   calculateBalances,
@@ -26,8 +27,10 @@ import {
 } from "../lib/expenses";
 import { HouseholdMember, loadHouseholdMembers } from "../lib/members";
 import { pb } from "../lib/pocketbase";
+import { HouseholdDropdown } from "@/components/household-dropdown";
 
 export function ExpensesScreen({ householdId }: { householdId: string }) {
+  const theme = useTheme();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [members, setMembers] = useState<HouseholdMember[]>([]);
@@ -211,14 +214,17 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
   const paymentSuggestions = suggestPayments(balances);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f6f6f6" }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
         contentContainerStyle={{
           padding: 16,
           gap: 12,
         }}
       >
-        <Text variant="headlineMedium">Ausgaben</Text>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Text variant="headlineMedium">Ausgaben</Text>
+          <HouseholdDropdown />
+        </View>
 
         <Card>
           <Card.Title title="Neue Ausgabe" />

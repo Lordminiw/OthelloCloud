@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { View } from "react-native";
-import { Button, Card, Text, TextInput } from "react-native-paper";
+import { Button, Card, Text, TextInput, useTheme } from "react-native-paper";
 import { pb } from "../lib/pocketbase";
 
 export function LoginScreen({ onLogin }: { onLogin: () => void }) {
+  const theme = useTheme();
   const [mode, setMode] = useState<"login" | "register">("login");
 
   const [name, setName] = useState("");
@@ -105,7 +106,7 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
     <View
       style={{
         flex: 1,
-        backgroundColor: "#f6f6f6",
+        backgroundColor: theme.colors.background,
         justifyContent: "center",
         padding: 16,
       }}
