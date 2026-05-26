@@ -1,8 +1,15 @@
 import { View } from "react-native";
 import { Button, Card, List, Text } from "react-native-paper";
+import { Household } from "../lib/household";
 import { pb } from "../lib/pocketbase";
 
-export function ProfileScreen({ onLogout }: { onLogout: () => void }) {
+export function ProfileScreen({
+  household,
+  onLogout,
+}: {
+  household: Household;
+  onLogout: () => void;
+}) {
   const user = pb.authStore.model;
 
   function logout() {
@@ -11,10 +18,8 @@ export function ProfileScreen({ onLogout }: { onLogout: () => void }) {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f6f6f6", padding: 16 }}>
-      <Text variant="headlineMedium" style={{ marginBottom: 12 }}>
-        Profil
-      </Text>
+    <View style={{ flex: 1, backgroundColor: "#f6f6f6", padding: 16, gap: 12 }}>
+      <Text variant="headlineMedium">Profil</Text>
 
       <Card>
         <Card.Title title={user?.name || "Benutzer"} subtitle={user?.email} />
@@ -30,12 +35,28 @@ export function ProfileScreen({ onLogout }: { onLogout: () => void }) {
             description={user?.verified ? "Ja" : "Nein"}
             left={(props) => <List.Icon {...props} icon="check-circle" />}
           />
-
-          <Button mode="contained-tonal" onPress={logout}>
-            Ausloggen
-          </Button>
         </Card.Content>
       </Card>
+
+      <Card>
+        <Card.Title title="WG" subtitle={household.name} />
+        <Card.Content>
+          <List.Item
+            title="Invite-Code"
+            description={household.inviteCode}
+            left={(props) => <List.Icon {...props} icon="account-plus" />}
+          />
+
+          <Text variant="bodyMedium">
+            Teile diesen Code mit neuen Mitbewohnern, damit sie deiner WG
+            beitreten können.
+          </Text>
+        </Card.Content>
+      </Card>
+
+      <Button mode="contained-tonal" onPress={logout}>
+        Ausloggen
+      </Button>
     </View>
   );
 }

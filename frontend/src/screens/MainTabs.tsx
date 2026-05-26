@@ -1,4 +1,5 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Household } from "../lib/household";
 import { CalendarScreen } from "./CalendarScreen";
 import { ExpensesScreen } from "./ExpensesScreen";
 import { ProfileScreen } from "./ProfileScreen";
@@ -7,10 +8,10 @@ import { ShoppingListScreen } from "./ShoppingListScreen";
 const Tab = createBottomTabNavigator();
 
 export function MainTabs({
-  householdId,
+  household,
   onLogout,
 }: {
-  householdId: string;
+  household: Household;
   onLogout: () => void;
 }) {
   return (
@@ -20,19 +21,19 @@ export function MainTabs({
       }}
     >
       <Tab.Screen name="Einkauf">
-        {() => <ShoppingListScreen householdId={householdId} />}
+        {() => <ShoppingListScreen householdId={household.id} />}
       </Tab.Screen>
 
       <Tab.Screen name="Ausgaben">
-        {() => <ExpensesScreen householdId={householdId} />}
+        {() => <ExpensesScreen householdId={household.id} />}
       </Tab.Screen>
 
       <Tab.Screen name="Kalender">
-        {() => <CalendarScreen householdId={householdId} />}
+        {() => <CalendarScreen householdId={household.id} />}
       </Tab.Screen>
 
       <Tab.Screen name="Profil">
-        {() => <ProfileScreen onLogout={onLogout} />}
+        {() => <ProfileScreen household={household} onLogout={onLogout} />}
       </Tab.Screen>
     </Tab.Navigator>
   );

@@ -1,23 +1,27 @@
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "react-native-paper";
 import { LoginScreen } from "../src/screens/LoginScreen";
-import { ShoppingListScreen } from "../src/screens/ShoppingListScreen";
-import { pb } from "../src/lib/pocketbase";
-import { getCurrentUserHousehold, Household } from "../src/lib/household";
 import { MainTabs } from "../src/screens/MainTabs";
+import { HouseholdSetupScreen } from "../src/screens/HouseholdSetupScreen";
+import { getCurrentUserHousehold, Household } from "../src/lib/household";
+import { pb } from "../src/lib/pocketbase";
 
-export default function App() {
+export default function Index() {
   const [loggedIn, setLoggedIn] = useState(pb.authStore.isValid);
   const [household, setHousehold] = useState<Household | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function loadHousehold() {
     setLoading(true);
+
     try {
       const result = await getCurrentUserHousehold();
       setHousehold(result);
-    } catch (error) {
+    } catch (error: any) {
       console.log("HOUSEHOLD LOAD ERROR:", error);
+      console.log("RESPONSE:", error?.response);
+      setHousehold(null);
     } finally {
       setLoading(false);
     }
@@ -26,6 +30,8 @@ export default function App() {
   useEffect(() => {
     if (loggedIn) {
       loadHousehold();
+    } else {
+      setHousehold(null);
     }
   }, [loggedIn]);
 
@@ -35,24 +41,21 @@ export default function App() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: "white", padding: 24 }}>
-        <Text style={{ color: "black" }}>Lade WG...</Text>
+      <View style={{ flex: 1, backgroundColor: "#f6f6f6", padding: 24 }}>
+        <Text variant="bodyLarge">Lade WG...</Text>
       </View>
     );
   }
 
   if (!household) {
-    return (
-      <View style={{ flex: 1, backgroundColor: "white", padding: 24 }}>
-        <Text style={{ color: "black" }}>Du bist noch keiner WG zugeordnet.</Text>
-      </View>
-    );
+    return <HouseholdSetupScreen onHouseholdReady={loadHousehold} />;
   }
 
   return (
     <MainTabs
-      householdId={household.id}
+      household={household}
       onLogout={() => {
+        pb.authStore.clear();
         setLoggedIn(false);
         setHousehold(null);
       }}
