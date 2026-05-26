@@ -9,6 +9,7 @@ import {
   List,
   Portal,
   RadioButton,
+  SegmentedButtons,
   Text,
   TextInput,
 } from "react-native-paper";
@@ -23,6 +24,7 @@ import {
   loadExpenses,
   loadSettlements,
   Settlement,
+  SplitMode,
   suggestPayments,
 } from "../lib/expenses";
 import { HouseholdMember, loadHouseholdMembers } from "../lib/members";
@@ -41,6 +43,10 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
 
   const [paidBy, setPaidBy] = useState<string | null>(null);
   const [splitBetween, setSplitBetween] = useState<string[]>([]);
+  const [splitMode, setSplitMode] = useState<SplitMode>("equal");
+  const [splitSharesText, setSplitSharesText] = useState<Record<string, string>>(
+    {}
+  );
 
   const [payerDialogVisible, setPayerDialogVisible] = useState(false);
   const [splitDialogVisible, setSplitDialogVisible] = useState(false);
@@ -114,6 +120,66 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
     setSplitBetween([]);
   }
 
+  function updateSplitShare(userId: string, value: string) {
+    setSplitSharesText((current) => ({
+      ...current,
+      [userId]: value,
+    }));
+  }
+
+  function buildSplitShares(amount: number) {
+    if (splitMode === "equal") {
+      return undefined;
+    }
+
+    const splitShares = Object.fromEntries(
+      splitBetween.map((userId) => [
+        userId,
+        Number((splitSharesText[userId] ?? "").replace(",", ".")),
+      ])
+    );
+
+    const invalidShare = Object.values(splitShares).some(
+      (share) => !Number.isFinite(share) || share < 0
+    );
+
+    if (invalidShare) {
+      alert("Bitte gültige Split-Werte eingeben.");
+      return null;
+    }
+
+    const total = Object.values(splitShares).reduce(
+      (sum, share) => sum + share,
+      0
+    );
+
+    if (splitMode === "amount" && Math.abs(total - amount) >= 0.01) {
+      alert(
+        `Die Einzelbeträge müssen zusammen ${amount.toFixed(2)} € ergeben.`
+      );
+      return null;
+    }
+
+    if (splitMode === "percent" && Math.abs(total - 100) >= 0.01) {
+      alert("Die Prozentwerte müssen zusammen 100 % ergeben.");
+      return null;
+    }
+
+    return splitShares;
+  }
+
+  function getSplitModeLabel(mode: SplitMode | undefined) {
+    if (mode === "amount") return "Beträge";
+    if (mode === "percent") return "Prozent";
+    return "Gleich";
+  }
+
+  function getExpenseSplitDescription(expense: Expense) {
+    return `Bezahlt von ${getMemberLabel(expense.paidBy)}\n${getSplitModeLabel(
+      expense.splitMode
+    )}: ${expense.splitBetween.map(getMemberLabel).join(", ")}`;
+  }
+
   async function addExpense() {
     const amount = Number(amountText.replace(",", "."));
 
@@ -137,6 +203,12 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
       return;
     }
 
+    const splitShares = buildSplitShares(amount);
+
+    if (splitShares === null) {
+      return;
+    }
+
     try {
       await createExpense({
         householdId,
@@ -144,10 +216,14 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
         amount,
         paidBy,
         splitBetween,
+        splitMode,
+        splitShares,
       });
 
       setDescription("");
       setAmountText("");
+      setSplitMode("equal");
+      setSplitSharesText({});
       selectAllMembers();
       setPaidBy(pb.authStore.model?.id ?? paidBy);
 
@@ -251,6 +327,33 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                 : "niemand ausgewählt"}
             </Text>
 
+            <SegmentedButtons
+              value={splitMode}
+              onValueChange={(value) => setSplitMode(value as SplitMode)}
+              buttons={[
+                { value: "equal", label: "Gleich" },
+                { value: "amount", label: "Betrag" },
+                { value: "percent", label: "%" },
+              ]}
+            />
+
+            {splitMode !== "equal" && (
+              <View style={layout.formContent}>
+                {splitBetween.map((userId) => (
+                  <TextInput
+                    key={userId}
+                    label={`${getMemberLabel(userId)} ${
+                      splitMode === "percent" ? "in %" : "in €"
+                    }`}
+                    value={splitSharesText[userId] ?? ""}
+                    onChangeText={(value) => updateSplitShare(userId, value)}
+                    keyboardType="decimal-pad"
+                    mode="outlined"
+                  />
+                ))}
+              </View>
+            )}
+
             <Button mode="contained" onPress={addExpense}>
               Ausgabe hinzufügen
             </Button>
@@ -340,11 +443,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                   title={`${expense.description}: ${expense.amount.toFixed(
                     2
                   )} €`}
-                  description={`Bezahlt von ${getMemberLabel(
-                    expense.paidBy
-                  )}\nSplit: ${expense.splitBetween
-                    .map(getMemberLabel)
-                    .join(", ")}`}
+                  description={getExpenseSplitDescription(expense)}
                   left={(props) => (
                     <List.Icon {...props} icon="receipt" />
                   )}

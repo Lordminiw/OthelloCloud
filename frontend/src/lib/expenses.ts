@@ -7,8 +7,12 @@ export type Expense = {
   amount: number;
   paidBy: string;
   splitBetween: string[];
+  splitMode?: SplitMode;
+  splitShares?: string;
   createdBy?: string;
 };
+
+export type SplitMode = "equal" | "amount" | "percent";
 
 export type Settlement = {
   id: string;
@@ -43,6 +47,8 @@ export async function createExpense(input: {
   amount: number;
   paidBy: string;
   splitBetween: string[];
+  splitMode?: SplitMode;
+  splitShares?: Record<string, number>;
 }) {
   return await pb.collection("expenses").create({
     household: input.householdId,
@@ -50,6 +56,8 @@ export async function createExpense(input: {
     amount: input.amount,
     paidBy: input.paidBy,
     splitBetween: input.splitBetween,
+    splitMode: input.splitMode ?? "equal",
+    splitShares: input.splitShares ? JSON.stringify(input.splitShares) : "",
     createdBy: pb.authStore.model?.id,
   });
 }
@@ -103,9 +111,9 @@ export function calculateBalances(input: {
       continue;
     }
 
-    const share = expense.amount / participants.length;
+    const shares = getExpenseShares(expense);
 
-    for (const userId of participants) {
+    for (const [userId, share] of Object.entries(shares)) {
       add(userId, -share);
     }
 
@@ -173,4 +181,52 @@ export function suggestPayments(balances: Balance[]): PaymentSuggestion[] {
   }
 
   return suggestions;
+}
+
+export function getExpenseShares(expense: Expense): Record<string, number> {
+  const participants = expense.splitBetween ?? [];
+
+  if (participants.length === 0) {
+    return {};
+  }
+
+  const splitMode = expense.splitMode ?? "equal";
+
+  if (splitMode === "amount") {
+    return parseStoredShares(expense.splitShares, participants);
+  }
+
+  if (splitMode === "percent") {
+    const percentages = parseStoredShares(expense.splitShares, participants);
+    return Object.fromEntries(
+      Object.entries(percentages).map(([userId, percent]) => [
+        userId,
+        (expense.amount * percent) / 100,
+      ])
+    );
+  }
+
+  const share = expense.amount / participants.length;
+
+  return Object.fromEntries(
+    participants.map((userId) => [userId, share])
+  );
+}
+
+function parseStoredShares(
+  storedShares: string | undefined,
+  participants: string[]
+): Record<string, number> {
+  try {
+    const parsed = storedShares ? JSON.parse(storedShares) : {};
+
+    return Object.fromEntries(
+      participants.map((userId) => [
+        userId,
+        Number.isFinite(Number(parsed[userId])) ? Number(parsed[userId]) : 0,
+      ])
+    );
+  } catch {
+    return Object.fromEntries(participants.map((userId) => [userId, 0]));
+  }
 }
