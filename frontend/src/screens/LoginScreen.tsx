@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { View } from "react-native";
-import { Button, Card, Text, TextInput, useTheme } from "react-native-paper";
+import { Button, Card, Text, TextInput } from "react-native-paper";
+import { AppScreen, layout } from "@/components/app-screen";
 import { pb } from "../lib/pocketbase";
 
 export function LoginScreen({ onLogin }: { onLogin: () => void }) {
-  const theme = useTheme();
   const [mode, setMode] = useState<"login" | "register">("login");
 
   const [name, setName] = useState("");
@@ -103,18 +102,11 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
   const isLogin = mode === "login";
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: theme.colors.background,
-        justifyContent: "center",
-        padding: 16,
-      }}
-    >
-      <Card>
+    <AppScreen title="OthelloCloud" centered maxWidth={460}>
+      <Card style={layout.card}>
         <Card.Title title={isLogin ? "Einloggen" : "Registrieren"} />
 
-        <Card.Content style={{ gap: 12 }}>
+        <Card.Content style={layout.formContent}>
           <Text variant="bodyMedium">
             {isLogin
               ? "Melde dich mit deinem WG-Account an."
@@ -170,6 +162,6 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
           </Button>
         </Card.Content>
       </Card>
-    </View>
+    </AppScreen>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { View } from "react-native";
-import { Button, Card, Text, TextInput, useTheme } from "react-native-paper";
+import { useWindowDimensions, View } from "react-native";
+import { Button, Card, Text, TextInput } from "react-native-paper";
+import { AppScreen, layout } from "@/components/app-screen";
 import { createHousehold, joinHousehold } from "../lib/household";
 
 export function HouseholdSetupScreen({
@@ -8,7 +9,8 @@ export function HouseholdSetupScreen({
 }: {
   onHouseholdReady: () => void;
 }) {
-  const theme = useTheme();
+  const { width } = useWindowDimensions();
+  const isWide = width >= 820;
   const [newHouseholdName, setNewHouseholdName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -76,12 +78,11 @@ export function HouseholdSetupScreen({
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background, padding: 16, gap: 12 }}>
-      <Text variant="headlineMedium">WG einrichten</Text>
-
-      <Card>
+    <AppScreen title="WG einrichten" centered>
+      <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
+      <Card style={[layout.card, layout.twoColumnCard]}>
         <Card.Title title="Neue WG erstellen" />
-        <Card.Content style={{ gap: 12 }}>
+        <Card.Content style={layout.formContent}>
           <Text variant="bodyMedium">
             Erstelle eine neue WG. Du wirst automatisch Admin.
           </Text>
@@ -105,9 +106,9 @@ export function HouseholdSetupScreen({
         </Card.Content>
       </Card>
 
-      <Card>
+      <Card style={[layout.card, layout.twoColumnCard]}>
         <Card.Title title="Bestehender WG beitreten" />
-        <Card.Content style={{ gap: 12 }}>
+        <Card.Content style={layout.formContent}>
           <Text variant="bodyMedium">
             Gib den Invite-Code ein, den du von einem WG-Mitglied bekommen hast.
           </Text>
@@ -131,6 +132,7 @@ export function HouseholdSetupScreen({
           </Button>
         </Card.Content>
       </Card>
-    </View>
+      </View>
+    </AppScreen>
   );
 }

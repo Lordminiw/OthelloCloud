@@ -10,7 +10,7 @@ import { useHousehold } from "@/context/household-context";
 export default function Index() {
   const theme = useTheme();
   const [loggedIn, setLoggedIn] = useState(pb.authStore.isValid);
-  const { households, activeHousehold, loading, refreshHouseholds } = useHousehold();
+  const { households, loading, refreshHouseholds } = useHousehold();
 
   useEffect(() => {
     const unsubscribe = pb.authStore.onChange((token, model) => {

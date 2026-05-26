@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { ScrollView, View } from "react-native";
-import { Button, Card, Divider, List, Text, TextInput, useTheme } from "react-native-paper";
-import { pb } from "../lib/pocketbase";
+import { useWindowDimensions, View } from "react-native";
+import { Button, Card, Divider, List, Text, TextInput } from "react-native-paper";
+import { AppScreen, layout } from "@/components/app-screen";
 import { HouseholdDropdown } from "@/components/household-dropdown";
+import { pb } from "../lib/pocketbase";
 
 type ShoppingItem = {
   id: string;
@@ -19,7 +20,8 @@ type ShoppingListScreenProps = {
 const MAX_CHECKED_ITEMS = 10;
 
 export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
-  const theme = useTheme();
+  const { width } = useWindowDimensions();
+  const isWide = width >= 900;
   const [openItems, setOpenItems] = useState<ShoppingItem[]>([]);
   const [checkedItems, setCheckedItems] = useState<ShoppingItem[]>([]);
   const [name, setName] = useState("");
@@ -117,19 +119,25 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text variant="headlineMedium">Einkaufsliste</Text>
-          <HouseholdDropdown />
-        </View>
-
-        <Card>
+    <AppScreen title="Einkaufsliste" right={<HouseholdDropdown />}>
+      <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
+        <Card style={[layout.card, isWide && layout.wideForm]}>
           <Card.Title title="Neuer Artikel" />
-          <Card.Content style={{ gap: 12 }}>
-            <TextInput label="Artikel" value={name} onChangeText={setName} mode="outlined" />
+          <Card.Content style={layout.formContent}>
+            <TextInput
+              label="Artikel"
+              value={name}
+              onChangeText={setName}
+              mode="outlined"
+            />
 
-            <TextInput label="Menge" value={quantity} onChangeText={setQuantity} mode="outlined" placeholder="z.B. 2x, 1 kg, 500 g" />
+            <TextInput
+              label="Menge"
+              value={quantity}
+              onChangeText={setQuantity}
+              mode="outlined"
+              placeholder="z.B. 2x, 1 kg, 500 g"
+            />
 
             <Button mode="contained" onPress={addItem}>
               Hinzufügen
@@ -137,45 +145,55 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
           </Card.Content>
         </Card>
 
-        <Card>
-          <Card.Title title={`Offen (${openItems.length})`} />
-          <Card.Content>
-            {openItems.length === 0 && <Text variant="bodyMedium">Keine offenen Einträge.</Text>}
+        <View style={[layout.stack, isWide && layout.widePanel]}>
+          <Card style={layout.card}>
+            <Card.Title title={`Offen (${openItems.length})`} />
+            <Card.Content style={layout.listCardContent}>
+              {openItems.length === 0 && (
+                <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
+                  Keine offenen Einträge.
+                </Text>
+              )}
 
-            {openItems.map((item) => (
-              <View key={item.id}>
-                <List.Item
-                  title={item.name}
-                  description={itemDescription(item)}
-                  left={(props) => <List.Icon {...props} icon="checkbox-blank-outline" />}
-                  onPress={() => toggleItem(item)}
-                />
-                <Divider />
-              </View>
-            ))}
-          </Card.Content>
-        </Card>
+              {openItems.map((item) => (
+                <View key={item.id}>
+                  <List.Item
+                    title={item.name}
+                    description={itemDescription(item)}
+                    left={(props) => <List.Icon {...props} icon="checkbox-blank-outline" />}
+                    onPress={() => toggleItem(item)}
+                  />
+                  <Divider />
+                </View>
+              ))}
+            </Card.Content>
+          </Card>
 
-        <Card>
-          <Card.Title title={`Zuletzt erledigt (${checkedItems.length})`} />
-          <Card.Content>
-            {checkedItems.length === 0 && <Text variant="bodyMedium">Noch nichts erledigt.</Text>}
+          <Card style={layout.card}>
+            <Card.Title title={`Zuletzt erledigt (${checkedItems.length})`} />
+            <Card.Content style={layout.listCardContent}>
+              {checkedItems.length === 0 && (
+                <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
+                  Noch nichts erledigt.
+                </Text>
+              )}
 
-            {checkedItems.map((item) => (
-              <View key={item.id}>
-                <List.Item
-                  title={item.name}
-                  description={itemDescription(item)}
-                  titleStyle={{ textDecorationLine: "line-through" }}
-                  left={(props) => <List.Icon {...props} icon="checkbox-marked" />}
-                  onPress={() => toggleItem(item)}
-                />
-                <Divider />
-              </View>
-            ))}
-          </Card.Content>
-        </Card>
-      </ScrollView>
-    </View>
+              {checkedItems.map((item) => (
+                <View key={item.id}>
+                  <List.Item
+                    title={item.name}
+                    description={itemDescription(item)}
+                    titleStyle={{ textDecorationLine: "line-through" }}
+                    left={(props) => <List.Icon {...props} icon="checkbox-marked" />}
+                    onPress={() => toggleItem(item)}
+                  />
+                  <Divider />
+                </View>
+              ))}
+            </Card.Content>
+          </Card>
+        </View>
+      </View>
+    </AppScreen>
   );
 }

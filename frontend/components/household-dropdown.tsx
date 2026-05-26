@@ -50,8 +50,9 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   button: {
-    borderRadius: 20,
+    borderRadius: 8,
     backgroundColor: 'transparent',
+    maxWidth: 220,
   },
   buttonContent: {
     flexDirection: 'row',

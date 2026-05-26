@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView, useWindowDimensions, View } from "react-native";
 import {
   Button,
   Card,
@@ -11,8 +11,8 @@ import {
   RadioButton,
   Text,
   TextInput,
-  useTheme,
 } from "react-native-paper";
+import { AppScreen, layout } from "@/components/app-screen";
 import {
   calculateBalances,
   createExpense,
@@ -30,7 +30,8 @@ import { pb } from "../lib/pocketbase";
 import { HouseholdDropdown } from "@/components/household-dropdown";
 
 export function ExpensesScreen({ householdId }: { householdId: string }) {
-  const theme = useTheme();
+  const { width } = useWindowDimensions();
+  const isWide = width >= 900;
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [members, setMembers] = useState<HouseholdMember[]>([]);
@@ -214,21 +215,11 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
   const paymentSuggestions = suggestPayments(balances);
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <ScrollView
-        contentContainerStyle={{
-          padding: 16,
-          gap: 12,
-        }}
-      >
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text variant="headlineMedium">Ausgaben</Text>
-          <HouseholdDropdown />
-        </View>
-
-        <Card>
+    <AppScreen title="Ausgaben" right={<HouseholdDropdown />}>
+      <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
+        <Card style={[layout.card, isWide && layout.wideForm]}>
           <Card.Title title="Neue Ausgabe" />
-          <Card.Content style={{ gap: 12 }}>
+          <Card.Content style={layout.formContent}>
             <TextInput
               label="Beschreibung"
               value={description}
@@ -266,11 +257,15 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
           </Card.Content>
         </Card>
 
-        <Card>
+        <View style={[layout.stack, isWide && layout.widePanel]}>
+        <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
+        <Card style={[layout.card, layout.twoColumnCard]}>
           <Card.Title title="Salden" />
-          <Card.Content>
+          <Card.Content style={layout.listCardContent}>
             {balances.length === 0 && (
-              <Text variant="bodyMedium">Alles ausgeglichen.</Text>
+              <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
+                Alles ausgeglichen.
+              </Text>
             )}
 
             {balances.map((balance) => (
@@ -284,11 +279,13 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
           </Card.Content>
         </Card>
 
-        <Card>
+        <Card style={[layout.card, layout.twoColumnCard]}>
           <Card.Title title="Zahlungsvorschläge" />
-          <Card.Content>
+          <Card.Content style={layout.listCardContent}>
             {paymentSuggestions.length === 0 && (
-              <Text variant="bodyMedium">Keine offenen Zahlungen.</Text>
+              <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
+                Keine offenen Zahlungen.
+              </Text>
             )}
 
             {paymentSuggestions.map((suggestion, index) => (
@@ -319,18 +316,22 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
             <Button
               mode="outlined"
               onPress={() => setSettlementDialogVisible(true)}
-              style={{ marginTop: 8 }}
+              style={{ marginHorizontal: 16, marginTop: 8 }}
             >
               Ausgleich manuell eintragen
             </Button>
           </Card.Content>
         </Card>
+        </View>
 
-        <Card>
+        <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
+        <Card style={[layout.card, layout.twoColumnCard]}>
           <Card.Title title="Letzte Ausgaben" />
-          <Card.Content>
+          <Card.Content style={layout.listCardContent}>
             {expenses.length === 0 && (
-              <Text variant="bodyMedium">Noch keine Ausgaben.</Text>
+              <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
+                Noch keine Ausgaben.
+              </Text>
             )}
 
             {expenses.map((expense) => (
@@ -365,11 +366,13 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
           </Card.Content>
         </Card>
 
-        <Card>
+        <Card style={[layout.card, layout.twoColumnCard]}>
           <Card.Title title="Ausgleichszahlungen" />
-          <Card.Content>
+          <Card.Content style={layout.listCardContent}>
             {settlements.length === 0 && (
-              <Text variant="bodyMedium">Noch keine Ausgleichszahlungen.</Text>
+              <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
+                Noch keine Ausgleichszahlungen.
+              </Text>
             )}
 
             {settlements.map((settlement) => (
@@ -399,7 +402,9 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
             ))}
           </Card.Content>
         </Card>
-      </ScrollView>
+        </View>
+        </View>
+      </View>
 
       <Portal>
         <Dialog
@@ -527,6 +532,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
           </Dialog.Actions>
         </Dialog>
       </Portal>
-    </View>
+    </AppScreen>
   );
 }
+

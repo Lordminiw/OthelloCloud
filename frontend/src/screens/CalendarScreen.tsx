@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView, useWindowDimensions, View } from "react-native";
 import { Calendar, DateData, LocaleConfig } from "react-native-calendars";
 import {
   Button,
@@ -12,6 +12,7 @@ import {
   TextInput,
   useTheme,
 } from "react-native-paper";
+import { AppScreen, layout } from "@/components/app-screen";
 import {
   CalendarEvent,
   createCalendarEvent,
@@ -179,6 +180,8 @@ function getEventDateRangeLabel(event: CalendarEvent) {
 
 export function CalendarScreen({ householdId }: CalendarScreenProps) {
   const theme = useTheme();
+  const { width } = useWindowDimensions();
+  const isWide = width >= 900;
   const [visibleMonth, setVisibleMonth] = useState(() => new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
 
@@ -331,14 +334,9 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text variant="headlineMedium">Kalender</Text>
-          <HouseholdDropdown />
-        </View>
-
-        <Card>
+    <AppScreen title="Kalender" right={<HouseholdDropdown />}>
+      <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
+        <Card style={[layout.card, isWide && layout.wideForm]}>
           <Card.Content>
             <Calendar
               key={theme.dark ? "dark" : "light"}
@@ -363,13 +361,15 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
           </Card.Content>
         </Card>
 
-        <Card>
+        <Card style={[layout.card, isWide && layout.widePanel]}>
           <Card.Title
             title={`Termine am ${formatDateKeyGerman(selectedDateKey)}`}
           />
-          <Card.Content>
+          <Card.Content style={layout.listCardContent}>
             {selectedEvents.length === 0 && (
-              <Text variant="bodyMedium">Keine Termine an diesem Tag.</Text>
+              <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
+                Keine Termine an diesem Tag.
+              </Text>
             )}
 
             {selectedEvents.map((event) => (
@@ -395,13 +395,13 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
             <Button
               mode="contained"
               onPress={openCreateDialog}
-              style={{ marginTop: 12 }}
+              style={{ marginHorizontal: 16, marginTop: 12 }}
             >
               Termin hinzufügen
             </Button>
           </Card.Content>
         </Card>
-      </ScrollView>
+      </View>
 
       <Portal>
         <Dialog
@@ -536,6 +536,6 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
           </Dialog.Actions>
         </Dialog>
       </Portal>
-    </View>
+    </AppScreen>
   );
 }

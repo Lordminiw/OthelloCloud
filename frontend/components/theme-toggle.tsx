@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Platform, View } from 'react-native';
+import { Pressable, StyleSheet, Platform } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   withTiming,
@@ -20,7 +20,7 @@ export function ThemeToggle() {
 
   React.useEffect(() => {
     rotation.value = withSpring(isDark ? 360 : 0, { damping: 15, stiffness: 100 });
-  }, [isDark]);
+  }, [isDark, rotation]);
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
@@ -73,7 +73,7 @@ export function ThemeToggle() {
 const styles = StyleSheet.create({
   button: {
     position: 'absolute',
-    top: 16,
+    bottom: 82,
     right: 16,
     width: 42,
     height: 42,

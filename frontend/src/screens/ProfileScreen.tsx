@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { View } from "react-native";
 import {
   Button,
   Card,
@@ -7,10 +7,9 @@ import {
   Divider,
   List,
   Portal,
-  Text,
   TextInput,
-  useTheme,
 } from "react-native-paper";
+import { AppScreen, layout } from "@/components/app-screen";
 import { Household } from "../lib/household";
 import { pb } from "../lib/pocketbase";
 import { useHousehold } from "@/context/household-context";
@@ -23,7 +22,6 @@ export function ProfileScreen({
   household: Household;
   onLogout: () => void;
 }) {
-  const theme = useTheme();
   const user = pb.authStore.model;
   const { households, createNewHousehold, joinNewHousehold } = useHousehold();
 
@@ -73,15 +71,10 @@ export function ProfileScreen({
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text variant="headlineMedium">Profil</Text>
-          <HouseholdDropdown />
-        </View>
-
+    <AppScreen title="Profil" right={<HouseholdDropdown />}>
+      <View style={layout.stack}>
         {/* User Info */}
-        <Card>
+        <Card style={layout.card}>
           <Card.Title title={user?.name || "Benutzer"} subtitle={user?.email} />
           <Card.Content>
             <List.Item
@@ -98,7 +91,7 @@ export function ProfileScreen({
         </Card>
 
         {/* Meine WGs */}
-        <Card>
+        <Card style={layout.card}>
           <Card.Title title="Meine WGs" subtitle={`${households.length} WG${households.length !== 1 ? "s" : ""}`} />
           <Card.Content>
             {households.map((h, index) => (
@@ -120,9 +113,9 @@ export function ProfileScreen({
         </Card>
 
         {/* WG verwalten */}
-        <Card>
+        <Card style={layout.card}>
           <Card.Title title="WG verwalten" />
-          <Card.Content style={{ gap: 8 }}>
+          <Card.Content style={layout.formContent}>
             <Button
               mode="outlined"
               icon="plus"
@@ -143,7 +136,7 @@ export function ProfileScreen({
         <Button mode="contained-tonal" onPress={logout}>
           Ausloggen
         </Button>
-      </ScrollView>
+      </View>
 
       <Portal>
         {/* Create WG Dialog */}
@@ -195,6 +188,6 @@ export function ProfileScreen({
           </Dialog.Actions>
         </Dialog>
       </Portal>
-    </View>
+    </AppScreen>
   );
-}
+}
