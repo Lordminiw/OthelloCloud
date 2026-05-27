@@ -83,11 +83,11 @@ function composeLocalDateTime(dateValue: string, timeValue: string) {
 
 function buildPollShareLink(pollId: string) {
   if (typeof window !== "undefined" && window.location?.origin) {
-    return `${window.location.origin}/Umfragen?poll=${encodeURIComponent(pollId)}`;
+    return `${window.location.origin}/?tab=Umfragen&poll=${encodeURIComponent(pollId)}`;
   }
 
-  return ExpoLinking.createURL("Umfragen", {
-    queryParams: { poll: pollId },
+  return ExpoLinking.createURL("", {
+    queryParams: { tab: "Umfragen", poll: pollId },
   });
 }
 

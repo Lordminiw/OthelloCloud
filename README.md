@@ -18,7 +18,7 @@ OthelloCloud ist eine WG-App fuer gemeinsame Organisation im Alltag. Der aktuell
 ## Tech Stack
 
 - Expo / React Native
-- Expo Router
+- React Navigation
 - React Native Paper
 - PocketBase als Backend
 
@@ -86,7 +86,6 @@ Die folgenden direkten Dependencies sind im Frontend aktiv und stammen aus exter
 - `expo-haptics` - MIT
 - `expo-image` - MIT
 - `expo-linking` - MIT
-- `expo-router` - MIT
 - `expo-splash-screen` - MIT
 - `expo-status-bar` - MIT
 - `expo-symbols` - MIT
