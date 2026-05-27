@@ -20,6 +20,7 @@ services:
   ddns-updater:
     image: ghcr.io/qdm12/ddns-updater:latest
     restart: unless-stopped
+    network_mode: host
     env_file:
       - ./deploy/public/.env
     environment:
@@ -27,9 +28,8 @@ services:
       PERIOD: 5m
       PUBLICIP_FETCHERS: http
       PUBLICIPV4_HTTP_PROVIDERS: ipify
+      PUBLICIPV6_HTTP_PROVIDERS: ipify
       TZ: Europe/Berlin
-    ports:
-      - "127.0.0.1:8000:8000"
     volumes:
       - ./deploy/public/ddns-updater/data:/updater/data
 
