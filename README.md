@@ -9,7 +9,6 @@ OthelloCloud ist eine WG-App fuer gemeinsame Organisation im Alltag. Der aktuell
 - gemeinsamer Kalender fuer Termine
 - Login, Registrierung und WG-Beitritt per Invite-Code
 - mehrere WGs pro Account
-- Thema hell/dunkel
 
 ## Projektstruktur
 
