@@ -5,14 +5,14 @@
       "domain": "deinedomain.tld",
       "api_key": "pk1_your_api_key_here",
       "secret_api_key": "sk1_your_secret_api_key_here",
-      "ip_version": "ipv4"
+      "ip_version": "ipv6"
     },
     {
       "provider": "porkbun",
       "domain": "www.deinedomain.tld",
       "api_key": "pk1_your_api_key_here",
       "secret_api_key": "sk1_your_secret_api_key_here",
-      "ip_version": "ipv4"
+      "ip_version": "ipv6"
     }
   ]
 }

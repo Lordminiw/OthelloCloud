@@ -89,6 +89,8 @@ Wenn du die App von aussen erreichbar machen willst, kannst du den zusatzlichen 
    - Kopiere `deploy/public/.env.example` nach `deploy/public/.env` und trage deine Domain ein.
    - Kopiere `deploy/public/ddns-updater/data/config.json.example` nach `deploy/public/ddns-updater/data/config.json`.
    - Ersetze die Platzhalter durch deine echten Porkbun API-Daten.
+   - Als Ziel-IP brauchst du die globale IPv6 deines Pi, bei dir ist das die `2001:...`-Adresse aus `ip -6 addr`.
+   - Die `fd...`-Adresse ist nur intern, `fe80...` ist nur Link-Local und nicht fuer das Internet.
 
 3. Public-Stack starten
 
