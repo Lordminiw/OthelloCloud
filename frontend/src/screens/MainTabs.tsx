@@ -3,6 +3,7 @@ import { Icon, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CalendarScreen } from "./CalendarScreen";
 import { ExpensesScreen } from "./ExpensesScreen";
+import { PollsScreen } from "./PollsScreen";
 import { ProfileScreen } from "./ProfileScreen";
 import { ShoppingListScreen } from "./ShoppingListScreen";
 import { useHousehold } from "@/context/household-context";
@@ -10,8 +11,10 @@ import { useHousehold } from "@/context/household-context";
 const Tab = createBottomTabNavigator();
 
 export function MainTabs({
+  initialTabName,
   onLogout,
 }: {
+  initialTabName?: string;
   onLogout: () => void;
 }) {
   const theme = useTheme();
@@ -24,6 +27,7 @@ export function MainTabs({
 
   return (
     <Tab.Navigator
+      initialRouteName={initialTabName}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: theme.colors.primary,
@@ -81,6 +85,17 @@ export function MainTabs({
         }}
       >
         {() => <CalendarScreen householdId={activeHousehold.id} />}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="Umfragen"
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon color={color} size={size} icon="poll" />
+          ),
+        }}
+      >
+        {() => <PollsScreen householdId={activeHousehold.id} />}
       </Tab.Screen>
 
       <Tab.Screen

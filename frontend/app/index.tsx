@@ -1,5 +1,6 @@
 import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import { View } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import { Text, useTheme } from "react-native-paper";
 import { LoginScreen } from "../src/screens/LoginScreen";
 import { MainTabs } from "../src/screens/MainTabs";
@@ -10,6 +11,8 @@ import { useHousehold } from "@/context/household-context";
 export default function Index() {
   const [loggedIn, setLoggedIn] = useState(pb.authStore.isValid);
   const { households, loading, refreshHouseholds } = useHousehold();
+  const params = useLocalSearchParams<{ poll?: string | string[] }>();
+  const hasPollLink = Array.isArray(params.poll) ? params.poll.length > 0 : Boolean(params.poll);
 
   return (
     <IndexContent
@@ -18,6 +21,7 @@ export default function Index() {
       households={households}
       loading={loading}
       refreshHouseholds={refreshHouseholds}
+      initialTabName={hasPollLink ? "Umfragen" : undefined}
     />
   );
 }
@@ -28,12 +32,14 @@ function IndexContent({
   households,
   loading,
   refreshHouseholds,
+  initialTabName,
 }: {
   loggedIn: boolean;
   setLoggedIn: Dispatch<SetStateAction<boolean>>;
   households: ReturnType<typeof useHousehold>["households"];
   loading: boolean;
   refreshHouseholds: ReturnType<typeof useHousehold>["refreshHouseholds"];
+  initialTabName?: string;
 }) {
   const theme = useTheme();
 
@@ -62,6 +68,7 @@ function IndexContent({
 
   return (
     <MainTabs
+      initialTabName={initialTabName}
       onLogout={() => {
         pb.authStore.clear();
         setLoggedIn(false);
