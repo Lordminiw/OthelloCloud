@@ -1,0 +1,28 @@
+services:
+  pocketbase:
+    build:
+      context: ./backend/pocketbase
+      args:
+        POCKETBASE_VERSION: v0.38.0
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./backend/pocketbase/pb_data:/pb_data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8090/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        EXPO_PUBLIC_POCKETBASE_URL: /api
+    depends_on:
+      pocketbase:
+        condition: service_healthy
+    ports:
+      - "8081:80"
+    restart: unless-stopped

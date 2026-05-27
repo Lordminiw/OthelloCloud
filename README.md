@@ -51,6 +51,29 @@ OthelloCloud ist eine WG-App fuer gemeinsame Organisation im Alltag. Der aktuell
    npm run web
    ```
 
+## Docker auf dem Raspberry Pi
+
+Wenn auf deinem Raspberry Pi Docker bereits installiert ist, kannst du den kompletten Stack direkt starten:
+
+```bash
+docker compose up --build -d
+```
+
+Danach erreichst du die App im Browser unter:
+
+- `http://gprodder-docker:8081`
+- oder alternativ über die IP des Raspberry Pi
+
+PocketBase läuft im selben Compose-Setup unter:
+
+- `http://gprodder-docker:8090/_/`
+
+Wichtig:
+- Das Frontend wird als statische Web-App gebaut und per Nginx ausgeliefert.
+- PocketBase wird im Container auf `0.0.0.0:8090` gestartet.
+- Der Browser spricht intern gegen `/api`, das im Nginx-Container an PocketBase weitergeleitet wird.
+- Wenn du bestehende lokale Daten mitnehmen willst, kopiere `backend/pocketbase/pb_data` auf den Pi.
+
 ## Wichtige Datenmodelle
 
 Die App arbeitet aktuell mit diesen PocketBase-Collections:
