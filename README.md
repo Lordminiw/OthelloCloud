@@ -72,10 +72,6 @@ Die App arbeitet aktuell mit diesen PocketBase-Collections:
 
 ## Lizenzen und Drittanbieter
 
-### Projektlizenz
-
-Fuer dieses Repository ist aktuell keine top-level `LICENSE`-Datei hinterlegt. Wenn du das Projekt oeffentlich oder mit Dritten teilen willst, solltest du dafuer noch eine klare Repo-Lizenz festlegen.
-
 ### Mitgelieferte Lizenzhinweise
 
 - `backend/pocketbase/LICENSE.md` - MIT License fuer die mitgelieferte PocketBase-Komponente
@@ -118,9 +114,6 @@ Die folgenden direkten Dependencies sind im Frontend aktiv und stammen aus exter
 - `typescript` - Apache-2.0
 - `node` - MIT
 
-### Hinweis zu Transitiv-Abhaengigkeiten
-
-Abhaengigkeiten der zweiten Ebene bringen ihre eigenen Lizenztexte mit. Wenn du spaeter eine vollstaendige, maschinenlesbare Lizenzliste brauchst, ist ein automatischer Lizenz-Scan im `frontend/`-Ordner der sauberste Weg.
 
 ## AI Usage
 
