@@ -11,8 +11,8 @@ RUN set -eux; \
   case "$TARGETARCH" in \
     amd64) ARCH="amd64" ;; \
     arm64) ARCH="arm64" ;; \
-    arm) ARCH="arm64" ;; \
-    "") ARCH="arm64" ;; \
+    arm) ARCH="armv7" ;; \
+    "") ARCH="armv7" ;; \
     *) echo "Unsupported TARGETARCH: $TARGETARCH"; exit 1 ;; \
   esac; \
   curl -fsSL -o /tmp/pocketbase.zip \
