@@ -3,7 +3,7 @@ services:
     build:
       context: ./backend/pocketbase
       args:
-        POCKETBASE_VERSION: v0.38.0
+        POCKETBASE_VERSION: 0.38.0
     ports:
       - "8090:8090"
     volumes:
