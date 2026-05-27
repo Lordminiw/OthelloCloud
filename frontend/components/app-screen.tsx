@@ -32,9 +32,14 @@ export function AppScreen({
       >
         <View style={[styles.content, { maxWidth: contentMaxWidth }]}>
           <View style={styles.header}>
-            <Text variant="headlineMedium" style={styles.title}>
-              {title}
-            </Text>
+            <View style={styles.brandBlock}>
+              <Text variant="labelSmall" style={[styles.brand, { color: theme.colors.primary }]}>
+                OthelloCloud
+              </Text>
+              <Text variant="headlineMedium" style={styles.title}>
+                {title}
+              </Text>
+            </View>
             {right ? <View style={styles.headerRight}>{right}</View> : null}
           </View>
 
@@ -103,11 +108,24 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    gap: 12,
+    alignItems: "flex-start",
+    gap: 16,
     flexWrap: "wrap",
     marginBottom: 2,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    backgroundColor: "rgba(127, 127, 127, 0.08)",
+  },
+  brandBlock: {
+    gap: 2,
+    flexShrink: 1,
+  },
+  brand: {
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    fontWeight: "700",
   },
   title: {
     flexShrink: 1,

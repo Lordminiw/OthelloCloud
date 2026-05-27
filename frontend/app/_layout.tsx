@@ -58,7 +58,7 @@ function RootLayoutContent() {
     <NavigationProvider value={navTheme}>
       <PaperProvider theme={theme}>
         <HouseholdProvider>
-          <Stack />
+          <Stack screenOptions={{ headerShown: false }} />
           <ThemeToggle />
         </HouseholdProvider>
       </PaperProvider>
@@ -72,4 +72,4 @@ export default function RootLayout() {
       <RootLayoutContent />
     </ThemeProvider>
   );
-}
+}
