@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { Button, Card, Divider, List, Text, TextInput } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
@@ -11,6 +11,11 @@ type ShoppingItem = {
   quantity?: string;
   checked: boolean;
   checkedAt?: string;
+};
+
+type ShoppingSuggestion = {
+  name: string;
+  quantity?: string;
 };
 
 type ShoppingListScreenProps = {
@@ -27,7 +32,38 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("");
 
-  async function loadItems() {
+  const suggestions = useMemo(() => {
+    const query = name.trim().toLowerCase();
+
+    if (!query) {
+      return [];
+    }
+
+    const seen = new Set<string>();
+    const combined = [...openItems, ...checkedItems];
+
+    return combined.reduce<ShoppingSuggestion[]>((result, item) => {
+      const normalizedName = item.name.trim();
+      const normalizedKey = normalizedName.toLowerCase();
+
+      if (!normalizedName || seen.has(normalizedKey)) {
+        return result;
+      }
+
+      if (!normalizedKey.includes(query)) {
+        return result;
+      }
+
+      seen.add(normalizedKey);
+      result.push({
+        name: normalizedName,
+        quantity: item.quantity?.trim() || undefined,
+      });
+      return result;
+    }, []).slice(0, 5);
+  }, [name, openItems, checkedItems]);
+
+  const loadItems = useCallback(async () => {
     try {
       const records = await pb.collection("shopping_items").getFullList<ShoppingItem>({
         filter: `household = "${householdId}"`,
@@ -42,7 +78,7 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
       console.log("MESSAGE:", error?.message);
       console.log("RESPONSE:", error?.response);
     }
-  }
+  }, [householdId]);
 
   async function cleanupOldCheckedItems() {
     const checked = await pb.collection("shopping_items").getFullList<ShoppingItem>({
@@ -80,6 +116,13 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
     }
   }
 
+  function applySuggestion(suggestion: ShoppingSuggestion) {
+    setName(suggestion.name);
+    if (suggestion.quantity) {
+      setQuantity(suggestion.quantity);
+    }
+  }
+
   async function toggleItem(item: ShoppingItem) {
     try {
       const willBeChecked = !item.checked;
@@ -105,14 +148,14 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
   useEffect(() => {
     loadItems();
 
-    pb.collection("shopping_items").subscribe("*", async () => {
+    void pb.collection("shopping_items").subscribe("*", async () => {
       await loadItems();
     });
 
     return () => {
-      pb.collection("shopping_items").unsubscribe("*");
+      void pb.collection("shopping_items").unsubscribe("*");
     };
-  }, [householdId]);
+  }, [loadItems]);
 
   function itemDescription(item: ShoppingItem) {
     return item.quantity ? `Menge: ${item.quantity}` : undefined;
@@ -121,7 +164,7 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
   return (
     <AppScreen title="Einkaufsliste" right={<HouseholdDropdown />}>
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
-        <Card style={[layout.card, isWide && layout.wideForm]}>
+          <Card style={[layout.card, isWide && layout.wideForm]}>
           <Card.Title title="Neuer Artikel" />
           <Card.Content style={layout.formContent}>
             <TextInput
@@ -130,6 +173,29 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
               onChangeText={setName}
               mode="outlined"
             />
+
+            {suggestions.length > 0 && (
+              <View style={styles.suggestionsCard}>
+                <Text variant="labelMedium" style={styles.suggestionsLabel}>
+                  Vorschläge
+                </Text>
+
+                {suggestions.map((suggestion, index) => (
+                  <View key={`${suggestion.name}-${index}`}>
+                    <List.Item
+                      title={suggestion.name}
+                      description={
+                        suggestion.quantity ? `Zuletzt: ${suggestion.quantity}` : "Schon mal verwendet"
+                      }
+                      left={(props) => <List.Icon {...props} icon="history" />}
+                      onPress={() => applySuggestion(suggestion)}
+                      style={styles.suggestionItem}
+                    />
+                    {index < suggestions.length - 1 && <Divider />}
+                  </View>
+                ))}
+              </View>
+            )}
 
             <TextInput
               label="Menge"
@@ -215,5 +281,21 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
 const styles = StyleSheet.create({
   mobileCardList: {
     maxHeight: 360,
+  },
+  suggestionsCard: {
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "rgba(127, 127, 127, 0.08)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(127, 127, 127, 0.18)",
+  },
+  suggestionsLabel: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+    opacity: 0.8,
+  },
+  suggestionItem: {
+    paddingLeft: 8,
   },
 });

@@ -1,5 +1,6 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Icon, useTheme } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CalendarScreen } from "./CalendarScreen";
 import { ExpensesScreen } from "./ExpensesScreen";
 import { ProfileScreen } from "./ProfileScreen";
@@ -14,6 +15,7 @@ export function MainTabs({
   onLogout: () => void;
 }) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const { activeHousehold } = useHousehold();
 
   if (!activeHousehold) {
@@ -29,13 +31,22 @@ export function MainTabs({
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.outlineVariant,
-          height: 64,
-          paddingTop: 6,
-          paddingBottom: 8,
+          height: 70 + insets.bottom,
+          paddingTop: 8,
+          paddingBottom: 10 + insets.bottom,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 0,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: "600",
+          lineHeight: 12,
+          marginTop: 1,
+          marginBottom: 0,
+        },
+        tabBarIconStyle: {
+          marginBottom: 0,
         },
       }}
     >
@@ -95,5 +106,5 @@ function TabIcon({
   size: number;
   icon: string;
 }) {
-  return <Icon source={icon} color={color} size={size} />;
+  return <Icon source={icon} color={color} size={Math.min(size, 22)} />;
 }

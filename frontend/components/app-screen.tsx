@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 16,
     paddingTop: 18,
-    paddingBottom: 28,
+    paddingBottom: 96,
     alignItems: "center",
   },
   centeredScroll: {
