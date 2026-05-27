@@ -1,0 +1,38 @@
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    env_file:
+      - ./deploy/public/.env
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/public/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      pocketbase:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+
+  ddns-updater:
+    image: ghcr.io/qdm12/ddns-updater:latest
+    restart: unless-stopped
+    env_file:
+      - ./deploy/public/.env
+    environment:
+      LOG_LEVEL: info
+      PERIOD: 5m
+      PUBLICIP_FETCHERS: http
+      PUBLICIPV4_HTTP_PROVIDERS: ipify
+      TZ: Europe/Berlin
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./deploy/public/ddns-updater/data:/updater/data
+
+volumes:
+  caddy_data:
+  caddy_config:

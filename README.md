@@ -75,6 +75,43 @@ Wichtig:
 - Der Browser spricht intern gegen `/api`, das im Nginx-Container an PocketBase weitergeleitet wird.
 - Wenn du bestehende lokale Daten mitnehmen willst, kopiere `backend/pocketbase/pb_data` auf den Pi.
 
+## Oeffentliche Domain mit Porkbun und FRITZ!Box
+
+Wenn du die App von aussen erreichbar machen willst, kannst du den zusatzlichen Public-Stack nutzen:
+
+1. Porkbun API vorbereiten
+
+   - Erzeuge in Porkbun einen `API Key` und `Secret Key`.
+   - Aktiviere fuer deine Domain unter `API Access` die API-Nutzung.
+
+2. Public-Konfig anlegen
+
+   - Kopiere `deploy/public/.env.example` nach `deploy/public/.env` und trage deine Domain ein.
+   - Kopiere `deploy/public/ddns-updater/data/config.json.example` nach `deploy/public/ddns-updater/data/config.json`.
+   - Ersetze die Platzhalter durch deine echten Porkbun API-Daten.
+
+3. Public-Stack starten
+
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.public.yml up -d
+   ```
+
+4. FRITZ!Box Portfreigaben setzen
+
+   - Leite extern `80` und `443` auf den Raspberry Pi weiter.
+   - `8090` bleibt intern und wird nicht nach aussen freigegeben.
+
+5. Erreichbarkeit testen
+
+   - `https://deinedomain.tld`
+   - `https://www.deinedomain.tld` falls du `www` mitkonfiguriert hast
+
+Wichtig:
+
+- Caddy holt automatisch ein TLS-Zertifikat.
+- `ddns-updater` aktualisiert deine Porkbun-DNS-Eintraege automatisch bei IP-Wechsel.
+- Die lokalen Ports `8081` und `8090` bleiben weiterhin fuer LAN- oder Debug-Zugriff nutzbar.
+
 ## Wichtige Datenmodelle
 
 Die App arbeitet aktuell mit diesen PocketBase-Collections:
