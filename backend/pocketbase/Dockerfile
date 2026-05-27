@@ -25,7 +25,6 @@ RUN apk add --no-cache ca-certificates tzdata
 
 WORKDIR /pb
 COPY --from=builder /out/pocketbase /usr/local/bin/pocketbase
-COPY pb_migrations /pb_migrations
 
 VOLUME ["/pb_data"]
 EXPOSE 8090

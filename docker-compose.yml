@@ -8,6 +8,7 @@ services:
       - "8090:8090"
     volumes:
       - ./backend/pocketbase/pb_data:/pb_data
+      - ./backend/pocketbase/pb_migrations:/pb_migrations:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8090/api/health"]
