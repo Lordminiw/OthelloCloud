@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-FROM --platform=linux/amd64 node:20-bookworm-slim AS build
+FROM node:20-bookworm-slim AS build
 
 WORKDIR /app
 
@@ -10,9 +10,7 @@ ENV npm_config_fund=false
 ENV npm_config_update_notifier=false
 
 COPY package*.json ./
-RUN --mount=type=cache,target=/root/.npm \
-  npm cache clean --force && \
-  npm ci --no-audit --no-fund
+RUN npm ci --no-audit --no-fund
 
 COPY . .
 RUN npx expo export --platform web
