@@ -1,235 +1,134 @@
-import { useEffect, useMemo, useState } from "react";
-import { View } from "react-native";
-import * as Linking from "expo-linking";
+import { createElement, useEffect } from "react";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { NavigationContainer, DarkTheme, DefaultTheme } from "@react-navigation/native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { PaperProvider, MD3LightTheme, MD3DarkTheme, Text } from "react-native-paper";
-import { ThemeProvider, useThemeContext } from "@/context/theme-context";
-import { HouseholdProvider, useHousehold } from "@/context/household-context";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { LoginScreen } from "./src/screens/LoginScreen";
-import { HouseholdSetupScreen } from "./src/screens/HouseholdSetupScreen";
-import { MainTabs } from "./src/screens/MainTabs";
-import { authStoreReady, pb } from "./src/lib/pocketbase";
+import { WebView } from "react-native-webview";
 
-const TAB_NAMES = ["Einkauf", "Ausgaben", "Kalender", "Umfragen", "Profil"] as const;
+const APP_URL = process.env.EXPO_PUBLIC_APP_URL ?? "https://app.othello-cloud.de";
 
-const lightTheme = {
-  ...MD3LightTheme,
-  colors: {
-    ...MD3LightTheme.colors,
-    primary: "#2563eb",
-    background: "#f6f6f6",
-    surface: "#ffffff",
-  },
-};
-
-const darkTheme = {
-  ...MD3DarkTheme,
-  colors: {
-    ...MD3DarkTheme.colors,
-    primary: "#3b82f6",
-    background: "#121212",
-    surface: "#1e1e1e",
-  },
-};
-
-const customLightTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: "#2563eb",
-    background: "#f6f6f6",
-    card: "#ffffff",
-    text: "#111827",
-    border: "rgba(0,0,0,0.08)",
-  },
-};
-
-const customDarkTheme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    primary: "#3b82f6",
-    background: "#121212",
-    card: "#1e1e1e",
-    text: "#ecedee",
-    border: "rgba(255,255,255,0.08)",
-  },
-};
-
-function parseInitialTab(url: string | null) {
-  if (!url) {
-    return undefined;
-  }
-
+function getUrlOrigin(url: string): string | null {
   try {
-    const parsed = new URL(url);
-    const tabParam = parsed.searchParams.get("tab");
-
-    if (tabParam && TAB_NAMES.includes(tabParam as (typeof TAB_NAMES)[number])) {
-      return tabParam as (typeof TAB_NAMES)[number];
-    }
-
-    const segments = parsed.pathname.split("/").filter(Boolean);
-    const lastTab = [...segments].reverse().find((segment) =>
-      TAB_NAMES.includes(segment as (typeof TAB_NAMES)[number])
-    );
-
-    if (lastTab) {
-      return lastTab as (typeof TAB_NAMES)[number];
-    }
-
-    if (parsed.searchParams.has("poll")) {
-      return "Umfragen" as const;
-    }
+    return new URL(url).origin;
   } catch {
-    return undefined;
+    return null;
   }
-
-  return undefined;
-}
-
-function AppShell() {
-  const { colorScheme } = useThemeContext();
-  const paperTheme = colorScheme === "dark" ? darkTheme : lightTheme;
-  const navTheme = colorScheme === "dark" ? customDarkTheme : customLightTheme;
-  const url = Linking.useURL();
-  const [authReady, setAuthReady] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
-  const { households, loading, refreshHouseholds } = useHousehold();
-
-  const initialTabName = useMemo(() => parseInitialTab(url), [url]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const search = new URLSearchParams(window.location.search);
-    const currentTab = search.get("tab");
-    const currentPoll = search.get("poll");
-    const pathnameSegments = window.location.pathname.split("/").filter(Boolean);
-    const pathTab = [...pathnameSegments]
-      .reverse()
-      .find((segment) => TAB_NAMES.includes(segment as (typeof TAB_NAMES)[number]));
-
-    const nextTab = currentTab && TAB_NAMES.includes(currentTab as (typeof TAB_NAMES)[number])
-      ? currentTab
-      : pathTab ?? initialTabName;
-
-    if (!nextTab) {
-      if (window.location.pathname !== "/" || window.location.search) {
-        window.history.replaceState({}, "", "/");
-      }
-      return;
-    }
-
-    const nextSearch = new URLSearchParams();
-    nextSearch.set("tab", nextTab);
-    if (currentPoll) {
-      nextSearch.set("poll", currentPoll);
-    }
-
-    const normalized = `/?${nextSearch.toString()}`;
-    const current = `${window.location.pathname}${window.location.search}`;
-
-    if (current !== normalized) {
-      window.history.replaceState({}, "", normalized);
-    }
-  }, [initialTabName]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const unsubscribe = pb.authStore.onChange(() => {
-      if (mounted) {
-        setLoggedIn(pb.authStore.isValid);
-      }
-    });
-
-    authStoreReady.finally(() => {
-      if (mounted) {
-        setLoggedIn(pb.authStore.isValid);
-        setAuthReady(true);
-      }
-    });
-
-    return () => {
-      mounted = false;
-      unsubscribe();
-    };
-  }, []);
-
-  if (!authReady) {
-    return (
-      <View style={{ flex: 1, backgroundColor: paperTheme.colors.background, padding: 24 }}>
-        <Text variant="bodyLarge">Lade Anmeldung...</Text>
-      </View>
-    );
-  }
-
-  if (!loggedIn) {
-    return (
-      <LoginScreen
-        onLogin={async () => {
-          await refreshHouseholds();
-          setLoggedIn(true);
-        }}
-      />
-    );
-  }
-
-  if (loading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: paperTheme.colors.background, padding: 24 }}>
-        <Text variant="bodyLarge">Lade WG...</Text>
-      </View>
-    );
-  }
-
-  if (households.length === 0) {
-    return <HouseholdSetupScreen onHouseholdReady={refreshHouseholds} />;
-  }
-
-  return (
-    <NavigationContainer theme={navTheme}>
-      <MainTabs
-        initialTabName={initialTabName}
-        onLogout={() => {
-          pb.authStore.clear();
-          setLoggedIn(false);
-        }}
-      />
-      <ThemeToggle />
-    </NavigationContainer>
-  );
-}
-
-function AppProviders() {
-  const { colorScheme } = useThemeContext();
-  const paperTheme = colorScheme === "dark" ? darkTheme : lightTheme;
-
-  return (
-    <HouseholdProvider>
-      <PaperProvider theme={paperTheme}>
-        <AppShell />
-      </PaperProvider>
-    </HouseholdProvider>
-  );
 }
 
 export default function App() {
+  useEffect(() => {
+    if (Platform.OS === "web" && typeof document !== "undefined") {
+      document.title = "OthelloCloud";
+    }
+  }, []);
+
+  if (Platform.OS === "web") {
+    const targetOrigin = getUrlOrigin(APP_URL);
+    const currentOrigin = typeof window !== "undefined" ? window.location.origin : null;
+
+    if (!targetOrigin || !currentOrigin) {
+      return (
+        <View style={styles.page}>
+          <View style={styles.card}>
+            <Text style={styles.kicker}>OthelloCloud</Text>
+            <Text style={styles.title}>Client shell</Text>
+            <Text style={styles.body}>
+              Set <Text style={styles.mono}>EXPO_PUBLIC_APP_URL</Text> to the frontend you want to embed.
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
+    if (targetOrigin === currentOrigin) {
+      return (
+        <View style={styles.page}>
+          <View style={styles.card}>
+            <Text style={styles.kicker}>OthelloCloud</Text>
+            <Text style={styles.title}>Frontend is already here</Text>
+            <Text style={styles.body}>
+              This web build is hosted on the same origin as the target frontend, so embedding it here would create a loop.
+              Point <Text style={styles.mono}>EXPO_PUBLIC_APP_URL</Text> at a different frontend URL for the web shell.
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
+    return createElement("iframe", {
+      src: APP_URL,
+      title: "OthelloCloud",
+      style: styles.iframe,
+      allow: "clipboard-read; clipboard-write",
+    });
+  }
+
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ThemeProvider>
-          <AppProviders />
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <View style={styles.nativeRoot}>
+      <StatusBar style="light" />
+      <WebView
+        source={{ uri: APP_URL }}
+        style={styles.webview}
+        originWhitelist={["*"]}
+        javaScriptEnabled
+        domStorageEnabled
+        allowsInlineMediaPlayback
+        setSupportMultipleWindows={false}
+      />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+    backgroundColor: "#0b0b0f",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  nativeRoot: {
+    flex: 1,
+    backgroundColor: "#0b0b0f",
+  },
+  card: {
+    width: "100%",
+    maxWidth: 520,
+    borderRadius: 24,
+    backgroundColor: "#17171d",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    padding: 24,
+    gap: 12,
+  },
+  kicker: {
+    color: "#4f87ff",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+  },
+  title: {
+    color: "#f4f7fb",
+    fontSize: 28,
+    fontWeight: "700",
+  },
+  body: {
+    color: "#c2c7d0",
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  mono: {
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
+    color: "#edf2ff",
+  },
+  iframe: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+    borderWidth: 0,
+    backgroundColor: "#0b0b0f",
+  },
+  webview: {
+    flex: 1,
+    backgroundColor: "#0b0b0f",
+  },
+});
