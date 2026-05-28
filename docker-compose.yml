@@ -21,7 +21,7 @@ services:
     build:
       context: ./frontend
       args:
-        EXPO_PUBLIC_POCKETBASE_URL: /api
+        EXPO_PUBLIC_POCKETBASE_URL: /
     depends_on:
       pocketbase:
         condition: service_healthy
