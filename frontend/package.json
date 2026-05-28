@@ -6,8 +6,8 @@
     "start": "expo start",
     "android": "expo start --android",
     "android:device": "expo run:android",
-    "android:apk": "npx eas-cli build --platform android --profile preview",
-    "android:aab": "npx eas-cli build --platform android --profile production",
+    "android:apk": "node scripts/eas-build.cjs preview",
+    "android:aab": "node scripts/eas-build.cjs production",
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "eslint ."

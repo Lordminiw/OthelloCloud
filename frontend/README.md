@@ -55,3 +55,4 @@ The Expo project is configured as the Android app `de.othellocloud.app`.
    ```
 
 The native app persists the PocketBase auth token with AsyncStorage, so users stay logged in between app launches.
+The EAS build scripts skip the optional local fingerprint upload because it can fail on Windows before the build is submitted.

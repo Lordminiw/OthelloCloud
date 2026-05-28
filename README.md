@@ -80,6 +80,8 @@ Das Frontend ist als Expo-App fuer Android vorbereitet. Die Android-App heisst `
    npm run android:aab
    ```
 
+Die Build-Skripte ueberspringen den optionalen lokalen EAS-Fingerprint-Schritt, weil dieser auf Windows vor dem eigentlichen Build abbrechen kann.
+
 ## Docker auf dem Raspberry Pi
 
 Wenn auf deinem Raspberry Pi Docker bereits installiert ist, kannst du den kompletten Stack direkt starten:
