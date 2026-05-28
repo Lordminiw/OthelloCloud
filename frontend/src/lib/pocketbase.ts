@@ -6,4 +6,9 @@ if (!pocketBaseUrl) {
   throw new Error("Missing EXPO_PUBLIC_POCKETBASE_URL");
 }
 
-export const pb = new PocketBase(pocketBaseUrl);
+const resolvedPocketBaseUrl =
+  typeof window !== "undefined" && pocketBaseUrl.startsWith("/")
+    ? window.location.origin
+    : pocketBaseUrl;
+
+export const pb = new PocketBase(resolvedPocketBaseUrl);
