@@ -28,6 +28,8 @@ build/
 !deploy/public/ddns-updater/data/config.json.example
 deploy/public/.env
 deploy/public/ddns-updater/data/config.json
+!deploy/cloudflare/.env.example
+deploy/cloudflare/.env
 
 # =========================
 # TypeScript / tooling

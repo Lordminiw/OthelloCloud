@@ -1,0 +1,20 @@
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    volumes:
+      - ./deploy/cloudflare/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      pocketbase:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    env_file:
+      - ./deploy/cloudflare/.env
+    depends_on:
+      - caddy

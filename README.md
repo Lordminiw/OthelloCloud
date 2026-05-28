@@ -75,48 +75,51 @@ Wichtig:
 - Der Browser spricht intern gegen `/api`, das im Nginx-Container an PocketBase weitergeleitet wird.
 - Wenn du bestehende lokale Daten mitnehmen willst, kopiere `backend/pocketbase/pb_data` auf den Pi.
 
-## Oeffentliche Domain mit Porkbun und FRITZ!Box
+## Oeffentliche Domain mit Cloudflare Tunnel
 
-Wenn du die App von aussen erreichbar machen willst, kannst du den zusatzlichen Public-Stack nutzen:
+Wenn du die App von aussen erreichbar machen willst, ist Cloudflare Tunnel der deutlich einfachere Weg bei DS-Lite:
 
-1. Porkbun API vorbereiten
+1. Domain zu Cloudflare umziehen
 
-   - Erzeuge in Porkbun einen `API Key` und `Secret Key`.
-   - Aktiviere fuer deine Domain unter `API Access` die API-Nutzung.
-   - Trage die Werte spaeter in `deploy/public/.env` als `PORKBUN_API_KEY` und `PORKBUN_API_SECRET_KEY` ein.
+   - Lege deine Domain in Cloudflare als Zone an.
+   - Aendere die Nameserver bei Porkbun auf die von Cloudflare zugewiesenen Nameserver.
+   - Cloudflare dokumentiert, dass fuer die Nutzung der DNS- und Tunnel-Funktionen die Domain als Cloudflare-Zone aktiv sein muss.
 
-2. Public-Konfig anlegen
+2. Tunnel in Cloudflare anlegen
 
-   - Kopiere `deploy/public/.env.example` nach `deploy/public/.env` und trage deine Domain ein.
-   - Kopiere `deploy/public/ddns-updater/data/config.json.example` nach `deploy/public/ddns-updater/data/config.json`.
-   - Ersetze die Platzhalter durch deine echten Porkbun API-Daten.
-   - Als Ziel-IP brauchst du die globale IPv6 deines Pi, bei dir ist das die `2001:...`-Adresse aus `ip -6 addr`.
-   - Die `fd...`-Adresse ist nur intern, `fe80...` ist nur Link-Local und nicht fuer das Internet.
-   - Caddy nutzt die Porkbun-API fuer die DNS-01-Zertifikatsausstellung.
+   - Gehe in Cloudflare Zero Trust zu `Networks > Tunnels`.
+   - Erstelle einen neuen Tunnel.
+   - Waehl `Cloudflared`.
+   - Kopiere den Tunnel-Token aus der Cloudflare-Konfiguration.
 
-3. Public-Stack starten
+3. Public-Konfig anlegen
+
+   - Kopiere `deploy/cloudflare/.env.example` nach `deploy/cloudflare/.env`.
+   - Trage dort deinen echten `CLOUDFLARE_TUNNEL_TOKEN` ein.
+   - Route in Cloudflare den Hostname `othello-cloud.de` auf `http://caddy:80`.
+   - Optional kannst du `www.othello-cloud.de` ebenfalls auf denselben Service zeigen lassen.
+
+4. Stack starten
 
    ```bash
-   docker compose -f docker-compose.yml -f docker-compose.public.yml up -d
+   docker compose -f docker-compose.yml -f docker-compose.cloudflare.yml up -d
    ```
 
-4. FRITZ!Box Portfreigaben setzen
+5. Portfreigaben
 
-   - Leite extern mindestens `443` auf den Raspberry Pi weiter.
-   - `80` ist fuer Zertifikate via DNS-01 nicht mehr noetig, kann aber fuer HTTP-Weiterleitungen offen bleiben.
-   - `8090` bleibt intern und wird nicht nach aussen freigegeben.
+   - Keine FRITZ!Box-Portfreigaben fuer den oeffentlichen Zugriff noetig.
+   - `cloudflared` baut nur ausgehende Verbindungen zu Cloudflare auf.
+   - Deine lokalen Ports `8081` und `8090` bleiben weiterhin fuer LAN- oder Debug-Zugriff nutzbar.
 
-5. Erreichbarkeit testen
+6. Erreichbarkeit testen
 
-   - `https://deinedomain.tld`
-   - `https://www.deinedomain.tld` falls du `www` mitkonfiguriert hast
+   - `https://othello-cloud.de`
 
 Wichtig:
 
-- Caddy holt automatisch ein TLS-Zertifikat.
-- Caddy holt das Zertifikat per DNS-01 ueber Porkbun, daher ist kein eingehender HTTP-01- oder TLS-ALPN-Check mehr noetig.
-- `ddns-updater` aktualisiert deine Porkbun-DNS-Eintraege automatisch bei IP-Wechsel.
-- Die lokalen Ports `8081` und `8090` bleiben weiterhin fuer LAN- oder Debug-Zugriff nutzbar.
+- Der Tunnel laeuft outbound-only, also ohne eingehende Ports auf deinem Anschluss.
+- Caddy laeuft intern nur als Reverse Proxy zwischen `frontend` und `pocketbase`.
+- Die eigentliche TLS-Beendigung passiert bei Cloudflare.
 
 ## Wichtige Datenmodelle
 

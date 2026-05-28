@@ -1,0 +1,11 @@
+:80 {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy pocketbase:8090
+	}
+
+	handle {
+		reverse_proxy frontend:80
+	}
+}
