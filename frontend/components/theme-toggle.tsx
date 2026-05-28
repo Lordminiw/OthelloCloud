@@ -12,6 +12,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 
 export function ThemeToggle() {
   const { colorScheme, toggleColorScheme } = useThemeContext();
+  const [hovered, setHovered] = React.useState(false);
   const isDark = colorScheme === 'dark';
 
   // Animated rotation and scale
@@ -50,7 +51,9 @@ export function ThemeToggle() {
       onPressOut={() => {
         scale.value = withTiming(1, { duration: 100 });
       }}
-      style={({ hovered }) => [
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
+      style={[
         styles.button,
         {
           backgroundColor,

@@ -51,6 +51,35 @@ OthelloCloud ist eine WG-App fuer gemeinsame Organisation im Alltag. Der aktuell
    npm run web
    ```
 
+## Android-App bauen
+
+Das Frontend ist als Expo-App fuer Android vorbereitet. Die Android-App heisst `OthelloCloud`, nutzt die Package-ID `de.othellocloud.app` und speichert die PocketBase-Anmeldung dauerhaft auf dem Geraet.
+
+1. Backend-URL in `frontend/.env` setzen:
+
+   ```bash
+   EXPO_PUBLIC_POCKETBASE_URL=https://othello-cloud.de/api
+   ```
+
+2. Auf Android testen:
+
+   ```bash
+   cd frontend
+   npm run android
+   ```
+
+3. Installierbare APK bauen:
+
+   ```bash
+   npm run android:apk
+   ```
+
+4. Play-Store-Bundle bauen:
+
+   ```bash
+   npm run android:aab
+   ```
+
 ## Docker auf dem Raspberry Pi
 
 Wenn auf deinem Raspberry Pi Docker bereits installiert ist, kannst du den kompletten Stack direkt starten:

@@ -25,3 +25,33 @@ This is the Expo frontend for OthelloCloud.
 ## Navigation
 
 The app uses React Navigation for in-app navigation. Main screens live in `src/screens/`.
+
+## Android app
+
+The Expo project is configured as the Android app `de.othellocloud.app`.
+
+1. Set the backend URL in `.env`:
+
+   ```bash
+   EXPO_PUBLIC_POCKETBASE_URL=https://othello-cloud.de/api
+   ```
+
+2. Test on a connected Android device or emulator:
+
+   ```bash
+   npm run android
+   ```
+
+3. Build an installable APK for direct sharing:
+
+   ```bash
+   npm run android:apk
+   ```
+
+4. Build a Play Store-ready Android App Bundle:
+
+   ```bash
+   npm run android:aab
+   ```
+
+The native app persists the PocketBase auth token with AsyncStorage, so users stay logged in between app launches.

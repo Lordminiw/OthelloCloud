@@ -12,7 +12,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { HouseholdSetupScreen } from "./src/screens/HouseholdSetupScreen";
 import { MainTabs } from "./src/screens/MainTabs";
-import { pb } from "./src/lib/pocketbase";
+import { authStoreReady, pb } from "./src/lib/pocketbase";
 
 const TAB_NAMES = ["Einkauf", "Ausgaben", "Kalender", "Umfragen", "Profil"] as const;
 
@@ -97,7 +97,8 @@ function AppShell() {
   const paperTheme = colorScheme === "dark" ? darkTheme : lightTheme;
   const navTheme = colorScheme === "dark" ? customDarkTheme : customLightTheme;
   const url = Linking.useURL();
-  const [loggedIn, setLoggedIn] = useState(pb.authStore.isValid);
+  const [authReady, setAuthReady] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
   const { households, loading, refreshHouseholds } = useHousehold();
 
   const initialTabName = useMemo(() => parseInitialTab(url), [url]);
@@ -139,6 +140,36 @@ function AppShell() {
       window.history.replaceState({}, "", normalized);
     }
   }, [initialTabName]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const unsubscribe = pb.authStore.onChange(() => {
+      if (mounted) {
+        setLoggedIn(pb.authStore.isValid);
+      }
+    });
+
+    authStoreReady.finally(() => {
+      if (mounted) {
+        setLoggedIn(pb.authStore.isValid);
+        setAuthReady(true);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, []);
+
+  if (!authReady) {
+    return (
+      <View style={{ flex: 1, backgroundColor: paperTheme.colors.background, padding: 24 }}>
+        <Text variant="bodyLarge">Lade Anmeldung...</Text>
+      </View>
+    );
+  }
 
   if (!loggedIn) {
     return (
