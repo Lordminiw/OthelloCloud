@@ -141,7 +141,14 @@ function AppShell() {
   }, [initialTabName]);
 
   if (!loggedIn) {
-    return <LoginScreen onLogin={() => setLoggedIn(true)} />;
+    return (
+      <LoginScreen
+        onLogin={async () => {
+          await refreshHouseholds();
+          setLoggedIn(true);
+        }}
+      />
+    );
   }
 
   if (loading) {

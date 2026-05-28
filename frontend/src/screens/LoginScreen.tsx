@@ -3,7 +3,11 @@ import { Button, Card, Text, TextInput } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
 import { pb } from "../lib/pocketbase";
 
-export function LoginScreen({ onLogin }: { onLogin: () => void }) {
+export function LoginScreen({
+  onLogin,
+}: {
+  onLogin: () => Promise<void> | void;
+}) {
   const [mode, setMode] = useState<"login" | "register">("login");
 
   const [name, setName] = useState("");
@@ -27,7 +31,7 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
     try {
       await pb.collection("users").authWithPassword(email.trim(), password);
-      onLogin();
+      await onLogin();
     } catch (error: any) {
       console.log("LOGIN ERROR:", error);
       console.log("STATUS:", error?.status);
@@ -76,7 +80,7 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
       await pb.collection("users").authWithPassword(email.trim(), password);
 
-      onLogin();
+      await onLogin();
     } catch (error: any) {
       console.log("REGISTER ERROR:", error);
       console.log("STATUS:", error?.status);
