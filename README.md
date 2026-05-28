@@ -94,9 +94,7 @@ Wenn du die App von aussen erreichbar machen willst, ist Cloudflare Tunnel der d
 
 3. Public-Konfig anlegen
 
-   - Kopiere `deploy/cloudflare/.env.example` nach `deploy/cloudflare/.env`.
-   - Trage dort deinen echten `CLOUDFLARE_TUNNEL_TOKEN` ein.
-   - Route in Cloudflare den Hostname `othello-cloud.de` auf `http://caddy:80`.
+   - Leite den Hostname `othello-cloud.de` in Cloudflare auf `http://localhost:80`.
    - Optional kannst du `www.othello-cloud.de` ebenfalls auf denselben Service zeigen lassen.
 
 4. Stack starten
@@ -119,6 +117,7 @@ Wichtig:
 
 - Der Tunnel laeuft outbound-only, also ohne eingehende Ports auf deinem Anschluss.
 - Caddy laeuft intern nur als Reverse Proxy zwischen `frontend` und `pocketbase`.
+- Cloudflare Tunnel zeigt auf `http://localhost:80`, also auf den Caddy-Port auf dem Pi.
 - Die eigentliche TLS-Beendigung passiert bei Cloudflare.
 
 ## Wichtige Datenmodelle

@@ -2,6 +2,8 @@ services:
   caddy:
     image: caddy:2.8-alpine
     restart: unless-stopped
+    ports:
+      - "80:80"
     volumes:
       - ./deploy/cloudflare/Caddyfile:/etc/caddy/Caddyfile:ro
     depends_on:
@@ -9,16 +11,3 @@ services:
         condition: service_healthy
       frontend:
         condition: service_started
-
-  cloudflared:
-    build:
-      context: ./deploy/cloudflare/cloudflared
-    restart: unless-stopped
-    command:
-      - sh
-      - -c
-      - 'exec /usr/local/bin/cloudflared tunnel --no-autoupdate run --token "$$CLOUDFLARE_TUNNEL_TOKEN"'
-    env_file:
-      - ./deploy/cloudflare/.env
-    depends_on:
-      - caddy
