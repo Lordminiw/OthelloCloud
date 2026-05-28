@@ -72,7 +72,7 @@ Wichtig:
 - Das Frontend wird als statische Web-App gebaut und per Nginx ausgeliefert.
 - PocketBase wird im Container auf `0.0.0.0:8090` gestartet.
 - Die Migrations werden als Read-only-Volume aus `backend/pocketbase/pb_migrations` eingebunden.
-- Der Frontend-Build nutzt als PocketBase-Basis die Origin `/`, und der Browser spricht dann gegen `/api`, das im Nginx-Container an PocketBase weitergeleitet wird.
+- Der Browser spricht intern gegen `/api`, das im Nginx-Container an PocketBase weitergeleitet wird.
 - Wenn du bestehende lokale Daten mitnehmen willst, kopiere `backend/pocketbase/pb_data` auf den Pi.
 
 ## Oeffentliche Domain mit Cloudflare Tunnel

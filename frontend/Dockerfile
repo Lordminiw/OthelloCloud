@@ -3,7 +3,7 @@ FROM node:20.19.4-bookworm-slim AS build
 
 WORKDIR /app
 
-ARG EXPO_PUBLIC_POCKETBASE_URL=/
+ARG EXPO_PUBLIC_POCKETBASE_URL=/api
 ENV EXPO_PUBLIC_POCKETBASE_URL=${EXPO_PUBLIC_POCKETBASE_URL}
 ENV npm_config_audit=false
 ENV npm_config_fund=false
