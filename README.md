@@ -13,7 +13,6 @@ OthelloCloud ist eine WG-App fuer gemeinsame Organisation im Alltag. Der aktuell
 ## Projektstruktur
 
 - `frontend/` - Expo App mit der eigentlichen Benutzeroberflaeche
-- `backend/pocketbase/` - mitgelieferte PocketBase-Installation und deren Lizenzhinweis
 
 ## Tech Stack
 
@@ -58,7 +57,7 @@ Das Frontend ist als Expo-App fuer Android vorbereitet. Die Android-App heisst `
 1. Backend-URL in `frontend/.env` setzen:
 
    ```bash
-   EXPO_PUBLIC_POCKETBASE_URL=https://othello-cloud.de/api
+   EXPO_PUBLIC_POCKETBASE_URL=https://example.com/api
    ```
 
 2. Auf Android testen:
@@ -82,75 +81,6 @@ Das Frontend ist als Expo-App fuer Android vorbereitet. Die Android-App heisst `
 
 Die Build-Skripte ueberspringen den optionalen lokalen EAS-Fingerprint-Schritt, weil dieser auf Windows vor dem eigentlichen Build abbrechen kann.
 
-## Docker auf dem Raspberry Pi
-
-Wenn auf deinem Raspberry Pi Docker bereits installiert ist, kannst du den kompletten Stack direkt starten:
-
-```bash
-docker compose up --build -d
-```
-
-Danach erreichst du die App im Browser unter:
-
-- `http://gprodder-docker:8081`
-- oder alternativ über die IP des Raspberry Pi
-
-PocketBase läuft im selben Compose-Setup unter:
-
-- `http://gprodder-docker:8090/_/`
-
-Wichtig:
-- Das Frontend wird als statische Web-App gebaut und per Nginx ausgeliefert.
-- PocketBase wird im Container auf `0.0.0.0:8090` gestartet.
-- Die Migrations werden als Read-only-Volume aus `backend/pocketbase/pb_migrations` eingebunden.
-- Der Browser spricht intern gegen `/api`, das im Nginx-Container an PocketBase weitergeleitet wird.
-- Wenn du bestehende lokale Daten mitnehmen willst, kopiere `backend/pocketbase/pb_data` auf den Pi.
-
-## Oeffentliche Domain mit Cloudflare Tunnel
-
-Wenn du die App von aussen erreichbar machen willst, ist Cloudflare Tunnel der deutlich einfachere Weg bei DS-Lite:
-
-1. Domain zu Cloudflare umziehen
-
-   - Lege deine Domain in Cloudflare als Zone an.
-   - Aendere die Nameserver bei Porkbun auf die von Cloudflare zugewiesenen Nameserver.
-   - Cloudflare dokumentiert, dass fuer die Nutzung der DNS- und Tunnel-Funktionen die Domain als Cloudflare-Zone aktiv sein muss.
-
-2. Tunnel in Cloudflare anlegen
-
-   - Gehe in Cloudflare Zero Trust zu `Networks > Tunnels`.
-   - Erstelle einen neuen Tunnel.
-   - Waehl `Cloudflared`.
-   - Kopiere den Tunnel-Token aus der Cloudflare-Konfiguration.
-
-3. Public-Konfig anlegen
-
-   - Leite den Hostname `othello-cloud.de` in Cloudflare auf `http://localhost:80`.
-   - Optional kannst du `www.othello-cloud.de` ebenfalls auf denselben Service zeigen lassen.
-
-4. Stack starten
-
-   ```bash
-   docker compose -f docker-compose.yml -f docker-compose.cloudflare.yml up -d
-   ```
-
-5. Portfreigaben
-
-   - Keine FRITZ!Box-Portfreigaben fuer den oeffentlichen Zugriff noetig.
-   - `cloudflared` baut nur ausgehende Verbindungen zu Cloudflare auf.
-   - Deine lokalen Ports `8081` und `8090` bleiben weiterhin fuer LAN- oder Debug-Zugriff nutzbar.
-
-6. Erreichbarkeit testen
-
-   - `https://othello-cloud.de`
-
-Wichtig:
-
-- Der Tunnel laeuft outbound-only, also ohne eingehende Ports auf deinem Anschluss.
-- Caddy laeuft intern nur als Reverse Proxy zwischen `frontend` und `pocketbase`.
-- Cloudflare Tunnel zeigt auf `http://localhost:80`, also auf den Caddy-Port auf dem Pi.
-- Die eigentliche TLS-Beendigung passiert bei Cloudflare.
-
 ## Wichtige Datenmodelle
 
 Die App arbeitet aktuell mit diesen PocketBase-Collections:
@@ -171,10 +101,6 @@ Die App arbeitet aktuell mit diesen PocketBase-Collections:
 4. Kalender-Verbesserungen
 
 ## Lizenzen und Drittanbieter
-
-### Mitgelieferte Lizenzhinweise
-
-- `backend/pocketbase/LICENSE.md` - MIT License fuer die mitgelieferte PocketBase-Komponente
 
 ### Verwendete Kern-Abhaengigkeiten
 
@@ -212,7 +138,6 @@ Die folgenden direkten Dependencies sind im Frontend aktiv und stammen aus exter
 - `eslint-config-expo` - MIT
 - `typescript` - Apache-2.0
 - `node` - MIT
-
 
 ## AI Usage
 
