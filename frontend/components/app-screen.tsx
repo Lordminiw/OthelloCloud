@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { Text, useTheme } from "react-native-paper";
 
@@ -8,6 +8,8 @@ type AppScreenProps = {
   children: ReactNode;
   centered?: boolean;
   maxWidth?: number;
+  showBrand?: boolean;
+  browserTitle?: string;
 };
 
 export function AppScreen({
@@ -16,10 +18,20 @@ export function AppScreen({
   children,
   centered = false,
   maxWidth,
+  showBrand = true,
+  browserTitle,
 }: AppScreenProps) {
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const contentMaxWidth = maxWidth ?? (width >= 900 ? 1040 : 640);
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    document.title = browserTitle ?? (title === "OthelloCloud" ? "OthelloCloud" : `OthelloCloud - ${title}`);
+  }, [browserTitle, title]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -33,9 +45,11 @@ export function AppScreen({
         <View style={[styles.content, { maxWidth: contentMaxWidth }]}>
           <View style={styles.header}>
             <View style={styles.brandBlock}>
-              <Text variant="labelSmall" style={[styles.brand, { color: theme.colors.primary }]}>
-                OthelloCloud
-              </Text>
+              {showBrand ? (
+                <Text variant="labelSmall" style={[styles.brand, { color: theme.colors.primary }]}>
+                  OthelloCloud
+                </Text>
+              ) : null}
               <Text variant="headlineMedium" style={styles.title}>
                 {title}
               </Text>

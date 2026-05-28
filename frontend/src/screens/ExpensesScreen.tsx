@@ -435,7 +435,11 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
   const paymentSuggestions = suggestPayments(balances);
 
   return (
-    <AppScreen title="Ausgaben" right={<HouseholdDropdown />}>
+    <AppScreen
+      title="Ausgaben"
+      right={<HouseholdDropdown />}
+      browserTitle="OthelloCloud - Ausgaben"
+    >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
         <Card style={[layout.card, isWide && layout.wideForm]}>
           <Card.Title title="Neue Ausgabe" />

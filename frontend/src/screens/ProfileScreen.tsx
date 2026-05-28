@@ -215,7 +215,11 @@ export function ProfileScreen({
     : null;
 
   return (
-    <AppScreen title="Profil" right={<HouseholdDropdown />}>
+    <AppScreen
+      title="Profil"
+      right={<HouseholdDropdown />}
+      browserTitle="OthelloCloud - Profil"
+    >
       <View style={layout.stack}>
         <Card style={layout.card}>
           <Card.Title title={user?.name || "Benutzer"} subtitle={user?.email} />

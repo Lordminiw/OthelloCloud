@@ -450,7 +450,11 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
   });
 
   return (
-    <AppScreen title="Umfragen" right={<HouseholdDropdown />}>
+    <AppScreen
+      title="Umfragen"
+      right={<HouseholdDropdown />}
+      browserTitle="OthelloCloud - Umfragen"
+    >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
         <Card style={[layout.card, isWide && layout.wideForm]}>
           <Card.Title title="Neue Umfrage" />

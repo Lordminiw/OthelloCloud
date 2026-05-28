@@ -162,7 +162,11 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
   }
 
   return (
-    <AppScreen title="Einkaufsliste" right={<HouseholdDropdown />}>
+    <AppScreen
+      title="Einkaufsliste"
+      right={<HouseholdDropdown />}
+      browserTitle="OthelloCloud - Einkauf"
+    >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
           <Card style={[layout.card, isWide && layout.wideForm]}>
           <Card.Title title="Neuer Artikel" />

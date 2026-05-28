@@ -106,7 +106,13 @@ export function LoginScreen({
   const isLogin = mode === "login";
 
   return (
-    <AppScreen title="OthelloCloud" centered maxWidth={460}>
+    <AppScreen
+      title="OthelloCloud"
+      centered
+      maxWidth={460}
+      showBrand={false}
+      browserTitle="OthelloCloud"
+    >
       <Card style={layout.card}>
         <Card.Title title={isLogin ? "Einloggen" : "Registrieren"} />
 

@@ -822,7 +822,11 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   });
 
   return (
-    <AppScreen title="Kalender" right={<HouseholdDropdown />}>
+    <AppScreen
+      title="Kalender"
+      right={<HouseholdDropdown />}
+      browserTitle="OthelloCloud - Kalender"
+    >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
         <Card style={[layout.card, isWide && layout.wideForm]}>
           <Card.Title title="Monatsansicht" />
