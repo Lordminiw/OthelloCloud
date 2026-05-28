@@ -1,6 +1,7 @@
 services:
   caddy:
-    image: caddy:2.8-alpine
+    build:
+      context: ./deploy/public
     restart: unless-stopped
     env_file:
       - ./deploy/public/.env

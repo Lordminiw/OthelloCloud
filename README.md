@@ -83,6 +83,7 @@ Wenn du die App von aussen erreichbar machen willst, kannst du den zusatzlichen 
 
    - Erzeuge in Porkbun einen `API Key` und `Secret Key`.
    - Aktiviere fuer deine Domain unter `API Access` die API-Nutzung.
+   - Trage die Werte spaeter in `deploy/public/.env` als `PORKBUN_API_KEY` und `PORKBUN_API_SECRET_KEY` ein.
 
 2. Public-Konfig anlegen
 
@@ -91,6 +92,7 @@ Wenn du die App von aussen erreichbar machen willst, kannst du den zusatzlichen 
    - Ersetze die Platzhalter durch deine echten Porkbun API-Daten.
    - Als Ziel-IP brauchst du die globale IPv6 deines Pi, bei dir ist das die `2001:...`-Adresse aus `ip -6 addr`.
    - Die `fd...`-Adresse ist nur intern, `fe80...` ist nur Link-Local und nicht fuer das Internet.
+   - Caddy nutzt die Porkbun-API fuer die DNS-01-Zertifikatsausstellung.
 
 3. Public-Stack starten
 
@@ -100,7 +102,8 @@ Wenn du die App von aussen erreichbar machen willst, kannst du den zusatzlichen 
 
 4. FRITZ!Box Portfreigaben setzen
 
-   - Leite extern `80` und `443` auf den Raspberry Pi weiter.
+   - Leite extern mindestens `443` auf den Raspberry Pi weiter.
+   - `80` ist fuer Zertifikate via DNS-01 nicht mehr noetig, kann aber fuer HTTP-Weiterleitungen offen bleiben.
    - `8090` bleibt intern und wird nicht nach aussen freigegeben.
 
 5. Erreichbarkeit testen
@@ -111,6 +114,7 @@ Wenn du die App von aussen erreichbar machen willst, kannst du den zusatzlichen 
 Wichtig:
 
 - Caddy holt automatisch ein TLS-Zertifikat.
+- Caddy holt das Zertifikat per DNS-01 ueber Porkbun, daher ist kein eingehender HTTP-01- oder TLS-ALPN-Check mehr noetig.
 - `ddns-updater` aktualisiert deine Porkbun-DNS-Eintraege automatisch bei IP-Wechsel.
 - Die lokalen Ports `8081` und `8090` bleiben weiterhin fuer LAN- oder Debug-Zugriff nutzbar.
 
