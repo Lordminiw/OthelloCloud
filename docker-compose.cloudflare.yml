@@ -14,7 +14,10 @@ services:
     build:
       context: ./deploy/cloudflare/cloudflared
     restart: unless-stopped
-    command: tunnel run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    command:
+      - sh
+      - -c
+      - 'exec /usr/local/bin/cloudflared tunnel --no-autoupdate run --token "$CLOUDFLARE_TUNNEL_TOKEN"'
     env_file:
       - ./deploy/cloudflare/.env
     depends_on:
