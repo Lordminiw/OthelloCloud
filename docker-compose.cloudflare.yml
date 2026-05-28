@@ -11,7 +11,8 @@ services:
         condition: service_started
 
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    build:
+      context: ./deploy/cloudflare/cloudflared
     restart: unless-stopped
     command: tunnel run --token ${CLOUDFLARE_TUNNEL_TOKEN}
     env_file:
