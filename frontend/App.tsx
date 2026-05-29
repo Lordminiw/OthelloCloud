@@ -85,11 +85,28 @@ function parseInitialTab(url: string | null) {
     if (parsed.searchParams.has("poll")) {
       return "Umfragen" as const;
     }
+
+    if (parsed.searchParams.has("invite")) {
+      return "Profil" as const;
+    }
   } catch {
     return undefined;
   }
 
   return undefined;
+}
+
+function parseInviteCode(url: string | null) {
+  if (!url) {
+    return "";
+  }
+
+  try {
+    const parsed = new URL(url);
+    return parsed.searchParams.get("invite")?.trim().toUpperCase() ?? "";
+  } catch {
+    return "";
+  }
 }
 
 function AppShell() {
@@ -101,6 +118,7 @@ function AppShell() {
   const { households, loading, refreshHouseholds } = useHousehold();
 
   const initialTabName = useMemo(() => parseInitialTab(url), [url]);
+  const initialInviteCode = useMemo(() => parseInviteCode(url), [url]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -110,6 +128,7 @@ function AppShell() {
     const search = new URLSearchParams(window.location.search);
     const currentTab = search.get("tab");
     const currentPoll = search.get("poll");
+    const currentInvite = search.get("invite");
     const pathnameSegments = window.location.pathname.split("/").filter(Boolean);
     const pathTab = [...pathnameSegments]
       .reverse()
@@ -130,6 +149,9 @@ function AppShell() {
     nextSearch.set("tab", nextTab);
     if (currentPoll) {
       nextSearch.set("poll", currentPoll);
+    }
+    if (currentInvite) {
+      nextSearch.set("invite", currentInvite);
     }
 
     const normalized = `/?${nextSearch.toString()}`;
@@ -160,13 +182,19 @@ function AppShell() {
   }
 
   if (households.length === 0) {
-    return <HouseholdSetupScreen onHouseholdReady={refreshHouseholds} />;
+    return (
+      <HouseholdSetupScreen
+        initialInviteCode={initialInviteCode}
+        onHouseholdReady={refreshHouseholds}
+      />
+    );
   }
 
   return (
     <NavigationContainer theme={navTheme}>
       <MainTabs
         initialTabName={initialTabName}
+        initialInviteCode={initialInviteCode}
         onLogout={() => {
           pb.authStore.clear();
           setLoggedIn(false);

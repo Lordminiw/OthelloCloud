@@ -42,9 +42,11 @@ type PendingMemberAction =
 
 export function ProfileScreen({
   household,
+  initialInviteCode,
   onLogout,
 }: {
   household: Household;
+  initialInviteCode?: string;
   onLogout: () => void;
 }) {
   const user = pb.authStore.model;
@@ -53,8 +55,12 @@ export function ProfileScreen({
 
   const [createDialogVisible, setCreateDialogVisible] = useState(false);
   const [joinDialogVisible, setJoinDialogVisible] = useState(false);
+  const [renameDialogVisible, setRenameDialogVisible] = useState(false);
   const [newWgName, setNewWgName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
+  const [newUserName, setNewUserName] = useState(user?.name ?? "");
+  const [displayName, setDisplayName] = useState(user?.name ?? "");
+  const [inviteFeedbackId, setInviteFeedbackId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [members, setMembers] = useState<HouseholdMember[]>([]);
   const [membersLoading, setMembersLoading] = useState(true);
@@ -86,6 +92,13 @@ export function ProfileScreen({
   useEffect(() => {
     loadMembers();
   }, [loadMembers]);
+
+  useEffect(() => {
+    if (initialInviteCode) {
+      setInviteCode(initialInviteCode);
+      setJoinDialogVisible(true);
+    }
+  }, [initialInviteCode]);
 
   function logout() {
     pb.authStore.clear();
@@ -125,6 +138,68 @@ export function ProfileScreen({
       alert("WG konnte nicht gefunden werden: " + error?.message);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleRenameUser() {
+    if (!user?.id) {
+      alert("Du bist nicht eingeloggt.");
+      return;
+    }
+
+    const trimmedName = newUserName.trim();
+    if (!trimmedName) {
+      alert("Bitte Namen eingeben.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const updatedUser = await pb.collection("users").update(user.id, {
+        name: trimmedName,
+      });
+      pb.authStore.save(pb.authStore.token, updatedUser);
+      setDisplayName(trimmedName);
+      setRenameDialogVisible(false);
+    } catch (error: any) {
+      alert("Name konnte nicht geaendert werden: " + (error?.message ?? "Unbekannt"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function getInviteLink(inviteCodeValue: string) {
+    const code = inviteCodeValue.trim().toUpperCase();
+
+    if (typeof window !== "undefined" && window.location?.origin) {
+      return `${window.location.origin}/?invite=${encodeURIComponent(code)}`;
+    }
+
+    return `Invite-Code: ${code}`;
+  }
+
+  async function copyInviteLink(targetHousehold: Household) {
+    const link = getInviteLink(targetHousehold.inviteCode);
+
+    try {
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.clipboard?.writeText
+      ) {
+        await navigator.clipboard.writeText(link);
+        setInviteFeedbackId(targetHousehold.id);
+        window.setTimeout(() => setInviteFeedbackId(null), 1800);
+        return;
+      }
+
+      if (typeof window !== "undefined" && window.prompt) {
+        window.prompt("Invite-Link kopieren:", link);
+        return;
+      }
+
+      alert(link);
+    } catch {
+      alert(link);
     }
   }
 
@@ -222,18 +297,18 @@ export function ProfileScreen({
     >
       <View style={layout.stack}>
         <Card style={layout.card}>
-          <Card.Title title={user?.name || "Benutzer"} subtitle={user?.email} />
-          <Card.Content>
-            <List.Item
-              title="User-ID"
-              description={user?.id ?? "Unbekannt"}
-              left={(props) => <List.Icon {...props} icon="identifier" />}
-            />
-            <List.Item
-              title="Verifiziert"
-              description={user?.verified ? "Ja" : "Nein"}
-              left={(props) => <List.Icon {...props} icon="check-circle" />}
-            />
+          <Card.Title title={displayName || "Benutzer"} subtitle={user?.email} />
+          <Card.Content style={layout.formContent}>
+            <Button
+              mode="outlined"
+              icon="account-edit"
+              onPress={() => {
+                setNewUserName(displayName);
+                setRenameDialogVisible(true);
+              }}
+            >
+              Namen aendern
+            </Button>
           </Card.Content>
         </Card>
 
@@ -321,17 +396,31 @@ export function ProfileScreen({
 
         <Card style={layout.card}>
           <Card.Title title="Meine WGs" subtitle={`${households.length} WG${households.length !== 1 ? "s" : ""}`} />
-          <Card.Content>
+          <Card.Content style={layout.listCardContent}>
             {households.map((h, index) => (
               <View key={h.id}>
                 <List.Item
                   title={h.name}
-                  description={`Invite-Code: ${h.inviteCode}`}
+                  description={
+                    inviteFeedbackId === h.id
+                      ? "Invite-Link kopiert"
+                      : `Invite-Code: ${h.inviteCode}`
+                  }
                   left={(props) => (
                     <List.Icon
                       {...props}
                       icon={h.id === household.id ? "home" : "home-outline"}
                     />
+                  )}
+                  right={() => (
+                    <Button
+                      mode="text"
+                      icon="link-variant"
+                      compact
+                      onPress={() => copyInviteLink(h)}
+                    >
+                      Invite
+                    </Button>
                   )}
                 />
                 {index < households.length - 1 && <Divider />}
@@ -366,6 +455,29 @@ export function ProfileScreen({
       </View>
 
       <Portal>
+        <Dialog
+          visible={renameDialogVisible}
+          onDismiss={() => setRenameDialogVisible(false)}
+        >
+          <Dialog.Title>Namen aendern</Dialog.Title>
+          <Dialog.Content>
+            <TextInput
+              label="Name"
+              value={newUserName}
+              onChangeText={setNewUserName}
+              mode="outlined"
+              placeholder="z.B. Hannes"
+              style={{ marginTop: 8 }}
+            />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setRenameDialogVisible(false)}>Abbrechen</Button>
+            <Button onPress={handleRenameUser} loading={busy} disabled={busy}>
+              Speichern
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
         <Dialog
           visible={createDialogVisible}
           onDismiss={() => setCreateDialogVisible(false)}

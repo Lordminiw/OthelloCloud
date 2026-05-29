@@ -50,13 +50,13 @@ export function ThemeToggle() {
       onPressOut={() => {
         scale.value = withTiming(1, { duration: 100 });
       }}
-      style={({ hovered }) => [
+      style={(state) => [
         styles.button,
         {
           backgroundColor,
           borderColor,
         },
-        Platform.OS === 'web' && hovered && styles.buttonHovered,
+        Platform.OS === 'web' && 'hovered' in state && state.hovered && styles.buttonHovered,
       ]}
     >
       <Animated.View style={[styles.iconContainer, animatedStyle]}>

@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useWindowDimensions, View } from "react-native";
 import { Button, Card, Text, TextInput } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
 import { createHousehold, joinHousehold } from "../lib/household";
 
 export function HouseholdSetupScreen({
+  initialInviteCode,
   onHouseholdReady,
 }: {
+  initialInviteCode?: string;
   onHouseholdReady: () => void;
 }) {
   const { width } = useWindowDimensions();
@@ -14,6 +16,12 @@ export function HouseholdSetupScreen({
   const [newHouseholdName, setNewHouseholdName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (initialInviteCode) {
+      setInviteCode(initialInviteCode);
+    }
+  }, [initialInviteCode]);
 
   async function handleCreateHousehold() {
     if (!newHouseholdName.trim()) {

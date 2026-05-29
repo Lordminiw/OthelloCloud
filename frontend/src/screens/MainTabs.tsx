@@ -12,9 +12,11 @@ const Tab = createBottomTabNavigator();
 
 export function MainTabs({
   initialTabName,
+  initialInviteCode,
   onLogout,
 }: {
   initialTabName?: string;
+  initialInviteCode?: string;
   onLogout: () => void;
 }) {
   const theme = useTheme();
@@ -106,7 +108,13 @@ export function MainTabs({
           ),
         }}
       >
-        {() => <ProfileScreen household={activeHousehold} onLogout={onLogout} />}
+        {() => (
+          <ProfileScreen
+            household={activeHousehold}
+            initialInviteCode={initialInviteCode}
+            onLogout={onLogout}
+          />
+        )}
       </Tab.Screen>
     </Tab.Navigator>
   );
