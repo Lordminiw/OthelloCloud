@@ -51,6 +51,24 @@ OthelloCloud ist eine WG-App fuer gemeinsame Organisation im Alltag. Der aktuell
    npm run web
    ```
 
+## Entwicklungsumgebung fuer Site-Erweiterungen
+
+`main` sollte die stabile, Docker-faehige Version bleiben. Fuer groessere Aenderungen an der Site arbeite auf dem Branch `dev` und starte die App lokal ueber Expo:
+
+```bash
+cd frontend
+npm install
+npm run web
+```
+
+Lege dafuer in `frontend/.env` die lokale oder entfernte PocketBase-URL fest:
+
+```bash
+EXPO_PUBLIC_POCKETBASE_URL=http://localhost:8090
+```
+
+Der vollstaendige Ablauf steht in `docs/development.md`.
+
 ## Docker auf dem Raspberry Pi
 
 Wenn auf deinem Raspberry Pi Docker bereits installiert ist, kannst du den kompletten Stack direkt starten:
