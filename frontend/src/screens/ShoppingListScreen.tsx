@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native"
 import { Button, Card, Divider, List, Text, TextInput } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
 import { HouseholdDropdown } from "@/components/household-dropdown";
+import { useLanguage } from "@/context/language-context";
 import { pb } from "../lib/pocketbase";
 
 type ShoppingItem = {
@@ -25,6 +26,8 @@ type ShoppingListScreenProps = {
 const MAX_CHECKED_ITEMS = 10;
 
 export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
+  const { t, language } = useLanguage();
+  const isGerman = language === "de";
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
   const [openItems, setOpenItems] = useState<ShoppingItem[]>([]);
@@ -158,21 +161,25 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
   }, [loadItems]);
 
   function itemDescription(item: ShoppingItem) {
-    return item.quantity ? `Menge: ${item.quantity}` : undefined;
+    if (!item.quantity) {
+      return undefined;
+    }
+
+    return isGerman ? `Menge: ${item.quantity}` : `Quantity: ${item.quantity}`;
   }
 
   return (
     <AppScreen
-      title="Einkaufsliste"
+      title={t("shopping.title")}
       right={<HouseholdDropdown />}
-      browserTitle="OthelloCloud - Einkauf"
+      browserTitle={t("shopping.browserTitle")}
     >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
           <Card style={[layout.card, isWide && layout.wideForm]}>
-          <Card.Title title="Neuer Artikel" />
+          <Card.Title title={t("shopping.newItemTitle")} />
           <Card.Content style={layout.formContent}>
             <TextInput
-              label="Artikel"
+              label={t("shopping.itemLabel")}
               value={name}
               onChangeText={setName}
               mode="outlined"
@@ -181,7 +188,7 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
             {suggestions.length > 0 && (
               <View style={styles.suggestionsCard}>
                 <Text variant="labelMedium" style={styles.suggestionsLabel}>
-                  Vorschläge
+                  {isGerman ? "Vorschläge" : "Suggestions"}
                 </Text>
 
                 {suggestions.map((suggestion, index) => (
@@ -189,7 +196,13 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
                     <List.Item
                       title={suggestion.name}
                       description={
-                        suggestion.quantity ? `Zuletzt: ${suggestion.quantity}` : "Schon mal verwendet"
+                        suggestion.quantity
+                          ? isGerman
+                            ? `Zuletzt: ${suggestion.quantity}`
+                            : `Last used: ${suggestion.quantity}`
+                          : isGerman
+                            ? "Schon mal verwendet"
+                            : "Used before"
                       }
                       left={(props) => <List.Icon {...props} icon="history" />}
                       onPress={() => applySuggestion(suggestion)}
@@ -202,26 +215,28 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
             )}
 
             <TextInput
-              label="Menge"
+              label={isGerman ? "Menge" : "Quantity"}
               value={quantity}
               onChangeText={setQuantity}
               mode="outlined"
-              placeholder="z.B. 2x, 1 kg, 500 g"
+              placeholder={isGerman ? "z. B. 2x, 1 kg, 500 g" : "e.g. 2x, 1 kg, 500 g"}
             />
 
             <Button mode="contained" onPress={addItem}>
-              Hinzufügen
+              {t("shopping.addButton")}
             </Button>
           </Card.Content>
         </Card>
 
         <View style={[layout.stack, isWide && layout.widePanel]}>
           <Card style={layout.card}>
-            <Card.Title title={`Offen (${openItems.length})`} />
+            <Card.Title
+              title={isGerman ? `Offen (${openItems.length})` : `Open (${openItems.length})`}
+            />
             <Card.Content style={layout.listCardContent}>
               {openItems.length === 0 && (
                 <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
-                  Keine offenen Einträge.
+                  {t("common.noItems")}
                 </Text>
               )}
 
@@ -247,11 +262,11 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
           </Card>
 
           <Card style={layout.card}>
-            <Card.Title title={`Zuletzt erledigt (${checkedItems.length})`} />
+            <Card.Title title={`${t("shopping.completedSection")} (${checkedItems.length})`} />
             <Card.Content style={layout.listCardContent}>
               {checkedItems.length === 0 && (
                 <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
-                  Noch nichts erledigt.
+                  {t("common.noCompletedItems")}
                 </Text>
               )}
 

@@ -2,12 +2,14 @@ import { useState } from "react";
 import { Button, Card, Text, TextInput } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
 import { pb } from "../lib/pocketbase";
+import { useLanguage } from "@/context/language-context";
 
 export function LoginScreen({
   onLogin,
 }: {
   onLogin: () => Promise<void> | void;
 }) {
+  const { t } = useLanguage();
   const [mode, setMode] = useState<"login" | "register">("login");
 
   const [name, setName] = useState("");
@@ -18,12 +20,12 @@ export function LoginScreen({
 
   async function login() {
     if (!email.trim()) {
-      alert("Bitte E-Mail eingeben.");
+      alert(t("auth.emailRequired"));
       return;
     }
 
     if (!password) {
-      alert("Bitte Passwort eingeben.");
+      alert(t("auth.passwordRequired"));
       return;
     }
 
@@ -39,7 +41,8 @@ export function LoginScreen({
       console.log("RESPONSE:", error?.response);
 
       alert(
-        "Login fehlgeschlagen.\n\n" +
+        t("auth.loginFailed") +
+          "\n\n" +
           "Status: " +
           error?.status +
           "\n" +
@@ -53,17 +56,17 @@ export function LoginScreen({
 
   async function register() {
     if (!name.trim()) {
-      alert("Bitte Namen eingeben.");
+      alert(t("auth.nameRequired"));
       return;
     }
 
     if (!email.trim()) {
-      alert("Bitte E-Mail eingeben.");
+      alert(t("auth.emailRequired"));
       return;
     }
 
     if (password.length < 8) {
-      alert("Bitte ein Passwort mit mindestens 8 Zeichen eingeben.");
+      alert(t("auth.passwordTooShort"));
       return;
     }
 
@@ -88,7 +91,8 @@ export function LoginScreen({
       console.log("RESPONSE:", error?.response);
 
       alert(
-        "Registrierung fehlgeschlagen.\n\n" +
+        t("auth.registerFailed") +
+          "\n\n" +
           "Status: " +
           error?.status +
           "\n" +
@@ -107,34 +111,34 @@ export function LoginScreen({
 
   return (
     <AppScreen
-      title="OthelloCloud"
+      title={t("app.brand")}
       centered
       maxWidth={460}
       showBrand={false}
-      browserTitle="OthelloCloud"
+      browserTitle={t("app.brand")}
     >
       <Card style={layout.card}>
-        <Card.Title title={isLogin ? "Einloggen" : "Registrieren"} />
+        <Card.Title title={isLogin ? t("auth.loginTitle") : t("auth.registerTitle")} />
 
         <Card.Content style={layout.formContent}>
           <Text variant="bodyMedium">
             {isLogin
-              ? "Melde dich mit deinem WG-Account an."
-              : "Erstelle einen neuen Account. Danach kannst du eine WG erstellen oder per Invite-Code beitreten."}
+              ? t("auth.loginDescription")
+              : t("auth.registerDescription")}
           </Text>
 
           {!isLogin && (
             <TextInput
-              label="Name"
+              label={t("auth.nameLabel")}
               value={name}
               onChangeText={setName}
               mode="outlined"
-              placeholder="z.B. Hannes"
+              placeholder={t("auth.namePlaceholder")}
             />
           )}
 
           <TextInput
-            label="E-Mail"
+            label={t("auth.emailLabel")}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -143,7 +147,7 @@ export function LoginScreen({
           />
 
           <TextInput
-            label="Passwort"
+            label={t("auth.passwordLabel")}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -156,7 +160,7 @@ export function LoginScreen({
             disabled={busy}
             loading={busy}
           >
-            {isLogin ? "Einloggen" : "Account erstellen"}
+            {isLogin ? t("auth.loginButton") : t("auth.registerButton")}
           </Button>
 
           <Button
@@ -166,9 +170,7 @@ export function LoginScreen({
             }}
             disabled={busy}
           >
-            {isLogin
-              ? "Noch keinen Account? Registrieren"
-              : "Schon einen Account? Einloggen"}
+            {isLogin ? t("auth.loginToggle") : t("auth.registerToggle")}
           </Button>
         </Card.Content>
       </Card>

@@ -31,8 +31,11 @@ import {
 import { HouseholdMember, loadHouseholdMembers } from "../lib/members";
 import { pb } from "../lib/pocketbase";
 import { HouseholdDropdown } from "@/components/household-dropdown";
+import { useLanguage } from "@/context/language-context";
 
 export function ExpensesScreen({ householdId }: { householdId: string }) {
+  const { language } = useLanguage();
+  const isGerman = language === "de";
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -169,7 +172,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
     );
 
     if (invalidShare) {
-      alert("Bitte gültige Split-Werte eingeben.");
+      alert(isGerman ? "Bitte gültige Split-Werte eingeben." : "Please enter valid split values.");
       return null;
     }
 
@@ -180,13 +183,19 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
 
     if (input.mode === "amount" && Math.abs(total - input.amount) >= 0.01) {
       alert(
-        `Die Einzelbeträge müssen zusammen ${input.amount.toFixed(2)} € ergeben.`
+        isGerman
+          ? `Die Einzelbeträge müssen zusammen ${input.amount.toFixed(2)} € ergeben.`
+          : `The individual amounts must add up to €${input.amount.toFixed(2)}.`
       );
       return null;
     }
 
     if (input.mode === "percent" && Math.abs(total - 100) >= 0.01) {
-      alert("Die Prozentwerte müssen zusammen 100 % ergeben.");
+      alert(
+        isGerman
+          ? "Die Prozentwerte müssen zusammen 100 % ergeben."
+          : "The percentages must add up to 100%."
+      );
       return null;
     }
 
@@ -194,21 +203,21 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
   }
 
   function getSplitModeLabel(mode: SplitMode | undefined) {
-    if (mode === "amount") return "Beträge";
-    if (mode === "percent") return "Prozent";
-    return "Gleich";
+    if (mode === "amount") return isGerman ? "Beträge" : "Amounts";
+    if (mode === "percent") return isGerman ? "Prozent" : "Percent";
+    return isGerman ? "Gleich" : "Equal";
   }
 
   function getExpenseSplitDescription(expense: Expense) {
     const lines = [
-      `Bezahlt von ${getMemberLabel(expense.paidBy)}`,
+      `${isGerman ? "Bezahlt von" : "Paid by"} ${getMemberLabel(expense.paidBy)}`,
       `${getSplitModeLabel(expense.splitMode)}: ${expense.splitBetween
         .map(getMemberLabel)
         .join(", ")}`,
     ];
 
     if (expense.notes?.trim()) {
-      lines.push(`Notiz: ${expense.notes.trim()}`);
+      lines.push(`${isGerman ? "Notiz" : "Note"}: ${expense.notes.trim()}`);
     }
 
     return lines.join("\n");
@@ -262,22 +271,26 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
     const amount = Number(amountText.replace(",", "."));
 
     if (!description.trim()) {
-      alert("Bitte Beschreibung eingeben.");
+      alert(isGerman ? "Bitte Beschreibung eingeben." : "Please enter a description.");
       return;
     }
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      alert("Bitte gültigen Betrag eingeben.");
+      alert(isGerman ? "Bitte gültigen Betrag eingeben." : "Please enter a valid amount.");
       return;
     }
 
     if (!paidBy) {
-      alert("Bitte auswählen, wer bezahlt hat.");
+      alert(isGerman ? "Bitte auswählen, wer bezahlt hat." : "Please choose who paid.");
       return;
     }
 
     if (splitBetween.length === 0) {
-      alert("Bitte mindestens eine Person auswählen, die mitzahlt.");
+      alert(
+        isGerman
+          ? "Bitte mindestens eine Person auswählen, die mitzahlt."
+          : "Please select at least one person who shares the expense."
+      );
       return;
     }
 
@@ -324,17 +337,21 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
     const amount = Number(settlementAmountText.replace(",", "."));
 
     if (!settlementFromUser || !settlementToUser) {
-      alert("Bitte beide Personen auswählen.");
+      alert(isGerman ? "Bitte beide Personen auswählen." : "Please select both people.");
       return;
     }
 
     if (settlementFromUser === settlementToUser) {
-      alert("Sender und Empfänger dürfen nicht gleich sein.");
+      alert(
+        isGerman
+          ? "Sender und Empfänger dürfen nicht gleich sein."
+          : "Sender and recipient cannot be the same."
+      );
       return;
     }
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      alert("Bitte gültigen Betrag eingeben.");
+      alert(isGerman ? "Bitte gültigen Betrag eingeben." : "Please enter a valid amount.");
       return;
     }
 
@@ -365,22 +382,26 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
     const amount = Number(editAmountText.replace(",", "."));
 
     if (!editDescription.trim()) {
-      alert("Bitte Beschreibung eingeben.");
+      alert(isGerman ? "Bitte Beschreibung eingeben." : "Please enter a description.");
       return;
     }
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      alert("Bitte gültigen Betrag eingeben.");
+      alert(isGerman ? "Bitte gültigen Betrag eingeben." : "Please enter a valid amount.");
       return;
     }
 
     if (!editPaidBy) {
-      alert("Bitte auswählen, wer bezahlt hat.");
+      alert(isGerman ? "Bitte auswählen, wer bezahlt hat." : "Please choose who paid.");
       return;
     }
 
     if (editSplitBetween.length === 0) {
-      alert("Bitte mindestens eine Person auswählen, die mitzahlt.");
+      alert(
+        isGerman
+          ? "Bitte mindestens eine Person auswählen, die mitzahlt."
+          : "Please select at least one person who shares the expense."
+      );
       return;
     }
 
@@ -436,32 +457,32 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
 
   return (
     <AppScreen
-      title="Ausgaben"
+      title={isGerman ? "Ausgaben" : "Expenses"}
       right={<HouseholdDropdown />}
-      browserTitle="OthelloCloud - Ausgaben"
+      browserTitle={isGerman ? "OthelloCloud - Ausgaben" : "OthelloCloud - Expenses"}
     >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
         <Card style={[layout.card, isWide && layout.wideForm]}>
-          <Card.Title title="Neue Ausgabe" />
+          <Card.Title title={isGerman ? "Neue Ausgabe" : "New expense"} />
           <Card.Content style={layout.formContent}>
             <TextInput
-              label="Beschreibung"
+              label={isGerman ? "Beschreibung" : "Description"}
               value={description}
               onChangeText={setDescription}
               mode="outlined"
             />
 
             <TextInput
-              label="Betrag"
+              label={isGerman ? "Betrag" : "Amount"}
               value={amountText}
               onChangeText={setAmountText}
               keyboardType="decimal-pad"
               mode="outlined"
-              placeholder="z.B. 12.50"
+              placeholder={isGerman ? "z. B. 12.50" : "e.g. 12.50"}
             />
 
             <TextInput
-              label="Notiz optional"
+              label={isGerman ? "Notiz optional" : "Note optional"}
               value={notes}
               onChangeText={setNotes}
               mode="outlined"
@@ -469,26 +490,26 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
             />
 
             <Button mode="outlined" onPress={() => setPayerDialogVisible(true)}>
-              Bezahlt von: {paidBy ? getMemberLabel(paidBy) : "auswählen"}
+              {isGerman ? "Bezahlt von" : "Paid by"}: {paidBy ? getMemberLabel(paidBy) : (isGerman ? "auswählen" : "select")}
             </Button>
 
             <Button mode="outlined" onPress={() => setSplitDialogVisible(true)}>
-              Mitglieder auswählen ({splitBetween.length}/{members.length})
+              {isGerman ? "Mitglieder auswählen" : "Select members"} ({splitBetween.length}/{members.length})
             </Button>
 
             <Text variant="bodyMedium">
-              Split zwischen:{" "}
+              {isGerman ? "Split zwischen:" : "Split between:"}{" "}
               {splitBetween.length > 0
                 ? splitBetween.map(getMemberLabel).join(", ")
-                : "niemand ausgewählt"}
+                : (isGerman ? "niemand ausgewählt" : "nobody selected")}
             </Text>
 
             <SegmentedButtons
               value={splitMode}
               onValueChange={(value) => setSplitMode(value as SplitMode)}
               buttons={[
-                { value: "equal", label: "Gleich" },
-                { value: "amount", label: "Betrag" },
+                { value: "equal", label: isGerman ? "Gleich" : "Equal" },
+                { value: "amount", label: isGerman ? "Betrag" : "Amount" },
                 { value: "percent", label: "%" },
               ]}
             />
@@ -498,9 +519,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                 {splitBetween.map((userId) => (
                   <TextInput
                     key={userId}
-                    label={`${getMemberLabel(userId)} ${
-                      splitMode === "percent" ? "in %" : "in €"
-                    }`}
+                    label={`${getMemberLabel(userId)} ${splitMode === "percent" ? "in %" : "in €"}`}
                     value={splitSharesText[userId] ?? ""}
                     onChangeText={(value) => updateSplitShare(userId, value)}
                     keyboardType="decimal-pad"
@@ -511,7 +530,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
             )}
 
             <Button mode="contained" onPress={addExpense}>
-              Ausgabe hinzufügen
+              {isGerman ? "Ausgabe hinzufügen" : "Add expense"}
             </Button>
           </Card.Content>
         </Card>
@@ -519,11 +538,11 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
         <View style={[layout.stack, isWide && layout.widePanel]}>
         <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
         <Card style={[layout.card, layout.twoColumnCard]}>
-          <Card.Title title="Salden" />
+          <Card.Title title={isGerman ? "Salden" : "Balances"} />
           <Card.Content style={layout.listCardContent}>
             {balances.length === 0 && (
               <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
-                Alles ausgeglichen.
+                {isGerman ? "Alles ausgeglichen." : "Everything is balanced."}
               </Text>
             )}
 
@@ -546,11 +565,11 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
         </Card>
 
         <Card style={[layout.card, layout.twoColumnCard]}>
-          <Card.Title title="Zahlungsvorschläge" />
+          <Card.Title title={isGerman ? "Zahlungsvorschläge" : "Payment suggestions"} />
           <Card.Content style={layout.listCardContent}>
             {paymentSuggestions.length === 0 && (
               <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
-                Keine offenen Zahlungen.
+                {isGerman ? "Keine offenen Zahlungen." : "No open payments."}
               </Text>
             )}
 
@@ -564,10 +583,8 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                     key={`${suggestion.fromUser}-${suggestion.toUser}-${index}`}
                   >
                     <List.Item
-                      title={`${getMemberLabel(suggestion.fromUser)} zahlt ${suggestion.amount.toFixed(
-                        2
-                      )} €`}
-                      description={`an ${getMemberLabel(suggestion.toUser)}`}
+                      title={`${getMemberLabel(suggestion.fromUser)} ${isGerman ? "zahlt" : "pays"} ${suggestion.amount.toFixed(2)} €`}
+                      description={`${isGerman ? "an" : "to"} ${getMemberLabel(suggestion.toUser)}`}
                       left={(props) => (
                         <List.Icon {...props} icon="cash-fast" />
                       )}
@@ -576,7 +593,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                           mode="text"
                           onPress={() => openSettlementFromSuggestion(suggestion)}
                         >
-                          Bezahlt
+                          {isGerman ? "Bezahlt" : "Paid"}
                         </Button>
                       )}
                     />
@@ -591,7 +608,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
               onPress={() => setSettlementDialogVisible(true)}
               style={styles.paymentManualButton}
             >
-              Ausgleich manuell eintragen
+              {isGerman ? "Ausgleich manuell eintragen" : "Add settlement manually"}
             </Button>
           </Card.Content>
         </Card>
@@ -599,11 +616,11 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
 
         <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
         <Card style={[layout.card, layout.twoColumnCard]}>
-          <Card.Title title="Letzte Ausgaben" />
+          <Card.Title title={isGerman ? "Letzte Ausgaben" : "Recent expenses"} />
           <Card.Content style={layout.listCardContent}>
             {expenses.length === 0 && (
               <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
-                Noch keine Ausgaben.
+                {isGerman ? "Noch keine Ausgaben." : "No expenses yet."}
               </Text>
             )}
 
@@ -615,9 +632,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                 {expenses.map((expense) => (
                   <View key={expense.id}>
                     <List.Item
-                      title={`${expense.description}: ${expense.amount.toFixed(
-                        2
-                      )} €`}
+                      title={`${expense.description}: ${expense.amount.toFixed(2)} €`}
                       description={getExpenseSplitDescription(expense)}
                       left={(props) => (
                         <List.Icon {...props} icon="receipt" />
@@ -625,7 +640,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                       right={() => (
                         <View>
                           <Button mode="text" onPress={() => openEditExpense(expense)}>
-                            Bearbeiten
+                            {isGerman ? "Bearbeiten" : "Edit"}
                           </Button>
                           <Button
                             mode="text"
@@ -634,7 +649,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                               await reload();
                             }}
                           >
-                            Löschen
+                            {isGerman ? "Löschen" : "Delete"}
                           </Button>
                         </View>
                       )}
@@ -648,11 +663,11 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
         </Card>
 
         <Card style={[layout.card, layout.twoColumnCard]}>
-          <Card.Title title="Ausgleichszahlungen" />
+          <Card.Title title={isGerman ? "Ausgleichszahlungen" : "Settlements"} />
           <Card.Content style={layout.listCardContent}>
             {settlements.length === 0 && (
               <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
-                Noch keine Ausgleichszahlungen.
+                {isGerman ? "Noch keine Ausgleichszahlungen." : "No settlements yet."}
               </Text>
             )}
 
@@ -666,8 +681,8 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                     <List.Item
                       title={`${getMemberLabel(
                         settlement.fromUser
-                      )} zahlte ${settlement.amount.toFixed(2)} €`}
-                      description={`an ${getMemberLabel(settlement.toUser)}`}
+                      )} ${isGerman ? "zahlte" : "paid"} ${settlement.amount.toFixed(2)} €`}
+                      description={`${isGerman ? "an" : "to"} ${getMemberLabel(settlement.toUser)}`}
                       left={(props) => (
                         <List.Icon {...props} icon="bank-transfer" />
                       )}
@@ -679,7 +694,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                             await reload();
                           }}
                         >
-                          Löschen
+                          {isGerman ? "Löschen" : "Delete"}
                         </Button>
                       )}
                     />
@@ -699,7 +714,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
           visible={payerDialogVisible}
           onDismiss={() => setPayerDialogVisible(false)}
         >
-          <Dialog.Title>Wer hat bezahlt?</Dialog.Title>
+          <Dialog.Title>{isGerman ? "Wer hat bezahlt?" : "Who paid?"}</Dialog.Title>
           <Dialog.ScrollArea>
             <ScrollView>
               <RadioButton.Group
@@ -718,7 +733,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
           </Dialog.ScrollArea>
           <Dialog.Actions>
             <Button onPress={() => setPayerDialogVisible(false)}>
-              Übernehmen
+              {isGerman ? "Übernehmen" : "Apply"}
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -727,14 +742,14 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
           visible={splitDialogVisible}
           onDismiss={() => setSplitDialogVisible(false)}
         >
-          <Dialog.Title>Wer zahlt mit?</Dialog.Title>
+          <Dialog.Title>{isGerman ? "Wer zahlt mit?" : "Who shares?"}</Dialog.Title>
           <Dialog.Content>
             <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
               <Button mode="outlined" onPress={selectAllMembers}>
-                Alle
+                {isGerman ? "Alle" : "All"}
               </Button>
               <Button mode="outlined" onPress={clearSelectedMembers}>
-                Keine
+                {isGerman ? "Keine" : "None"}
               </Button>
             </View>
           </Dialog.Content>
@@ -756,7 +771,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
           </Dialog.ScrollArea>
           <Dialog.Actions>
             <Button onPress={() => setSplitDialogVisible(false)}>
-              Übernehmen
+              {isGerman ? "Übernehmen" : "Apply"}
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -766,14 +781,14 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
           onDismiss={() => setEditingExpense(null)}
           style={styles.mobileDialog}
         >
-          <Dialog.Title>Ausgabe bearbeiten</Dialog.Title>
+          <Dialog.Title>{isGerman ? "Ausgabe bearbeiten" : "Edit expense"}</Dialog.Title>
           <Dialog.ScrollArea style={styles.editDialogScrollArea}>
             <ScrollView
               keyboardShouldPersistTaps="handled"
               contentContainerStyle={styles.editDialogContent}
             >
               <TextInput
-                label="Beschreibung"
+                label={isGerman ? "Beschreibung" : "Description"}
                 value={editDescription}
                 onChangeText={setEditDescription}
                 mode="outlined"
@@ -781,7 +796,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
               />
 
               <TextInput
-                label="Betrag"
+                label={isGerman ? "Betrag" : "Amount"}
                 value={editAmountText}
                 onChangeText={setEditAmountText}
                 keyboardType="decimal-pad"
@@ -790,7 +805,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
               />
 
               <TextInput
-                label="Notiz optional"
+                label={isGerman ? "Notiz optional" : "Note optional"}
                 value={editNotes}
                 onChangeText={setEditNotes}
                 mode="outlined"
@@ -799,7 +814,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
               />
 
               <Text variant="titleMedium" style={{ marginBottom: 8 }}>
-                Bezahlt von
+                {isGerman ? "Bezahlt von" : "Paid by"}
               </Text>
 
               <RadioButton.Group
@@ -821,10 +836,10 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
 
               <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
                 <Button mode="outlined" onPress={selectAllEditMembers}>
-                  Alle
+                  {isGerman ? "Alle" : "All"}
                 </Button>
                 <Button mode="outlined" onPress={clearSelectedEditMembers}>
-                  Keine
+                  {isGerman ? "Keine" : "None"}
                 </Button>
               </View>
 
@@ -845,8 +860,8 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                 value={editSplitMode}
                 onValueChange={(value) => setEditSplitMode(value as SplitMode)}
                 buttons={[
-                  { value: "equal", label: "Gleich" },
-                  { value: "amount", label: "Betrag" },
+                  { value: "equal", label: isGerman ? "Gleich" : "Equal" },
+                  { value: "amount", label: isGerman ? "Betrag" : "Amount" },
                   { value: "percent", label: "%" },
                 ]}
                 style={{ marginTop: 12 }}
@@ -857,9 +872,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                   {editSplitBetween.map((userId) => (
                     <TextInput
                       key={`edit-share-${userId}`}
-                      label={`${getMemberLabel(userId)} ${
-                        editSplitMode === "percent" ? "in %" : "in €"
-                      }`}
+                      label={`${getMemberLabel(userId)} ${editSplitMode === "percent" ? "in %" : "in €"}`}
                       value={editSplitSharesText[userId] ?? ""}
                       onChangeText={(value) => updateEditSplitShare(userId, value)}
                       keyboardType="decimal-pad"
@@ -871,8 +884,8 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
             </ScrollView>
           </Dialog.ScrollArea>
           <Dialog.Actions>
-            <Button onPress={() => setEditingExpense(null)}>Abbrechen</Button>
-            <Button onPress={saveEditedExpense}>Speichern</Button>
+            <Button onPress={() => setEditingExpense(null)}>{isGerman ? "Abbrechen" : "Cancel"}</Button>
+            <Button onPress={saveEditedExpense}>{isGerman ? "Speichern" : "Save"}</Button>
           </Dialog.Actions>
         </Dialog>
 
@@ -880,11 +893,11 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
           visible={settlementDialogVisible}
           onDismiss={() => setSettlementDialogVisible(false)}
         >
-          <Dialog.Title>Ausgleichszahlung</Dialog.Title>
+          <Dialog.Title>{isGerman ? "Ausgleichszahlung" : "Settlement"}</Dialog.Title>
           <Dialog.ScrollArea>
             <ScrollView>
               <Text variant="titleMedium" style={{ marginVertical: 8 }}>
-                Von
+                {isGerman ? "Von" : "From"}
               </Text>
 
               <RadioButton.Group
@@ -901,7 +914,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
               </RadioButton.Group>
 
               <Text variant="titleMedium" style={{ marginVertical: 8 }}>
-                An
+                {isGerman ? "An" : "To"}
               </Text>
 
               <RadioButton.Group
@@ -918,7 +931,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
               </RadioButton.Group>
 
               <TextInput
-                label="Betrag"
+                label={isGerman ? "Betrag" : "Amount"}
                 value={settlementAmountText}
                 onChangeText={setSettlementAmountText}
                 keyboardType="decimal-pad"
@@ -928,10 +941,8 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
             </ScrollView>
           </Dialog.ScrollArea>
           <Dialog.Actions>
-            <Button onPress={() => setSettlementDialogVisible(false)}>
-              Abbrechen
-            </Button>
-            <Button onPress={addSettlement}>Speichern</Button>
+            <Button onPress={() => setSettlementDialogVisible(false)}>{isGerman ? "Abbrechen" : "Cancel"}</Button>
+            <Button onPress={addSettlement}>{isGerman ? "Speichern" : "Save"}</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>

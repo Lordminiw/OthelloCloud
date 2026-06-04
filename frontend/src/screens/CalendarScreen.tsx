@@ -14,6 +14,7 @@ import {
   useTheme,
 } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
+import { useLanguage } from "@/context/language-context";
 import {
   CalendarEvent,
   createCalendarEvent,
@@ -68,7 +69,47 @@ LocaleConfig.locales.de = {
   today: "Heute",
 };
 
-LocaleConfig.defaultLocale = "de";
+LocaleConfig.locales.en = {
+  monthNames: [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ],
+  monthNamesShort: [
+    "Jan.",
+    "Feb.",
+    "Mar.",
+    "Apr.",
+    "May",
+    "Jun.",
+    "Jul.",
+    "Aug.",
+    "Sep.",
+    "Oct.",
+    "Nov.",
+    "Dec.",
+  ],
+  dayNames: [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ],
+  dayNamesShort: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
+  today: "Today",
+};
 
 type CalendarScreenProps = {
   householdId: string;
@@ -120,19 +161,19 @@ function getEventEndDateKey(event: CalendarEvent) {
   return toDateKeyFromIso(event.end);
 }
 
-function getEventTimeLabel(event: CalendarEvent) {
-  return new Date(event.start).toLocaleTimeString("de-DE", {
+function getEventTimeLabel(event: CalendarEvent, locale: string) {
+  return new Date(event.start).toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit",
   });
 }
 
-function getEventEndTimeLabel(event: CalendarEvent) {
+function getEventEndTimeLabel(event: CalendarEvent, locale: string) {
   if (!event.end) {
     return "";
   }
 
-  return new Date(event.end).toLocaleTimeString("de-DE", {
+  return new Date(event.end).toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -178,10 +219,10 @@ function getEffectiveEndDateKey(selectedDateKey: string, newEndDate: string) {
   return newEndDate.trim() || selectedDateKey;
 }
 
-function formatDateKeyGerman(dateKey: string) {
+function formatDateKey(dateKey: string, locale: string) {
   const [year, month, day] = dateKey.split("-").map(Number);
 
-  return new Date(year, month - 1, day).toLocaleDateString("de-DE", {
+  return new Date(year, month - 1, day).toLocaleDateString(locale, {
     weekday: "short",
     day: "2-digit",
     month: "2-digit",
@@ -189,18 +230,19 @@ function formatDateKeyGerman(dateKey: string) {
   });
 }
 
-function getEventDateRangeLabel(event: CalendarEvent) {
+function getEventDateRangeLabel(event: CalendarEvent, locale: string) {
   const startKey = getEventDateKey(event);
   const endKey = getEventEndDateKey(event);
-  const startTime = getEventTimeLabel(event);
-  const endTime = getEventEndTimeLabel(event);
+  const startTime = getEventTimeLabel(event, locale);
+  const endTime = getEventEndTimeLabel(event, locale);
 
   if (startKey === endKey) {
     return endTime ? `${startTime} – ${endTime}` : startTime;
   }
 
-  return `${formatDateKeyGerman(startKey)} ${startTime} – ${formatDateKeyGerman(
-    endKey
+  return `${formatDateKey(startKey, locale)} ${startTime} – ${formatDateKey(
+    endKey,
+    locale
   )}${endTime ? ` ${endTime}` : ""}`;
 }
 
@@ -209,6 +251,10 @@ function getStorageKey(householdId: string, suffix: string) {
 }
 
 export function CalendarScreen({ householdId }: CalendarScreenProps) {
+  const { language } = useLanguage();
+  const isGerman = language === "de";
+  const locale = isGerman ? "de-DE" : "en-US";
+  LocaleConfig.defaultLocale = isGerman ? "de" : "en";
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
@@ -484,17 +530,17 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
 
   async function addEvent() {
     if (!newTitle.trim()) {
-      alert("Bitte Titel eingeben.");
+      alert(isGerman ? "Bitte Titel eingeben." : "Please enter a title.");
       return;
     }
 
     if (!/^\d\d:\d\d$/.test(newTime)) {
-      alert("Bitte Start-Uhrzeit im Format HH:MM eingeben.");
+      alert(isGerman ? "Bitte Start-Uhrzeit im Format HH:MM eingeben." : "Please enter a start time in HH:MM format.");
       return;
     }
 
     if (!/^\d\d:\d\d$/.test(newEndTime)) {
-      alert("Bitte End-Uhrzeit im Format HH:MM eingeben.");
+      alert(isGerman ? "Bitte End-Uhrzeit im Format HH:MM eingeben." : "Please enter an end time in HH:MM format.");
       return;
     }
 
@@ -503,7 +549,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
     const endIso = makeLocalIso(endDateKey, newEndTime);
 
     if (new Date(endIso) < new Date(startIso)) {
-      alert("Das Ende darf nicht vor dem Start liegen.");
+      alert(isGerman ? "Das Ende darf nicht vor dem Start liegen." : "The end must not be before the start.");
       return;
     }
 
@@ -548,17 +594,17 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
     }
 
     if (!newTitle.trim()) {
-      alert("Bitte Titel eingeben.");
+      alert(isGerman ? "Bitte Titel eingeben." : "Please enter a title.");
       return;
     }
 
     if (!/^\d\d:\d\d$/.test(newTime)) {
-      alert("Bitte Start-Uhrzeit im Format HH:MM eingeben.");
+      alert(isGerman ? "Bitte Start-Uhrzeit im Format HH:MM eingeben." : "Please enter a start time in HH:MM format.");
       return;
     }
 
     if (!/^\d\d:\d\d$/.test(newEndTime)) {
-      alert("Bitte End-Uhrzeit im Format HH:MM eingeben.");
+      alert(isGerman ? "Bitte End-Uhrzeit im Format HH:MM eingeben." : "Please enter an end time in HH:MM format.");
       return;
     }
 
@@ -568,7 +614,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
     const endIso = makeLocalIso(endDateKey, newEndTime);
 
     if (new Date(endIso) < new Date(startIso)) {
-      alert("Das Ende darf nicht vor dem Start liegen.");
+      alert(isGerman ? "Das Ende darf nicht vor dem Start liegen." : "The end must not be before the start.");
       return;
     }
 
@@ -656,7 +702,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
     const responses = meta.responses ?? {};
     const requestLabel =
       meta.requestParticipation && requestedMemberIds.length
-        ? `\nAnfragen an: ${requestedMemberIds
+        ? `\n${isGerman ? "Anfragen an" : "Requests to"}: ${requestedMemberIds
             .map(getMemberLabel)
             .join(", ")}`
         : "";
@@ -673,40 +719,40 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
       meta.requestParticipation && requestedMemberIds.length > 0 ? (
         <View style={styles.responseSummary}>
           <Text variant="labelMedium" style={styles.responseSummaryTitle}>
-            Teilnahme-Status
+            {isGerman ? "Teilnahme-Status" : "Participation status"}
           </Text>
 
           <Text variant="bodySmall">
-            <Text style={styles.responseLabelYes}>Zugesagt:</Text>{" "}
+            <Text style={styles.responseLabelYes}>{isGerman ? "Zugesagt:" : "Yes:"}</Text>{" "}
             {responseGroups.yes.length > 0
               ? responseGroups.yes.map(getMemberLabel).join(", ")
-              : "niemand"}
+              : (isGerman ? "niemand" : "none")}
           </Text>
 
           <Text variant="bodySmall">
-            <Text style={styles.responseLabelPending}>Offen:</Text>{" "}
+            <Text style={styles.responseLabelPending}>{isGerman ? "Offen:" : "Open:"}</Text>{" "}
             {responseGroups.pending.length > 0
               ? responseGroups.pending.map(getMemberLabel).join(", ")
-              : "niemand"}
+              : (isGerman ? "niemand" : "none")}
           </Text>
 
           <Text variant="bodySmall">
-            <Text style={styles.responseLabelNo}>Abgesagt:</Text>{" "}
+            <Text style={styles.responseLabelNo}>{isGerman ? "Abgesagt:" : "Declined:"}</Text>{" "}
             {responseGroups.no.length > 0
               ? responseGroups.no.map(getMemberLabel).join(", ")
-              : "niemand"}
+              : (isGerman ? "niemand" : "none")}
           </Text>
         </View>
       ) : null;
 
     const responseLabel =
       requestStatus !== null
-        ? `\nDein Status: ${
+        ? `\n${isGerman ? "Dein Status" : "Your status"}: ${
             requestStatus === "yes"
-              ? "zugesagt"
+              ? (isGerman ? "zugesagt" : "yes")
               : requestStatus === "no"
-                ? "abgelehnt"
-                : "offen"
+                ? (isGerman ? "abgelehnt" : "declined")
+                : (isGerman ? "offen" : "open")
           }`
         : "";
 
@@ -714,10 +760,10 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
       <View key={event.id}>
         <List.Item
           title={event.title}
-          description={`${getEventDateRangeLabel(event)}${
-            event.location ? `\nOrt: ${event.location}` : ""
-          }\nErstellt von: ${creatorLabel}${
-            meta.notes ? `\nNotiz: ${meta.notes}` : ""
+          description={`${getEventDateRangeLabel(event, locale)}${
+            event.location ? `\n${isGerman ? "Ort" : "Location"}: ${event.location}` : ""
+          }\n${isGerman ? "Erstellt von" : "Created by"}: ${creatorLabel}${
+            meta.notes ? `\n${isGerman ? "Notiz" : "Note"}: ${meta.notes}` : ""
           }${requestLabel}${responseLabel}`}
           left={(props) => (
             <List.Icon {...props} icon="calendar-clock" color={creatorColor} />
@@ -733,7 +779,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                       void respondToEvent(event, "yes");
                     }}
                   >
-                    Zusagen
+                    {isGerman ? "Zusagen" : "Yes"}
                   </Button>
                   <Button
                     mode="text"
@@ -742,15 +788,15 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                       void respondToEvent(event, "no");
                     }}
                   >
-                    Absagen
+                    {isGerman ? "Absagen" : "No"}
                   </Button>
                 </>
               )}
               <Button mode="text" onPress={() => openEditDialog(event)}>
-                Bearbeiten
+                {isGerman ? "Bearbeiten" : "Edit"}
               </Button>
               <Button mode="text" onPress={() => removeEvent(event)}>
-                Löschen
+                {isGerman ? "Löschen" : "Delete"}
               </Button>
             </View>
           )}
@@ -771,20 +817,20 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
       <View key={event.id}>
         <List.Item
           title={event.title}
-          description={`${getEventDateRangeLabel(event)}${
-            event.location ? `\nOrt: ${event.location}` : ""
-          }\nErstellt von: ${creatorLabel}${
+          description={`${getEventDateRangeLabel(event, locale)}${
+            event.location ? `\n${isGerman ? "Ort" : "Location"}: ${event.location}` : ""
+          }\n${isGerman ? "Erstellt von" : "Created by"}: ${creatorLabel}${
             meta.requestParticipation
-              ? `\nAnfragen: ${meta.requestedMemberIds?.length ?? 0}`
+              ? `\n${isGerman ? "Anfragen" : "Requests"}: ${meta.requestedMemberIds?.length ?? 0}`
               : ""
           }${
             requestStatus !== null
-              ? `\nDein Status: ${
+              ? `\n${isGerman ? "Dein Status" : "Your status"}: ${
                   requestStatus === "yes"
-                    ? "zugesagt"
+                    ? (isGerman ? "zugesagt" : "yes")
                     : requestStatus === "no"
-                      ? "abgelehnt"
-                      : "offen"
+                      ? (isGerman ? "abgelehnt" : "declined")
+                      : (isGerman ? "offen" : "open")
                 }`
               : ""
           }`}
@@ -801,7 +847,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                     void respondToEvent(event, "yes");
                   }}
                 >
-                  Zusagen
+                  {isGerman ? "Zusagen" : "Yes"}
                 </Button>
                 <Button
                   mode="text"
@@ -810,7 +856,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                     void respondToEvent(event, "no");
                   }}
                 >
-                  Absagen
+                  {isGerman ? "Absagen" : "No"}
                 </Button>
               </View>
             ) : null
@@ -823,28 +869,28 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
 
   return (
     <AppScreen
-      title="Kalender"
+      title={isGerman ? "Kalender" : "Calendar"}
       right={<HouseholdDropdown />}
-      browserTitle="OthelloCloud - Kalender"
+      browserTitle={isGerman ? "OthelloCloud - Kalender" : "OthelloCloud - Calendar"}
     >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
         <Card style={[layout.card, isWide && layout.wideForm]}>
-          <Card.Title title="Monatsansicht" />
+          <Card.Title title={isGerman ? "Monatsansicht" : "Month view"} />
           <Card.Content>
             <View style={styles.calendarActions}>
               <Button mode="outlined" onPress={jumpToToday}>
-                Heute
+                {isGerman ? "Heute" : "Today"}
               </Button>
               <Button mode="outlined" onPress={openCreateDialog}>
-                Termin hinzufügen
+                {isGerman ? "Termin hinzufügen" : "Add event"}
               </Button>
               <Button mode="outlined" onPress={() => setColorConfigVisible(true)}>
-                Farben
+                {isGerman ? "Farben" : "Colors"}
               </Button>
             </View>
 
             <Calendar
-              key={theme.dark ? "dark" : "light"}
+              key={`${theme.dark ? "dark" : "light"}-${language}`}
               firstDay={1}
               markedDates={markedDates}
               onDayPress={handleDayPress}
@@ -869,15 +915,18 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
         <View style={[layout.stack, isWide && layout.widePanel]}>
           <Card style={layout.card}>
             <Card.Title
-              title={`Agenda für ${formatDateKeyGerman(selectedDateKey)}`}
-              subtitle={`${selectedEvents.length} Termin${
-                selectedEvents.length === 1 ? "" : "e"
-              } an diesem Tag`}
+              title={`${isGerman ? "Agenda für" : "Agenda for"} ${formatDateKey(
+                selectedDateKey,
+                locale
+              )}`}
+              subtitle={`${selectedEvents.length} ${isGerman ? "Termin" : "event"}${
+                selectedEvents.length === 1 ? "" : isGerman ? "e" : "s"
+              } ${isGerman ? "an diesem Tag" : "on this day"}`}
             />
             <Card.Content style={layout.listCardContent}>
               {selectedEvents.length === 0 && (
                 <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
-                  Keine Termine an diesem Tag.
+                  {isGerman ? "Keine Termine an diesem Tag." : "No events on this day."}
                 </Text>
               )}
 
@@ -894,17 +943,17 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
 
           <Card style={layout.card}>
             <Card.Title
-              title="Kommende Termine"
+              title={isGerman ? "Kommende Termine" : "Upcoming events"}
               subtitle={
                 upcomingEvents.length > 0
-                  ? `${upcomingEvents.length} bevorstehende Termine`
-                  : "Keine weiteren Termine"
+                  ? `${upcomingEvents.length} ${isGerman ? "bevorstehende Termine" : "upcoming events"}`
+                  : (isGerman ? "Keine weiteren Termine" : "No further events")
               }
             />
             <Card.Content style={layout.listCardContent}>
               {upcomingEvents.length === 0 && (
                 <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
-                  Es stehen noch keine weiteren Termine an.
+                  {isGerman ? "Es stehen noch keine weiteren Termine an." : "There are no further events yet."}
                 </Text>
               )}
 
@@ -927,13 +976,13 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
           onDismiss={() => setCreateDialogVisible(false)}
         >
           <Dialog.Title>
-            Neuer Termin am {formatDateKeyGerman(selectedDateKey)}
+            {isGerman ? "Neuer Termin am" : "New event on"} {formatDateKey(selectedDateKey, locale)}
           </Dialog.Title>
 
           <Dialog.ScrollArea>
             <ScrollView contentContainerStyle={{ paddingVertical: 12 }}>
               <TextInput
-                label="Titel"
+                label={isGerman ? "Titel" : "Title"}
                 value={newTitle}
                 onChangeText={setNewTitle}
                 mode="outlined"
@@ -941,7 +990,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
               />
 
               <TextInput
-                label="Startzeit"
+                label={isGerman ? "Startzeit" : "Start time"}
                 value={newTime}
                 onChangeText={setNewTime}
                 mode="outlined"
@@ -950,7 +999,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
               />
 
               <TextInput
-                label="Endzeit"
+                label={isGerman ? "Endzeit" : "End time"}
                 value={newEndTime}
                 onChangeText={setNewEndTime}
                 mode="outlined"
@@ -963,10 +1012,10 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                 onPress={() => setEndDatePickerVisible(true)}
                 style={{ marginBottom: 12 }}
               >
-                Enddatum:{" "}
+                {isGerman ? "Enddatum:" : "End date:"}{" "}
                 {newEndDate
-                  ? formatDateKeyGerman(newEndDate)
-                  : `gleicher Tag (${formatDateKeyGerman(selectedDateKey)})`}
+                  ? formatDateKey(newEndDate, locale)
+                  : `${isGerman ? "gleicher Tag" : "same day"} (${formatDateKey(selectedDateKey, locale)})`}
               </Button>
 
               {newEndDate !== "" && (
@@ -975,19 +1024,19 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                   onPress={() => setNewEndDate("")}
                   style={{ marginBottom: 12 }}
                 >
-                  Enddatum zurücksetzen
+                  {isGerman ? "Enddatum zurücksetzen" : "Reset end date"}
                 </Button>
               )}
 
               <TextInput
-                label="Ort optional"
+                label={isGerman ? "Ort optional" : "Location optional"}
                 value={newLocation}
                 onChangeText={setNewLocation}
                 mode="outlined"
               />
 
               <TextInput
-                label="Notiz optional"
+                label={isGerman ? "Notiz optional" : "Note optional"}
                 value={newNotes}
                 onChangeText={setNewNotes}
                 mode="outlined"
@@ -997,9 +1046,9 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
 
               <View style={styles.toggleRow}>
                 <View style={styles.toggleTextBlock}>
-                  <Text variant="titleSmall">Andere Mitglieder anfragen</Text>
+                  <Text variant="titleSmall">{isGerman ? "Andere Mitglieder anfragen" : "Request other members"}</Text>
                   <Text variant="bodySmall" style={{ opacity: 0.75 }}>
-                    Die ausgewählten Personen sehen den Termin als Anfrage.
+                    {isGerman ? "Die ausgewählten Personen sehen den Termin als Anfrage." : "The selected people see the event as a request."}
                   </Text>
                 </View>
                 <Switch
@@ -1031,19 +1080,19 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
 
           <Dialog.Actions>
             <Button onPress={() => setCreateDialogVisible(false)}>
-              Abbrechen
+              {isGerman ? "Abbrechen" : "Cancel"}
             </Button>
-            <Button onPress={addEvent}>Speichern</Button>
+            <Button onPress={addEvent}>{isGerman ? "Speichern" : "Save"}</Button>
           </Dialog.Actions>
         </Dialog>
 
         <Dialog visible={editingEvent !== null} onDismiss={closeEditDialog}>
-          <Dialog.Title>Termin bearbeiten</Dialog.Title>
+          <Dialog.Title>{isGerman ? "Termin bearbeiten" : "Edit event"}</Dialog.Title>
 
           <Dialog.ScrollArea>
             <ScrollView contentContainerStyle={{ paddingVertical: 12 }}>
               <TextInput
-                label="Titel"
+                label={isGerman ? "Titel" : "Title"}
                 value={newTitle}
                 onChangeText={setNewTitle}
                 mode="outlined"
@@ -1051,7 +1100,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
               />
 
               <TextInput
-                label="Startzeit"
+                label={isGerman ? "Startzeit" : "Start time"}
                 value={newTime}
                 onChangeText={setNewTime}
                 mode="outlined"
@@ -1060,7 +1109,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
               />
 
               <TextInput
-                label="Endzeit"
+                label={isGerman ? "Endzeit" : "End time"}
                 value={newEndTime}
                 onChangeText={setNewEndTime}
                 mode="outlined"
@@ -1073,11 +1122,13 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                 onPress={() => setEditEndDatePickerVisible(true)}
                 style={{ marginBottom: 12 }}
               >
-                Enddatum:{" "}
+                {isGerman ? "Enddatum:" : "End date:"}{" "}
                 {newEndDate
-                  ? formatDateKeyGerman(newEndDate)
-                  : `gleicher Tag (${
-                      editingEvent ? formatDateKeyGerman(getEventDateKey(editingEvent)) : formatDateKeyGerman(selectedDateKey)
+                  ? formatDateKey(newEndDate, locale)
+                  : `${isGerman ? "gleicher Tag" : "same day"} (${
+                      editingEvent
+                        ? formatDateKey(getEventDateKey(editingEvent), locale)
+                        : formatDateKey(selectedDateKey, locale)
                     })`}
               </Button>
 
@@ -1087,19 +1138,19 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                   onPress={() => setNewEndDate("")}
                   style={{ marginBottom: 12 }}
                 >
-                  Enddatum zurücksetzen
+                  {isGerman ? "Enddatum zurücksetzen" : "Reset end date"}
                 </Button>
               )}
 
               <TextInput
-                label="Ort optional"
+                label={isGerman ? "Ort optional" : "Location optional"}
                 value={newLocation}
                 onChangeText={setNewLocation}
                 mode="outlined"
               />
 
               <TextInput
-                label="Notiz optional"
+                label={isGerman ? "Notiz optional" : "Note optional"}
                 value={newNotes}
                 onChangeText={setNewNotes}
                 mode="outlined"
@@ -1109,9 +1160,9 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
 
               <View style={styles.toggleRow}>
                 <View style={styles.toggleTextBlock}>
-                  <Text variant="titleSmall">Andere Mitglieder anfragen</Text>
+                  <Text variant="titleSmall">{isGerman ? "Andere Mitglieder anfragen" : "Request other members"}</Text>
                   <Text variant="bodySmall" style={{ opacity: 0.75 }}>
-                    Die ausgewählten Personen sehen den Termin als Anfrage.
+                    {isGerman ? "Die ausgewählten Personen sehen den Termin als Anfrage." : "The selected people see the event as a request."}
                   </Text>
                 </View>
                 <Switch
@@ -1142,8 +1193,8 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
           </Dialog.ScrollArea>
 
           <Dialog.Actions>
-            <Button onPress={closeEditDialog}>Abbrechen</Button>
-            <Button onPress={saveEditedEvent}>Speichern</Button>
+            <Button onPress={closeEditDialog}>{isGerman ? "Abbrechen" : "Cancel"}</Button>
+            <Button onPress={saveEditedEvent}>{isGerman ? "Speichern" : "Save"}</Button>
           </Dialog.Actions>
         </Dialog>
 
@@ -1151,7 +1202,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
           visible={endDatePickerVisible}
           onDismiss={() => setEndDatePickerVisible(false)}
         >
-          <Dialog.Title>Enddatum auswählen</Dialog.Title>
+          <Dialog.Title>{isGerman ? "Enddatum auswählen" : "Choose end date"}</Dialog.Title>
 
           <Dialog.Content>
             <Calendar
@@ -1196,10 +1247,10 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                 setEndDatePickerVisible(false);
               }}
             >
-              Gleicher Tag
+              {isGerman ? "Gleicher Tag" : "Same day"}
             </Button>
             <Button onPress={() => setEndDatePickerVisible(false)}>
-              Abbrechen
+              {isGerman ? "Abbrechen" : "Cancel"}
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -1208,7 +1259,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
           visible={editEndDatePickerVisible}
           onDismiss={() => setEditEndDatePickerVisible(false)}
         >
-          <Dialog.Title>Enddatum auswählen</Dialog.Title>
+          <Dialog.Title>{isGerman ? "Enddatum auswählen" : "Choose end date"}</Dialog.Title>
 
           <Dialog.Content>
             <Calendar
@@ -1254,10 +1305,10 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                 setEditEndDatePickerVisible(false);
               }}
             >
-              Gleicher Tag
+              {isGerman ? "Gleicher Tag" : "Same day"}
             </Button>
             <Button onPress={() => setEditEndDatePickerVisible(false)}>
-              Abbrechen
+              {isGerman ? "Abbrechen" : "Cancel"}
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -1266,11 +1317,13 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
           visible={colorConfigVisible}
           onDismiss={() => setColorConfigVisible(false)}
         >
-          <Dialog.Title>Farben pro Person</Dialog.Title>
+          <Dialog.Title>{isGerman ? "Farben pro Person" : "Colors per person"}</Dialog.Title>
           <Dialog.ScrollArea>
             <ScrollView contentContainerStyle={{ paddingVertical: 12 }}>
               {members.length === 0 && (
-                <Text variant="bodyMedium">Keine Mitglieder geladen.</Text>
+                <Text variant="bodyMedium">
+                  {isGerman ? "Keine Mitglieder geladen." : "No members loaded."}
+                </Text>
               )}
 
               {members.map((member) => (
@@ -1280,7 +1333,9 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                       {member.name || member.email}
                     </Text>
                     <Text variant="bodySmall" style={{ opacity: 0.75 }}>
-                      Veranstaltungen von dieser Person nutzen diese Farbe.
+                      {isGerman
+                        ? "Veranstaltungen von dieser Person nutzen diese Farbe."
+                        : "Events from this person use this color."}
                     </Text>
                   </View>
 
@@ -1317,7 +1372,9 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
             </ScrollView>
           </Dialog.ScrollArea>
           <Dialog.Actions>
-            <Button onPress={() => setColorConfigVisible(false)}>Schließen</Button>
+            <Button onPress={() => setColorConfigVisible(false)}>
+              {isGerman ? "Schließen" : "Close"}
+            </Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>

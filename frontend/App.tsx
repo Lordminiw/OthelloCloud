@@ -8,13 +8,12 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { PaperProvider, MD3LightTheme, MD3DarkTheme, Text } from "react-native-paper";
 import { ThemeProvider, useThemeContext } from "@/context/theme-context";
 import { HouseholdProvider, useHousehold } from "@/context/household-context";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageProvider, useLanguage } from "@/context/language-context";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { HouseholdSetupScreen } from "./src/screens/HouseholdSetupScreen";
 import { MainTabs } from "./src/screens/MainTabs";
 import { pb } from "./src/lib/pocketbase";
-
-const TAB_NAMES = ["Einkauf", "Ausgaben", "Kalender", "Umfragen", "Profil"] as const;
+import { resolveTabKey, TabKey } from "@/constants/navigation";
 
 const lightTheme = {
   ...MD3LightTheme,
@@ -69,25 +68,24 @@ function parseInitialTab(url: string | null) {
     const parsed = new URL(url);
     const tabParam = parsed.searchParams.get("tab");
 
-    if (tabParam && TAB_NAMES.includes(tabParam as (typeof TAB_NAMES)[number])) {
-      return tabParam as (typeof TAB_NAMES)[number];
+    const resolvedParam = resolveTabKey(tabParam);
+    if (resolvedParam) {
+      return resolvedParam;
     }
 
     const segments = parsed.pathname.split("/").filter(Boolean);
-    const lastTab = [...segments].reverse().find((segment) =>
-      TAB_NAMES.includes(segment as (typeof TAB_NAMES)[number])
-    );
+    const lastTab = [...segments].reverse().map((segment) => resolveTabKey(segment)).find(Boolean);
 
     if (lastTab) {
-      return lastTab as (typeof TAB_NAMES)[number];
+      return lastTab as TabKey;
     }
 
     if (parsed.searchParams.has("poll")) {
-      return "Umfragen" as const;
+      return "polls" as const;
     }
 
     if (parsed.searchParams.has("invite")) {
-      return "Profil" as const;
+      return "profile" as const;
     }
   } catch {
     return undefined;
@@ -111,6 +109,7 @@ function parseInviteCode(url: string | null) {
 
 function AppShell() {
   const { colorScheme } = useThemeContext();
+  const { t } = useLanguage();
   const paperTheme = colorScheme === "dark" ? darkTheme : lightTheme;
   const navTheme = colorScheme === "dark" ? customDarkTheme : customLightTheme;
   const url = Linking.useURL();
@@ -132,11 +131,10 @@ function AppShell() {
     const pathnameSegments = window.location.pathname.split("/").filter(Boolean);
     const pathTab = [...pathnameSegments]
       .reverse()
-      .find((segment) => TAB_NAMES.includes(segment as (typeof TAB_NAMES)[number]));
+      .map((segment) => resolveTabKey(segment))
+      .find(Boolean) as TabKey | undefined;
 
-    const nextTab = currentTab && TAB_NAMES.includes(currentTab as (typeof TAB_NAMES)[number])
-      ? currentTab
-      : pathTab ?? initialTabName;
+    const nextTab = resolveTabKey(currentTab) ?? pathTab ?? initialTabName;
 
     if (!nextTab) {
       if (window.location.pathname !== "/" || window.location.search) {
@@ -176,7 +174,7 @@ function AppShell() {
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: paperTheme.colors.background, padding: 24 }}>
-        <Text variant="bodyLarge">Lade WG...</Text>
+        <Text variant="bodyLarge">{t("common.loadingHousehold")}</Text>
       </View>
     );
   }
@@ -200,7 +198,6 @@ function AppShell() {
           setLoggedIn(false);
         }}
       />
-      <ThemeToggle />
     </NavigationContainer>
   );
 }
@@ -210,11 +207,13 @@ function AppProviders() {
   const paperTheme = colorScheme === "dark" ? darkTheme : lightTheme;
 
   return (
-    <HouseholdProvider>
-      <PaperProvider theme={paperTheme}>
-        <AppShell />
-      </PaperProvider>
-    </HouseholdProvider>
+    <LanguageProvider>
+      <HouseholdProvider>
+        <PaperProvider theme={paperTheme}>
+          <AppShell />
+        </PaperProvider>
+      </HouseholdProvider>
+    </LanguageProvider>
   );
 }
 

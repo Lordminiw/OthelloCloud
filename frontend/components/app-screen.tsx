@@ -1,6 +1,8 @@
 import { ReactNode, useEffect } from "react";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { Text, useTheme } from "react-native-paper";
+import { LanguageSelector } from "@/components/language-selector";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type AppScreenProps = {
   title: string;
@@ -54,7 +56,11 @@ export function AppScreen({
                 {title}
               </Text>
             </View>
-            {right ? <View style={styles.headerRight}>{right}</View> : null}
+            <View style={styles.headerRight}>
+              {right ? <View style={styles.headerAction}>{right}</View> : null}
+              <LanguageSelector />
+              <ThemeToggle />
+            </View>
           </View>
 
           {children}
@@ -145,6 +151,14 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   headerRight: {
+    flexShrink: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
+  },
+  headerAction: {
     flexShrink: 0,
   },
 });

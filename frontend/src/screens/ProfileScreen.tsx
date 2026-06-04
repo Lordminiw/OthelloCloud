@@ -11,6 +11,7 @@ import {
   TextInput,
 } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
+import { useLanguage } from "@/context/language-context";
 import { Household } from "../lib/household";
 import { pb } from "../lib/pocketbase";
 import { useHousehold } from "@/context/household-context";
@@ -49,6 +50,8 @@ export function ProfileScreen({
   initialInviteCode?: string;
   onLogout: () => void;
 }) {
+  const { language } = useLanguage();
+  const isGerman = language === "de";
   const user = pb.authStore.model;
   const { households, createNewHousehold, joinNewHousehold, refreshHouseholds } =
     useHousehold();
@@ -82,12 +85,14 @@ export function ProfileScreen({
       setMembers(loadedMembers);
     } catch (error: any) {
       alert(
-        "Mitglieder konnten nicht geladen werden: " + (error?.message ?? "Unbekannt")
+        `${isGerman ? "Mitglieder konnten nicht geladen werden" : "Members could not be loaded"}: ${
+          error?.message ?? (isGerman ? "Unbekannt" : "Unknown")
+        }`
       );
     } finally {
       setMembersLoading(false);
     }
-  }, [household.id]);
+  }, [household.id, isGerman]);
 
   useEffect(() => {
     loadMembers();
@@ -107,7 +112,7 @@ export function ProfileScreen({
 
   async function handleCreate() {
     if (!newWgName.trim()) {
-      alert("Bitte WG-Namen eingeben.");
+      alert(isGerman ? "Bitte WG-Namen eingeben." : "Please enter a household name.");
       return;
     }
 
@@ -117,7 +122,11 @@ export function ProfileScreen({
       setNewWgName("");
       setCreateDialogVisible(false);
     } catch (error: any) {
-      alert("WG konnte nicht erstellt werden: " + error?.message);
+      alert(
+        `${isGerman ? "WG konnte nicht erstellt werden" : "Household could not be created"}: ${
+          error?.message ?? (isGerman ? "Unbekannt" : "Unknown")
+        }`
+      );
     } finally {
       setBusy(false);
     }
@@ -125,7 +134,7 @@ export function ProfileScreen({
 
   async function handleJoin() {
     if (!inviteCode.trim()) {
-      alert("Bitte Invite-Code eingeben.");
+      alert(isGerman ? "Bitte Invite-Code eingeben." : "Please enter an invite code.");
       return;
     }
 
@@ -135,7 +144,11 @@ export function ProfileScreen({
       setInviteCode("");
       setJoinDialogVisible(false);
     } catch (error: any) {
-      alert("WG konnte nicht gefunden werden: " + error?.message);
+      alert(
+        `${isGerman ? "WG konnte nicht gefunden werden" : "Household could not be found"}: ${
+          error?.message ?? (isGerman ? "Unbekannt" : "Unknown")
+        }`
+      );
     } finally {
       setBusy(false);
     }
@@ -143,13 +156,13 @@ export function ProfileScreen({
 
   async function handleRenameUser() {
     if (!user?.id) {
-      alert("Du bist nicht eingeloggt.");
+      alert(isGerman ? "Du bist nicht eingeloggt." : "You are not logged in.");
       return;
     }
 
     const trimmedName = newUserName.trim();
     if (!trimmedName) {
-      alert("Bitte Namen eingeben.");
+      alert(isGerman ? "Bitte Namen eingeben." : "Please enter a name.");
       return;
     }
 
@@ -162,7 +175,11 @@ export function ProfileScreen({
       setDisplayName(trimmedName);
       setRenameDialogVisible(false);
     } catch (error: any) {
-      alert("Name konnte nicht geaendert werden: " + (error?.message ?? "Unbekannt"));
+      alert(
+        `${isGerman ? "Name konnte nicht geändert werden" : "Name could not be changed"}: ${
+          error?.message ?? (isGerman ? "Unbekannt" : "Unknown")
+        }`
+      );
     } finally {
       setBusy(false);
     }
@@ -175,7 +192,7 @@ export function ProfileScreen({
       return `${window.location.origin}/?invite=${encodeURIComponent(code)}`;
     }
 
-    return `Invite-Code: ${code}`;
+    return `${isGerman ? "Invite-Code" : "Invite code"}: ${code}`;
   }
 
   async function copyInviteLink(targetHousehold: Household) {
@@ -193,7 +210,7 @@ export function ProfileScreen({
       }
 
       if (typeof window !== "undefined" && window.prompt) {
-        window.prompt("Invite-Link kopieren:", link);
+        window.prompt(isGerman ? "Invite-Link kopieren:" : "Copy invite link:", link);
         return;
       }
 
@@ -240,7 +257,11 @@ export function ProfileScreen({
       await loadMembers();
       await refreshHouseholds();
     } catch (error: any) {
-      alert("Mitglied konnte nicht aktualisiert werden: " + (error?.message ?? "Unbekannt"));
+      alert(
+        `${isGerman ? "Mitglied konnte nicht aktualisiert werden" : "Member could not be updated"}: ${
+          error?.message ?? (isGerman ? "Unbekannt" : "Unknown")
+        }`
+      );
     } finally {
       setMemberBusyId(null);
       setPendingMemberAction(null);
@@ -256,32 +277,40 @@ export function ProfileScreen({
 
     if (action.type === "remove") {
       return {
-        title: "Mitglied entfernen",
-        message: `Willst du ${label} wirklich aus der WG entfernen?`,
-        confirmLabel: "Entfernen",
+        title: isGerman ? "Mitglied entfernen" : "Remove member",
+        message: isGerman
+          ? `Willst du ${label} wirklich aus der WG entfernen?`
+          : `Do you really want to remove ${label} from the household?`,
+        confirmLabel: isGerman ? "Entfernen" : "Remove",
       };
     }
 
     if (action.type === "promote") {
       return {
-        title: "Zum Admin machen",
-        message: `Willst du ${label} wirklich zum Admin machen?`,
-        confirmLabel: "Machen",
+        title: isGerman ? "Zum Admin machen" : "Promote to admin",
+        message: isGerman
+          ? `Willst du ${label} wirklich zum Admin machen?`
+          : `Do you really want to promote ${label} to admin?`,
+        confirmLabel: isGerman ? "Machen" : "Promote",
       };
     }
 
     if (action.type === "demote") {
       return {
-        title: "Admin-Rechte entziehen",
-        message: `Willst du ${label} wirklich wieder zum Mitglied machen?`,
-        confirmLabel: "Entziehen",
+        title: isGerman ? "Admin-Rechte entziehen" : "Remove admin role",
+        message: isGerman
+          ? `Willst du ${label} wirklich wieder zum Mitglied machen?`
+          : `Do you really want to make ${label} a regular member again?`,
+        confirmLabel: isGerman ? "Entziehen" : "Demote",
       };
     }
 
     return {
-      title: "WG verlassen",
-      message: "Willst du diese WG wirklich verlassen?",
-      confirmLabel: "Verlassen",
+      title: isGerman ? "WG verlassen" : "Leave household",
+      message: isGerman
+        ? "Willst du diese WG wirklich verlassen?"
+        : "Do you really want to leave this household?",
+      confirmLabel: isGerman ? "Verlassen" : "Leave",
     };
   }
 
@@ -291,13 +320,13 @@ export function ProfileScreen({
 
   return (
     <AppScreen
-      title="Profil"
+      title={isGerman ? "Profil" : "Profile"}
       right={<HouseholdDropdown />}
-      browserTitle="OthelloCloud - Profil"
+      browserTitle={isGerman ? "OthelloCloud - Profil" : "OthelloCloud - Profile"}
     >
       <View style={layout.stack}>
         <Card style={layout.card}>
-          <Card.Title title={displayName || "Benutzer"} subtitle={user?.email} />
+          <Card.Title title={displayName || (isGerman ? "Benutzer" : "User")} subtitle={user?.email} />
           <Card.Content style={layout.formContent}>
             <Button
               mode="outlined"
@@ -307,30 +336,30 @@ export function ProfileScreen({
                 setRenameDialogVisible(true);
               }}
             >
-              Namen aendern
+              {isGerman ? "Namen ändern" : "Change name"}
             </Button>
           </Card.Content>
         </Card>
 
         <Card style={layout.card}>
           <Card.Title
-            title="Mitglieder"
+            title={isGerman ? "Mitglieder" : "Members"}
             subtitle={
               membersLoading
-                ? "Lade..."
-                : `${members.length} Mitglied${members.length !== 1 ? "er" : ""}`
+                ? (isGerman ? "Lade..." : "Loading...")
+                : `${members.length} ${isGerman ? "Mitglied" : "member"}${members.length !== 1 ? (isGerman ? "er" : "s") : ""}`
             }
           />
           <Card.Content style={layout.listCardContent}>
             {membersLoading && (
               <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
-                Mitglieder werden geladen...
+                {isGerman ? "Mitglieder werden geladen..." : "Members are loading..."}
               </Text>
             )}
 
             {!membersLoading && members.length === 0 && (
               <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
-                Noch keine Mitglieder gefunden.
+                {isGerman ? "Noch keine Mitglieder gefunden." : "No members found yet."}
               </Text>
             )}
 
@@ -343,8 +372,8 @@ export function ProfileScreen({
                   <View key={member.id}>
                     <List.Item
                       title={getMemberLabel(member)}
-                      description={`${isAdmin ? "Admin" : "Mitglied"}${
-                        isCurrentUser ? " - du" : ""
+                      description={`${isAdmin ? (isGerman ? "Admin" : "Admin") : (isGerman ? "Mitglied" : "Member")}${
+                        isCurrentUser ? (isGerman ? " - du" : " - you") : ""
                       }`}
                       left={(props) => (
                         <List.Icon
@@ -360,7 +389,7 @@ export function ProfileScreen({
                               onPress={() => requestLeaveHousehold(member)}
                               disabled={memberBusyId === member.id}
                             >
-                              WG verlassen
+                              {isGerman ? "WG verlassen" : "Leave household"}
                             </Button>
                           ) : canManageMembers ? (
                             <>
@@ -373,14 +402,14 @@ export function ProfileScreen({
                                 }
                                 disabled={memberBusyId === member.id}
                               >
-                                {isAdmin ? "Admin entfernen" : "Zum Admin"}
+                                {isAdmin ? (isGerman ? "Admin entfernen" : "Demote admin") : (isGerman ? "Zum Admin" : "Promote")}
                               </Button>
                               <Button
                                 mode="text"
                                 onPress={() => requestRemoveMember(member)}
                                 disabled={memberBusyId === member.id}
                               >
-                                Entfernen
+                                {isGerman ? "Entfernen" : "Remove"}
                               </Button>
                             </>
                           ) : null}
@@ -395,7 +424,10 @@ export function ProfileScreen({
         </Card>
 
         <Card style={layout.card}>
-          <Card.Title title="Meine WGs" subtitle={`${households.length} WG${households.length !== 1 ? "s" : ""}`} />
+          <Card.Title
+            title={isGerman ? "Meine WGs" : "My households"}
+            subtitle={`${households.length} ${isGerman ? "WG" : "household"}${households.length !== 1 ? (isGerman ? "s" : "s") : ""}`}
+          />
           <Card.Content style={layout.listCardContent}>
             {households.map((h, index) => (
               <View key={h.id}>
@@ -403,8 +435,8 @@ export function ProfileScreen({
                   title={h.name}
                   description={
                     inviteFeedbackId === h.id
-                      ? "Invite-Link kopiert"
-                      : `Invite-Code: ${h.inviteCode}`
+                      ? (isGerman ? "Invite-Link kopiert" : "Invite link copied")
+                      : `${isGerman ? "Invite-Code" : "Invite code"}: ${h.inviteCode}`
                   }
                   left={(props) => (
                     <List.Icon
@@ -419,7 +451,7 @@ export function ProfileScreen({
                       compact
                       onPress={() => copyInviteLink(h)}
                     >
-                      Invite
+                      {isGerman ? "Invite" : "Invite"}
                     </Button>
                   )}
                 />
@@ -430,27 +462,27 @@ export function ProfileScreen({
         </Card>
 
         <Card style={layout.card}>
-          <Card.Title title="WG verwalten" />
+          <Card.Title title={isGerman ? "WG verwalten" : "Manage household"} />
           <Card.Content style={layout.formContent}>
             <Button
               mode="outlined"
               icon="plus"
               onPress={() => setCreateDialogVisible(true)}
             >
-              Neue WG erstellen
+              {isGerman ? "Neue WG erstellen" : "Create household"}
             </Button>
             <Button
               mode="outlined"
               icon="account-plus"
               onPress={() => setJoinDialogVisible(true)}
             >
-              WG per Invite-Code beitreten
+              {isGerman ? "WG per Invite-Code beitreten" : "Join via invite code"}
             </Button>
           </Card.Content>
         </Card>
 
         <Button mode="contained-tonal" onPress={logout}>
-          Ausloggen
+          {isGerman ? "Ausloggen" : "Log out"}
         </Button>
       </View>
 
@@ -459,21 +491,21 @@ export function ProfileScreen({
           visible={renameDialogVisible}
           onDismiss={() => setRenameDialogVisible(false)}
         >
-          <Dialog.Title>Namen aendern</Dialog.Title>
+          <Dialog.Title>{isGerman ? "Namen ändern" : "Change name"}</Dialog.Title>
           <Dialog.Content>
             <TextInput
-              label="Name"
+              label={isGerman ? "Name" : "Name"}
               value={newUserName}
               onChangeText={setNewUserName}
               mode="outlined"
-              placeholder="z.B. Hannes"
+              placeholder={isGerman ? "z. B. Hannes" : "e.g. Hannes"}
               style={{ marginTop: 8 }}
             />
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setRenameDialogVisible(false)}>Abbrechen</Button>
+            <Button onPress={() => setRenameDialogVisible(false)}>{isGerman ? "Abbrechen" : "Cancel"}</Button>
             <Button onPress={handleRenameUser} loading={busy} disabled={busy}>
-              Speichern
+              {isGerman ? "Speichern" : "Save"}
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -482,21 +514,21 @@ export function ProfileScreen({
           visible={createDialogVisible}
           onDismiss={() => setCreateDialogVisible(false)}
         >
-          <Dialog.Title>Neue WG erstellen</Dialog.Title>
+          <Dialog.Title>{isGerman ? "Neue WG erstellen" : "Create household"}</Dialog.Title>
           <Dialog.Content>
             <TextInput
-              label="WG-Name"
+              label={isGerman ? "WG-Name" : "Household name"}
               value={newWgName}
               onChangeText={setNewWgName}
               mode="outlined"
-              placeholder="z.B. Sommer WG"
+              placeholder={isGerman ? "z. B. Sommer WG" : "e.g. Summer House"}
               style={{ marginTop: 8 }}
             />
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setCreateDialogVisible(false)}>Abbrechen</Button>
+            <Button onPress={() => setCreateDialogVisible(false)}>{isGerman ? "Abbrechen" : "Cancel"}</Button>
             <Button onPress={handleCreate} loading={busy} disabled={busy}>
-              Erstellen
+              {isGerman ? "Erstellen" : "Create"}
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -505,22 +537,22 @@ export function ProfileScreen({
           visible={joinDialogVisible}
           onDismiss={() => setJoinDialogVisible(false)}
         >
-          <Dialog.Title>WG beitreten</Dialog.Title>
+          <Dialog.Title>{isGerman ? "WG beitreten" : "Join household"}</Dialog.Title>
           <Dialog.Content>
             <TextInput
-              label="Invite-Code"
+              label={isGerman ? "Invite-Code" : "Invite code"}
               value={inviteCode}
               onChangeText={(v) => setInviteCode(v.toUpperCase())}
               mode="outlined"
               autoCapitalize="characters"
-              placeholder="z.B. ABC123"
+              placeholder={isGerman ? "z. B. ABC123" : "e.g. ABC123"}
               style={{ marginTop: 8 }}
             />
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setJoinDialogVisible(false)}>Abbrechen</Button>
+            <Button onPress={() => setJoinDialogVisible(false)}>{isGerman ? "Abbrechen" : "Cancel"}</Button>
             <Button onPress={handleJoin} loading={busy} disabled={busy}>
-              Beitreten
+              {isGerman ? "Beitreten" : "Join"}
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -529,12 +561,12 @@ export function ProfileScreen({
           visible={pendingMemberAction !== null}
           onDismiss={() => setPendingMemberAction(null)}
         >
-          <Dialog.Title>{pendingCopy?.title ?? "Mitglied"}</Dialog.Title>
+          <Dialog.Title>{pendingCopy?.title ?? (isGerman ? "Mitglied" : "Member")}</Dialog.Title>
           <Dialog.Content>
             <Text variant="bodyMedium">{pendingCopy?.message}</Text>
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setPendingMemberAction(null)}>Abbrechen</Button>
+            <Button onPress={() => setPendingMemberAction(null)}>{isGerman ? "Abbrechen" : "Cancel"}</Button>
             <Button onPress={confirmPendingMemberAction} loading={memberBusyId !== null}>
               {pendingCopy?.confirmLabel ?? "OK"}
             </Button>

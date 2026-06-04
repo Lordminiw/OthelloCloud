@@ -7,6 +7,7 @@ import { PollsScreen } from "./PollsScreen";
 import { ProfileScreen } from "./ProfileScreen";
 import { ShoppingListScreen } from "./ShoppingListScreen";
 import { useHousehold } from "@/context/household-context";
+import { useLanguage } from "@/context/language-context";
 
 const Tab = createBottomTabNavigator();
 
@@ -22,6 +23,7 @@ export function MainTabs({
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { activeHousehold } = useHousehold();
+  const { t } = useLanguage();
 
   if (!activeHousehold) {
     return null;
@@ -57,8 +59,9 @@ export function MainTabs({
       }}
     >
       <Tab.Screen
-        name="Einkauf"
+        name="shopping"
         options={{
+          tabBarLabel: t("tabs.shopping"),
           tabBarIcon: ({ color, size }) => (
             <TabIcon color={color} size={size} icon="cart-outline" />
           ),
@@ -68,8 +71,9 @@ export function MainTabs({
       </Tab.Screen>
 
       <Tab.Screen
-        name="Ausgaben"
+        name="expenses"
         options={{
+          tabBarLabel: t("tabs.expenses"),
           tabBarIcon: ({ color, size }) => (
             <TabIcon color={color} size={size} icon="receipt-outline" />
           ),
@@ -79,8 +83,9 @@ export function MainTabs({
       </Tab.Screen>
 
       <Tab.Screen
-        name="Kalender"
+        name="calendar"
         options={{
+          tabBarLabel: t("tabs.calendar"),
           tabBarIcon: ({ color, size }) => (
             <TabIcon color={color} size={size} icon="calendar-month-outline" />
           ),
@@ -90,8 +95,9 @@ export function MainTabs({
       </Tab.Screen>
 
       <Tab.Screen
-        name="Umfragen"
+        name="polls"
         options={{
+          tabBarLabel: t("tabs.polls"),
           tabBarIcon: ({ color, size }) => (
             <TabIcon color={color} size={size} icon="poll" />
           ),
@@ -101,8 +107,9 @@ export function MainTabs({
       </Tab.Screen>
 
       <Tab.Screen
-        name="Profil"
+        name="profile"
         options={{
+          tabBarLabel: t("tabs.profile"),
           tabBarIcon: ({ color, size }) => (
             <TabIcon color={color} size={size} icon="account-circle-outline" />
           ),

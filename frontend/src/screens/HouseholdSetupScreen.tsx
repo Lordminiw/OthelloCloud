@@ -3,6 +3,7 @@ import { useWindowDimensions, View } from "react-native";
 import { Button, Card, Text, TextInput } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
 import { createHousehold, joinHousehold } from "../lib/household";
+import { useLanguage } from "@/context/language-context";
 
 export function HouseholdSetupScreen({
   initialInviteCode,
@@ -11,6 +12,7 @@ export function HouseholdSetupScreen({
   initialInviteCode?: string;
   onHouseholdReady: () => void;
 }) {
+  const { t } = useLanguage();
   const { width } = useWindowDimensions();
   const isWide = width >= 820;
   const [newHouseholdName, setNewHouseholdName] = useState("");
@@ -25,7 +27,7 @@ export function HouseholdSetupScreen({
 
   async function handleCreateHousehold() {
     if (!newHouseholdName.trim()) {
-      alert("Bitte WG-Namen eingeben.");
+      alert(t("setup.householdNameRequired"));
       return;
     }
 
@@ -39,7 +41,8 @@ export function HouseholdSetupScreen({
       console.log("RESPONSE:", error?.response);
 
       alert(
-        "WG konnte nicht erstellt werden.\n\n" +
+        t("setup.createFailed") +
+          "\n\n" +
           "Status: " +
           error?.status +
           "\n" +
@@ -56,7 +59,7 @@ export function HouseholdSetupScreen({
 
   async function handleJoinHousehold() {
     if (!inviteCode.trim()) {
-      alert("Bitte Invite-Code eingeben.");
+      alert(t("setup.inviteCodeRequired"));
       return;
     }
 
@@ -70,7 +73,8 @@ export function HouseholdSetupScreen({
       console.log("RESPONSE:", error?.response);
 
       alert(
-        "WG konnte nicht gefunden oder nicht beigetreten werden.\n\n" +
+        t("setup.joinFailed") +
+          "\n\n" +
           "Status: " +
           error?.status +
           "\n" +
@@ -86,21 +90,21 @@ export function HouseholdSetupScreen({
   }
 
   return (
-    <AppScreen title="WG einrichten" centered>
+    <AppScreen title={t("setup.title")} centered>
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
       <Card style={[layout.card, layout.twoColumnCard]}>
-        <Card.Title title="Neue WG erstellen" />
+        <Card.Title title={t("setup.createHouseholdTitle")} />
         <Card.Content style={layout.formContent}>
           <Text variant="bodyMedium">
-            Erstelle eine neue WG. Du wirst automatisch Admin.
+            {t("setup.createDescription")}
           </Text>
 
           <TextInput
-            label="WG-Name"
+            label={t("setup.householdNameLabel")}
             value={newHouseholdName}
             onChangeText={setNewHouseholdName}
             mode="outlined"
-            placeholder="z.B. Othello WG"
+            placeholder={t("setup.householdNamePlaceholder")}
           />
 
           <Button
@@ -109,25 +113,25 @@ export function HouseholdSetupScreen({
             disabled={busy}
             loading={busy}
           >
-            WG erstellen
+            {t("setup.createButton")}
           </Button>
         </Card.Content>
       </Card>
 
       <Card style={[layout.card, layout.twoColumnCard]}>
-        <Card.Title title="Bestehender WG beitreten" />
+        <Card.Title title={t("setup.joinHouseholdTitle")} />
         <Card.Content style={layout.formContent}>
           <Text variant="bodyMedium">
-            Gib den Invite-Code ein, den du von einem WG-Mitglied bekommen hast.
+            {t("setup.joinDescription")}
           </Text>
 
           <TextInput
-            label="Invite-Code"
+            label={t("setup.inviteCodeLabel")}
             value={inviteCode}
             onChangeText={(value) => setInviteCode(value.toUpperCase())}
             mode="outlined"
             autoCapitalize="characters"
-            placeholder="z.B. ABC123"
+            placeholder={t("setup.inviteCodePlaceholder")}
           />
 
           <Button
@@ -136,7 +140,7 @@ export function HouseholdSetupScreen({
             disabled={busy}
             loading={busy}
           >
-            WG beitreten
+            {t("setup.joinButton")}
           </Button>
         </Card.Content>
       </Card>

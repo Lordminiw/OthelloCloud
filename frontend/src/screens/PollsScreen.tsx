@@ -14,6 +14,7 @@ import {
 } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
 import { HouseholdDropdown } from "@/components/household-dropdown";
+import { useLanguage } from "@/context/language-context";
 import { pb } from "../lib/pocketbase";
 import { HouseholdMember, loadHouseholdMembers } from "../lib/members";
 import {
@@ -38,11 +39,7 @@ function getPollStats(poll: ParsedPoll) {
   return { totalVotes, counts };
 }
 
-function pad2(value: number) {
-  return String(value).padStart(2, "0");
-}
-
-function formatEndsAt(endsAt?: string) {
+function formatEndsAt(endsAt: string | undefined, locale: string) {
   if (!endsAt) {
     return "";
   }
@@ -53,9 +50,13 @@ function formatEndsAt(endsAt?: string) {
     return "";
   }
 
-  return `${pad2(date.getDate())}.${pad2(date.getMonth() + 1)}.${date.getFullYear()} ${pad2(
-    date.getHours()
-  )}:${pad2(date.getMinutes())}`;
+  return date.toLocaleString(locale, {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function composeLocalDateTime(dateValue: string, timeValue: string) {
@@ -83,15 +84,18 @@ function composeLocalDateTime(dateValue: string, timeValue: string) {
 
 function buildPollShareLink(pollId: string) {
   if (typeof window !== "undefined" && window.location?.origin) {
-    return `${window.location.origin}/?tab=Umfragen&poll=${encodeURIComponent(pollId)}`;
+    return `${window.location.origin}/?tab=polls&poll=${encodeURIComponent(pollId)}`;
   }
 
   return ExpoLinking.createURL("", {
-    queryParams: { tab: "Umfragen", poll: pollId },
+    queryParams: { tab: "polls", poll: pollId },
   });
 }
 
 export function PollsScreen({ householdId }: PollsScreenProps) {
+  const { t, language } = useLanguage();
+  const isGerman = language === "de";
+  const locale = isGerman ? "de-DE" : "en-US";
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
   const currentUserId = pb.authStore.model?.id ?? "";
@@ -120,11 +124,13 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
       console.log("POLLS LOAD ERROR:", error);
       if (!options?.silent) {
         alert(
-          "Polls konnten nicht geladen werden. Prüfe, ob die PocketBase-Collection `polls` existiert."
+          isGerman
+            ? "Umfragen konnten nicht geladen werden. Prüfe, ob die PocketBase-Collection `polls` existiert."
+            : "Polls could not be loaded. Check whether the PocketBase collection `polls` exists."
         );
       }
     }
-  }, [householdId]);
+  }, [householdId, isGerman]);
 
   useEffect(() => {
     void reloadPolls();
@@ -159,17 +165,17 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
     return Object.fromEntries(
       members.map((member) => [
         member.userId,
-        member.name || member.email || "Unbekannt",
+        member.name || member.email || (isGerman ? "Unbekannt" : "Unknown"),
       ])
     ) as Record<string, string>;
-  }, [members]);
+  }, [isGerman, members]);
 
   function getMemberLabel(userId: string) {
-    return memberLabelById[userId] || "Unbekannt";
+    return memberLabelById[userId] || (isGerman ? "Unbekannt" : "Unknown");
   }
 
   function getPollAuthorLabel(poll: ParsedPoll) {
-    return poll.createdBy ? getMemberLabel(poll.createdBy) : "Unbekannt";
+    return poll.createdBy ? getMemberLabel(poll.createdBy) : (isGerman ? "Unbekannt" : "Unknown");
   }
 
   function updateOptionText(index: number, value: string) {
@@ -191,26 +197,26 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
     const trimmedOptions = optionTexts.map((text) => text.trim()).filter(Boolean);
 
     if (!trimmedQuestion) {
-      alert("Bitte eine Frage eingeben.");
+      alert(isGerman ? "Bitte eine Frage eingeben." : "Please enter a question.");
       return;
     }
 
     if (trimmedOptions.length < 2) {
-      alert("Bitte mindestens zwei Antwortoptionen eingeben.");
+      alert(isGerman ? "Bitte mindestens zwei Antwortoptionen eingeben." : "Please enter at least two answer options.");
       return;
     }
 
     let endsAt: string | undefined;
     if (useEndAt) {
       if (!endDate || !endTime) {
-        alert("Bitte Enddatum und Endzeit angeben.");
+        alert(isGerman ? "Bitte Enddatum und Endzeit angeben." : "Please enter an end date and end time.");
         return;
       }
 
       endsAt = composeLocalDateTime(endDate, endTime);
 
       if (!endsAt) {
-        alert("Das Enddatum konnte nicht gelesen werden.");
+        alert(isGerman ? "Das Enddatum konnte nicht gelesen werden." : "The end date could not be read.");
         return;
       }
     }
@@ -246,7 +252,7 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
 
   async function handleVote(poll: ParsedPoll, optionId: string) {
     if (poll.isClosed || isPollExpired(poll)) {
-      alert("Diese Umfrage ist bereits geschlossen.");
+      alert(isGerman ? "Diese Umfrage ist bereits geschlossen." : "This poll is already closed.");
       return;
     }
 
@@ -289,11 +295,11 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
       if (Platform.OS === "web") {
         if (navigator.clipboard?.writeText) {
           await navigator.clipboard.writeText(link);
-          alert("Link kopiert. Du kannst ihn jetzt in WhatsApp einfügen.");
+          alert(isGerman ? "Link kopiert. Du kannst ihn jetzt in WhatsApp einfügen." : "Link copied. You can now paste it into WhatsApp.");
           return;
         }
 
-        window.prompt("Link kopieren", link);
+        window.prompt(isGerman ? "Link kopieren" : "Copy link", link);
         return;
       }
 
@@ -304,7 +310,7 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
       });
     } catch (error) {
       console.log("SHARE POLL ERROR:", error);
-      alert("Der Link konnte nicht geteilt werden.");
+      alert(isGerman ? "Der Link konnte nicht geteilt werden." : "The link could not be shared.");
     }
   }
 
@@ -323,17 +329,17 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
       ])
     ) as Record<string, string[]>;
     const statusLabel = poll.isClosed
-      ? "Geschlossen"
+      ? (isGerman ? "Geschlossen" : "Closed")
       : poll.endsAt
-        ? `Läuft bis ${formatEndsAt(poll.endsAt)}`
-        : "Offen";
+        ? `${isGerman ? "Läuft bis" : "Runs until"} ${formatEndsAt(poll.endsAt, locale)}`
+        : (isGerman ? "Offen" : "Open");
 
     return (
       <Card key={poll.id} style={layout.card}>
         <Card.Title
           title={poll.question}
           subtitle={`${getPollAuthorLabel(poll)} · ${
-            poll.allowMultiple ? "Mehrfachauswahl" : "Einzelauswahl"
+            poll.allowMultiple ? (isGerman ? "Mehrfachauswahl" : "Multiple choice") : (isGerman ? "Einzelauswahl" : "Single choice")
           } · ${statusLabel}`}
           right={() =>
             !poll.isClosed ? (
@@ -344,10 +350,10 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
                   icon="share-variant"
                   onPress={() => void handleSharePoll(poll)}
                 >
-                  Teilen
+                  {t("polls.shareButton")}
                 </Button>
                 <Button mode="text" compact onPress={() => void handleClosePoll(poll)}>
-                  Schließen
+                  {isGerman ? "Schließen" : "Close"}
                 </Button>
               </View>
             ) : null
@@ -364,7 +370,7 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
               <View key={option.id}>
                 <List.Item
                   title={option.text}
-                  description={`${count} Stimme${count === 1 ? "" : "n"}${
+                  description={`${count} ${isGerman ? "Stimme" : "vote"}${count === 1 ? "" : isGerman ? "n" : "s"}${
                     votesByOption[option.id]?.length
                       ? ` · ${votesByOption[option.id].join(", ")}`
                       : ""
@@ -392,7 +398,9 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
           })}
 
           <Text variant="bodySmall" style={styles.footerText}>
-            {poll.isClosed ? "Diese Umfrage ist geschlossen." : "Du kannst deine Stimme jederzeit ändern."}
+            {poll.isClosed
+              ? (isGerman ? "Diese Umfrage ist geschlossen." : "This poll is closed.")
+              : (isGerman ? "Du kannst deine Stimme jederzeit ändern." : "You can change your vote at any time.")}
           </Text>
         </Card.Content>
       </Card>
@@ -415,7 +423,9 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
         <Card.Title
           title={poll.question}
           subtitle={`${getPollAuthorLabel(poll)} · ${
-            poll.endsAt ? `Beendet ${formatEndsAt(poll.endsAt)}` : "Geschlossen"
+            poll.endsAt
+              ? `${isGerman ? "Beendet" : "Ended"} ${formatEndsAt(poll.endsAt, locale)}`
+              : (isGerman ? "Geschlossen" : "Closed")
           }`}
         />
         <Card.Content style={layout.listCardContent}>
@@ -428,7 +438,7 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
               <View key={option.id}>
                 <List.Item
                   title={option.text}
-                  description={`${count} Stimme${count === 1 ? "" : "n"}${
+                  description={`${count} ${isGerman ? "Stimme" : "vote"}${count === 1 ? "" : isGerman ? "n" : "s"}${
                     votesByOption[option.id]?.length
                       ? ` · ${votesByOption[option.id].join(", ")}`
                       : ""
@@ -451,27 +461,29 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
 
   return (
     <AppScreen
-      title="Umfragen"
+      title={t("polls.title")}
       right={<HouseholdDropdown />}
-      browserTitle="OthelloCloud - Umfragen"
+      browserTitle={t("polls.browserTitle")}
     >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
         <Card style={[layout.card, isWide && layout.wideForm]}>
-          <Card.Title title="Neue Umfrage" />
+          <Card.Title title={t("polls.newPollTitle")} />
           <Card.Content style={layout.formContent}>
             <TextInput
-              label="Frage"
+              label={t("polls.questionLabel")}
               value={question}
               onChangeText={setQuestion}
               mode="outlined"
-              placeholder="z.B. Wann gehen wir essen?"
+              placeholder={isGerman ? "z. B. Wann gehen wir essen?" : "e.g. When should we go out to eat?"}
             />
 
             <View style={styles.multipleRow}>
               <View style={styles.multipleTextBlock}>
-                <Text variant="titleSmall">Mehrfachauswahl</Text>
+                <Text variant="titleSmall">{t("polls.multipleChoiceLabel")}</Text>
                 <Text variant="bodySmall" style={{ opacity: 0.75 }}>
-                  Teilnehmer können mehrere Antworten wählen.
+                  {isGerman
+                    ? "Teilnehmer können mehrere Antworten wählen."
+                    : "Participants can select multiple answers."}
                 </Text>
               </View>
               <Switch value={allowMultiple} onValueChange={setAllowMultiple} />
@@ -479,9 +491,11 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
 
             <View style={styles.multipleRow}>
               <View style={styles.multipleTextBlock}>
-                <Text variant="titleSmall">Ablaufdatum setzen</Text>
+                <Text variant="titleSmall">{t("polls.useEndDateLabel")}</Text>
                 <Text variant="bodySmall" style={{ opacity: 0.75 }}>
-                  Die Umfrage schließt automatisch zum gewählten Zeitpunkt.
+                  {isGerman
+                    ? "Die Umfrage schließt automatisch zum gewählten Zeitpunkt."
+                    : "The poll closes automatically at the selected time."}
                 </Text>
               </View>
               <Switch value={useEndAt} onValueChange={setUseEndAt} />
@@ -490,7 +504,7 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
             {useEndAt && (
               <View style={styles.endAtGrid}>
                 <TextInput
-                  label="Enddatum"
+                  label={t("polls.endDateLabel")}
                   value={endDate}
                   onChangeText={setEndDate}
                   mode="outlined"
@@ -498,7 +512,7 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
                   style={styles.endAtField}
                 />
                 <TextInput
-                  label="Endzeit"
+                  label={t("polls.endTimeLabel")}
                   value={endTime}
                   onChangeText={setEndTime}
                   mode="outlined"
@@ -511,7 +525,7 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
             {optionTexts.map((optionText, index) => (
               <View key={`option-${index}`} style={styles.optionRow}>
                 <TextInput
-                  label={`Option ${index + 1}`}
+                  label={`${t("polls.optionLabel")} ${index + 1}`}
                   value={optionText}
                   onChangeText={(value) => updateOptionText(index, value)}
                   mode="outlined"
@@ -519,18 +533,18 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
                 />
                 {optionTexts.length > 2 && (
                   <Button mode="text" onPress={() => removeOptionField(index)}>
-                    Entfernen
+                    {t("common.delete")}
                   </Button>
                 )}
               </View>
             ))}
 
             <Button mode="outlined" onPress={addOptionField}>
-              Option hinzufügen
+              {t("polls.addOptionButton")}
             </Button>
 
             <Button mode="contained" onPress={handleCreatePoll} loading={busy}>
-              Umfrage erstellen
+              {t("polls.createButton")}
             </Button>
           </Card.Content>
         </Card>
@@ -538,13 +552,17 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
         <View style={[layout.stack, isWide && layout.widePanel]}>
           <Card style={layout.card}>
             <Card.Title
-              title="Aktive Umfragen"
-              subtitle={`${activePolls.length} laufende Umfrage${activePolls.length === 1 ? "" : "n"}`}
+              title={t("polls.activePollsTitle")}
+              subtitle={
+                isGerman
+                  ? `${activePolls.length} laufende Umfrage${activePolls.length === 1 ? "" : "n"}`
+                  : `${activePolls.length} active poll${activePolls.length === 1 ? "" : "s"}`
+              }
             />
             <Card.Content style={layout.listCardContent}>
               {activePollCards.length === 0 && (
                 <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
-                  Noch keine Umfragen vorhanden.
+                  {t("polls.noPollsYet")}
                 </Text>
               )}
 
@@ -558,13 +576,17 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
 
           <Card style={layout.card}>
             <Card.Title
-              title="Vergangene Umfragen"
-              subtitle={`${pastPolls.length} abgeschlossene Umfrage${pastPolls.length === 1 ? "" : "n"}`}
+              title={t("polls.pastPollsTitle")}
+              subtitle={
+                isGerman
+                  ? `${pastPolls.length} abgeschlossene Umfrage${pastPolls.length === 1 ? "" : "n"}`
+                  : `${pastPolls.length} closed poll${pastPolls.length === 1 ? "" : "s"}`
+              }
             />
             <Card.Content style={layout.listCardContent}>
               {pastPollCards.length === 0 && (
                 <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
-                  Noch keine vergangenen Umfragen.
+                  {t("polls.noPastPollsYet")}
                 </Text>
               )}
 
