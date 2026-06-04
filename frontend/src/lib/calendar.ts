@@ -96,9 +96,29 @@ export async function loadCalendarEventsForMonth(input: {
   return await pb.collection("calendar_events").getFullList<CalendarEvent>({
     filter:
       `household = "${input.householdId}" && ` +
+      `(source = "" || source = "manual") && ` +
       `start < "${monthEnd.toISOString()}" && ` +
       `(end = "" || end >= "${monthStart.toISOString()}")`,
     sort: "start",
+    requestKey: null,
+  });
+}
+
+export async function loadImportedCalendarEventsForMonth(input: {
+  subscriptionId: string;
+  year: number;
+  month: number;
+}): Promise<CalendarEvent[]> {
+  const monthStart = new Date(input.year, input.month, 1);
+  const monthEnd = new Date(input.year, input.month + 1, 1);
+
+  return await pb.collection("calendar_events").getFullList<CalendarEvent>({
+    filter:
+      `subscription = "${input.subscriptionId}" && ` +
+      `start < "${monthEnd.toISOString()}" && ` +
+      `(end = "" || end >= "${monthStart.toISOString()}")`,
+    sort: "start",
+    requestKey: null,
   });
 }
 

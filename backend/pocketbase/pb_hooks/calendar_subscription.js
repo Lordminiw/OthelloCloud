@@ -1,10 +1,11 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-function calendarSubscriptionIsAdmin(app, householdId, userId) {
+function calendarSubscriptionIsHouseholdMember(app, householdId, userId) {
+  if (!householdId) return false
   try {
     app.findFirstRecordByFilter(
       "household_members",
-      "household = {:household} && user = {:user} && role = 'admin'",
+      "household = {:household} && user = {:user}",
       { household: householdId, user: userId }
     )
     return true
@@ -152,7 +153,7 @@ function calendarSubscriptionParse(raw) {
 }
 
 module.exports = {
-  isAdmin: calendarSubscriptionIsAdmin,
+  isHouseholdMember: calendarSubscriptionIsHouseholdMember,
   validateUrl: calendarSubscriptionValidateUrl,
   parse: calendarSubscriptionParse,
   safeMessage: calendarSubscriptionSafeMessage,

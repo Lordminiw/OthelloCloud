@@ -1,21 +1,18 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-routerAdd("POST", "/api/households/{householdId}/calendar-subscription/sync", (e) => {
+routerAdd("POST", "/api/calendar-subscriptions/{subscriptionId}/sync", (e) => {
   var helpers = require(__hooks + "/calendar_subscription.js")
-  var householdId = e.request.pathValue("householdId")
-  if (!helpers.isAdmin(e.app, householdId, e.auth.id)) {
-    throw new ForbiddenError("Only household admins can synchronize external calendars.")
-  }
-
   var subscription
   try {
-    subscription = e.app.findFirstRecordByFilter(
+    subscription = e.app.findRecordById(
       "calendar_subscriptions",
-      "household = {:household}",
-      { household: householdId }
+      e.request.pathValue("subscriptionId")
     )
   } catch (_) {
     throw new NotFoundError("No external calendar is configured.")
+  }
+  if (subscription.getString("owner") !== e.auth.id) {
+    throw new ForbiddenError("Only the calendar owner can synchronize it.")
   }
   if (!subscription.getBool("enabled")) {
     throw new BadRequestError("The external calendar is disabled.")
@@ -64,7 +61,7 @@ routerAdd("POST", "/api/households/{householdId}/calendar-subscription/sync", (e
         counts.created += 1
         record = new Record(collection)
       }
-      record.set("household", householdId)
+      record.set("household", "")
       record.set("title", item.title)
       record.set("start", item.start)
       record.set("end", item.end || "")
@@ -94,9 +91,13 @@ routerAdd("POST", "/api/households/{householdId}/calendar-subscription/sync", (e
 
 onRecordCreateRequest((e) => {
   var helpers = require(__hooks + "/calendar_subscription.js")
-  if (!helpers.isAdmin(e.app, e.record.getString("household"), e.auth.id)) {
-    throw new ForbiddenError("Only household admins can configure external calendars.")
+  var householdId = e.record.getString("household")
+  if (e.record.getBool("sharedWithHousehold") &&
+      !helpers.isHouseholdMember(e.app, householdId, e.auth.id)) {
+    throw new ForbiddenError("You can only share calendars with your households.")
   }
+  e.record.set("owner", e.auth.id)
+  if (!e.record.getBool("sharedWithHousehold")) e.record.set("household", "")
   e.record.set("url", helpers.validateUrl(e.record.getString("url")))
   if (!e.record.getString("name").trim()) e.record.set("name", "External calendar")
   return e.next()
@@ -104,25 +105,30 @@ onRecordCreateRequest((e) => {
 
 onRecordUpdateRequest((e) => {
   var helpers = require(__hooks + "/calendar_subscription.js")
-  if (!helpers.isAdmin(e.app, e.record.getString("household"), e.auth.id)) {
-    throw new ForbiddenError("Only household admins can configure external calendars.")
+  if (e.record.original().getString("owner") !== e.auth.id) {
+    throw new ForbiddenError("Only the calendar owner can configure it.")
   }
+  var householdId = e.record.getString("household")
+  if (e.record.getBool("sharedWithHousehold") &&
+      !helpers.isHouseholdMember(e.app, householdId, e.auth.id)) {
+    throw new ForbiddenError("You can only share calendars with your households.")
+  }
+  e.record.set("owner", e.auth.id)
+  if (!e.record.getBool("sharedWithHousehold")) e.record.set("household", "")
   e.record.set("url", helpers.validateUrl(e.record.getString("url")))
   return e.next()
 }, "calendar_subscriptions")
 
 onRecordDeleteRequest((e) => {
-  var helpers = require(__hooks + "/calendar_subscription.js")
-  if (!helpers.isAdmin(e.app, e.record.getString("household"), e.auth.id)) {
-    throw new ForbiddenError("Only household admins can remove external calendars.")
+  if (e.record.getString("owner") !== e.auth.id) {
+    throw new ForbiddenError("Only the calendar owner can remove it.")
   }
   return e.next()
 }, "calendar_subscriptions")
 
 onRecordEnrich((e) => {
-  var helpers = require(__hooks + "/calendar_subscription.js")
   var auth = e.requestInfo && e.requestInfo.auth
-  if (auth && helpers.isAdmin(e.app, e.record.getString("household"), auth.id)) {
+  if (auth && e.record.getString("owner") === auth.id) {
     e.record.unhide("url")
   } else {
     e.record.hide("url")

@@ -2,10 +2,10 @@
 
 ## Summary
 
-Add household-level iCal subscriptions to the shared calendar. A household
-admin can enable the integration, configure an iCal URL, and manually check for
-updates from the profile screen. Imported events are visible to every member of
-that household.
+Add user-owned iCal subscriptions to the calendar. A user can configure
+multiple iCal URLs and manually check for updates from the profile screen.
+Imports are private by default and can optionally be shared with every member
+of one of the user's households.
 
 The integration supports arbitrary compatible iCal feeds and custom names. An
 admin obtains the household's subscription URL from their calendar provider
@@ -16,7 +16,9 @@ and pastes it into OthelloCloud. The default display name is
 
 Create a `calendar_subscriptions` PocketBase collection with:
 
-- `household`: required relation to `households`
+- `owner`: required relation to `users`
+- `household`: optional relation used when sharing with a household
+- `sharedWithHousehold`: boolean
 - `name`: required display name, defaulting to `External calendar`
 - `url`: required iCal subscription URL
 - `enabled`: boolean
@@ -24,10 +26,10 @@ Create a `calendar_subscriptions` PocketBase collection with:
 - `lastSyncStatus`: optional `success` or `error` value
 - `lastSyncMessage`: optional text containing a safe status or error summary
 
-Allow one subscription per household for the first version. Household members
-may read its public status and name, but only household admins may create,
-update, enable, disable, or synchronize it. Do not expose the configured URL to
-regular members.
+Owners may create multiple subscriptions and are the only users who can update,
+enable, disable, synchronize, or view their configured URLs. When sharing is
+enabled, all members of the selected household may read its public status and
+events.
 
 Extend `calendar_events` with:
 
@@ -46,13 +48,13 @@ through the normal calendar UI.
 Add a PocketBase JavaScript hook exposing:
 
 ```text
-POST /api/households/:householdId/calendar-subscription/sync
+POST /api/calendar-subscriptions/:subscriptionId/sync
 ```
 
 The endpoint must:
 
-1. Require an authenticated user who is an admin of the requested household.
-2. Load the household's enabled subscription.
+1. Require the authenticated subscription owner.
+2. Load the enabled subscription.
 3. Download the iCal feed server-side.
 4. Parse `VEVENT` records, including all-day events, end dates, locations,
    descriptions, time zones, and stable UIDs.
@@ -90,17 +92,14 @@ Add a calendar-subscription client module that can:
 
 Add an **External calendar** card to the profile screen.
 
-For household admins, the card provides:
+For calendar owners, the card provides:
 
 - An enable or disable switch
 - A calendar name field
 - An iCal URL field
 - A **Check for updates** button
 - The last successful sync time and latest sync result
-
-For regular members, show only whether an external calendar is enabled, its
-display name, and its last successful update time. Do not show the URL or
-editable controls.
+- An option to share the calendar with all members of a selected household
 
 Update the calendar screen so imported events:
 
@@ -109,6 +108,8 @@ Update the calendar screen so imported events:
 - Use a distinct external-calendar color and source label.
 - Do not show edit or delete controls.
 - Continue to participate in month, agenda, and upcoming-event views.
+- Appear as independent selectable sources in the top-right multi-select menu,
+  alongside selectable household calendars.
 
 Add all new user-facing strings to the existing English and German localization
 catalog.

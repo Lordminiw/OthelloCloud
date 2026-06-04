@@ -19,13 +19,18 @@ import {
   CalendarEvent,
   createCalendarEvent,
   deleteCalendarEvent,
+  loadImportedCalendarEventsForMonth,
   loadCalendarEventsForMonth,
   parseCalendarEventMeta,
   updateCalendarEvent,
 } from "../lib/calendar";
-import { HouseholdDropdown } from "@/components/household-dropdown";
+import { CalendarDisplayDropdown } from "@/components/calendar-display-dropdown";
 import { pb } from "../lib/pocketbase";
 import { HouseholdMember, loadHouseholdMembers } from "../lib/members";
+import {
+  CalendarSubscription,
+  loadAccessibleCalendarSubscriptions,
+} from "../lib/calendar-subscriptions";
 
 LocaleConfig.locales.de = {
   monthNames: [
@@ -274,6 +279,15 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   const [visibleMonth, setVisibleMonth] = useState(() => new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [members, setMembers] = useState<HouseholdMember[]>([]);
+  const [calendarSubscriptions, setCalendarSubscriptions] = useState<
+    CalendarSubscription[]
+  >([]);
+  const [selectedHouseholdIds, setSelectedHouseholdIds] = useState<string[]>([
+    householdId,
+  ]);
+  const [selectedSubscriptionIds, setSelectedSubscriptionIds] = useState<
+    string[]
+  >([]);
 
   const [selectedDateKey, setSelectedDateKey] = useState(() =>
     toDateKey(new Date())
@@ -307,11 +321,24 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   const reloadEvents = useCallback(
     async (date = visibleMonth) => {
       try {
-        const records = await loadCalendarEventsForMonth({
-          householdId,
-          year: date.getFullYear(),
-          month: date.getMonth(),
-        });
+        const records = (
+          await Promise.all([
+            ...selectedHouseholdIds.map((selectedHouseholdId) =>
+              loadCalendarEventsForMonth({
+                householdId: selectedHouseholdId,
+                year: date.getFullYear(),
+                month: date.getMonth(),
+              })
+            ),
+            ...selectedSubscriptionIds.map((subscriptionId) =>
+              loadImportedCalendarEventsForMonth({
+                subscriptionId,
+                year: date.getFullYear(),
+                month: date.getMonth(),
+              })
+            ),
+          ])
+        ).flat();
 
         setEvents(records);
       } catch (error: any) {
@@ -319,10 +346,9 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
         console.log("STATUS:", error?.status);
         console.log("MESSAGE:", error?.message);
         console.log("RESPONSE:", error?.response);
-        alert(JSON.stringify(error?.response, null, 2));
       }
     },
-    [householdId, visibleMonth]
+    [selectedHouseholdIds, selectedSubscriptionIds, visibleMonth]
   );
 
   const reloadMembers = useCallback(async () => {
@@ -341,6 +367,19 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   useEffect(() => {
     reloadMembers();
   }, [reloadMembers]);
+
+  useEffect(() => {
+    void loadAccessibleCalendarSubscriptions()
+      .then((subscriptions) => {
+        setCalendarSubscriptions(subscriptions);
+        setSelectedSubscriptionIds(subscriptions.map((item) => item.id));
+      })
+      .catch((error) => console.log("CALENDAR SUBSCRIPTIONS LOAD ERROR:", error));
+  }, [householdId]);
+
+  useEffect(() => {
+    setSelectedHouseholdIds([householdId]);
+  }, [householdId]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -400,6 +439,29 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   function getMemberLabel(userId: string) {
     const member = members.find((item) => item.userId === userId);
     return member?.name || member?.email || "Unbekannt";
+  }
+
+  function getSubscriptionLabel(subscriptionId?: string) {
+    return (
+      calendarSubscriptions.find((item) => item.id === subscriptionId)?.name ??
+      t("calendar.externalCalendarSource")
+    );
+  }
+
+  function toggleSelectedHousehold(targetHouseholdId: string) {
+    setSelectedHouseholdIds((current) =>
+      current.includes(targetHouseholdId)
+        ? current.filter((id) => id !== targetHouseholdId)
+        : [...current, targetHouseholdId]
+    );
+  }
+
+  function toggleSelectedSubscription(subscriptionId: string) {
+    setSelectedSubscriptionIds((current) =>
+      current.includes(subscriptionId)
+        ? current.filter((id) => id !== subscriptionId)
+        : [...current, subscriptionId]
+    );
   }
 
   const getMemberColor = useCallback(
@@ -712,11 +774,14 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
     const isExternal = event.source === "ical";
     const meta = getEventMeta(event);
     const creatorLabel = isExternal
-      ? t("calendar.externalCalendarSource")
+      ? getSubscriptionLabel(event.subscription)
       : getMemberLabel(event.createdBy ?? "");
     const creatorColor = isExternal
       ? EXTERNAL_CALENDAR_COLOR
       : getMemberColor(event.createdBy ?? "");
+    const creatorLine = isExternal
+      ? `${t("profile.externalCalendarName")}: ${creatorLabel}`
+      : `${isGerman ? "Erstellt von" : "Created by"}: ${creatorLabel}`;
     const requestStatus = getRequestStatusForCurrentUser(event);
     const requestedMemberIds = meta.requestedMemberIds ?? [];
     const responses = meta.responses ?? {};
@@ -782,7 +847,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
           title={event.title}
           description={`${getEventDateRangeLabel(event, locale)}${
             event.location ? `\n${isGerman ? "Ort" : "Location"}: ${event.location}` : ""
-          }\n${isGerman ? "Erstellt von" : "Created by"}: ${creatorLabel}${
+          }\n${creatorLine}${
             meta.notes ? `\n${isGerman ? "Notiz" : "Note"}: ${meta.notes}` : ""
           }${requestLabel}${responseLabel}`}
           left={(props) => (
@@ -835,11 +900,14 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
     const isExternal = event.source === "ical";
     const meta = getEventMeta(event);
     const creatorLabel = isExternal
-      ? t("calendar.externalCalendarSource")
+      ? getSubscriptionLabel(event.subscription)
       : getMemberLabel(event.createdBy ?? "");
     const creatorColor = isExternal
       ? EXTERNAL_CALENDAR_COLOR
       : getMemberColor(event.createdBy ?? "");
+    const creatorLine = isExternal
+      ? `${t("profile.externalCalendarName")}: ${creatorLabel}`
+      : `${isGerman ? "Erstellt von" : "Created by"}: ${creatorLabel}`;
     const requestStatus = getRequestStatusForCurrentUser(event);
 
     return (
@@ -848,7 +916,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
           title={event.title}
           description={`${getEventDateRangeLabel(event, locale)}${
             event.location ? `\n${isGerman ? "Ort" : "Location"}: ${event.location}` : ""
-          }\n${isGerman ? "Erstellt von" : "Created by"}: ${creatorLabel}${
+          }\n${creatorLine}${
             meta.requestParticipation
               ? `\n${isGerman ? "Anfragen" : "Requests"}: ${meta.requestedMemberIds?.length ?? 0}`
               : ""
@@ -903,7 +971,15 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   return (
     <AppScreen
       title={isGerman ? "Kalender" : "Calendar"}
-      right={<HouseholdDropdown />}
+      right={
+        <CalendarDisplayDropdown
+          subscriptions={calendarSubscriptions}
+          selectedHouseholdIds={selectedHouseholdIds}
+          selectedSubscriptionIds={selectedSubscriptionIds}
+          onToggleHousehold={toggleSelectedHousehold}
+          onToggleSubscription={toggleSelectedSubscription}
+        />
+      }
       browserTitle={isGerman ? "OthelloCloud - Kalender" : "OthelloCloud - Calendar"}
     >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>

@@ -2,7 +2,9 @@ import { pb } from "./pocketbase";
 
 export type CalendarSubscription = {
   id: string;
-  household: string;
+  household?: string;
+  owner: string;
+  sharedWithHousehold: boolean;
   name: string;
   url?: string;
   enabled: boolean;
@@ -17,31 +19,37 @@ export type CalendarSyncResult = {
   removed: number;
 };
 
-export async function loadCalendarSubscription(householdId: string) {
-  try {
-    return await pb
-      .collection("calendar_subscriptions")
-      .getFirstListItem<CalendarSubscription>(`household = "${householdId}"`);
-  } catch (error: any) {
-    if (error?.status === 404) {
-      return null;
-    }
-    throw error;
-  }
+export async function loadOwnedCalendarSubscriptions() {
+  const userId = pb.authStore.model?.id;
+  if (!userId) return [];
+
+  return await pb.collection("calendar_subscriptions").getFullList<CalendarSubscription>({
+    filter: `owner = "${userId}"`,
+    sort: "name",
+  });
+}
+
+export async function loadAccessibleCalendarSubscriptions() {
+  return await pb.collection("calendar_subscriptions").getFullList<CalendarSubscription>({
+    filter: "enabled = true",
+    sort: "name",
+  });
 }
 
 export async function saveCalendarSubscription(input: {
   current: CalendarSubscription | null;
-  householdId: string;
+  householdId?: string;
   name: string;
   url: string;
   enabled: boolean;
+  sharedWithHousehold: boolean;
 }) {
   const data = {
-    household: input.householdId,
+    household: input.sharedWithHousehold ? input.householdId || "" : "",
     name: input.name.trim() || "External calendar",
     url: input.url.trim(),
     enabled: input.enabled,
+    sharedWithHousehold: input.sharedWithHousehold,
   };
 
   if (input.current) {
@@ -55,9 +63,9 @@ export async function saveCalendarSubscription(input: {
     .create<CalendarSubscription>(data);
 }
 
-export async function syncCalendarSubscription(householdId: string) {
+export async function syncCalendarSubscription(subscriptionId: string) {
   return await pb.send<CalendarSyncResult>(
-    `/api/households/${householdId}/calendar-subscription/sync`,
+    `/api/calendar-subscriptions/${subscriptionId}/sync`,
     { method: "POST" }
   );
 }

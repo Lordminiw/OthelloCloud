@@ -132,6 +132,9 @@ export type TranslationTree = {
     noMembersLoaded: string;
     newEventOn: string;
     externalCalendarSource: string;
+    householdCalendars: string;
+    importedCalendars: string;
+    selectedCalendars: string;
   };
   polls: {
     title: string;
@@ -212,6 +215,8 @@ export type TranslationTree = {
     externalCalendarSyncFailed: string;
     externalCalendarSyncComplete: string;
     externalCalendarUrlRequired: string;
+    externalCalendarNew: string;
+    externalCalendarShareWithHousehold: string;
   };
 };
 
@@ -354,6 +359,9 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       noMembersLoaded: "No members loaded.",
       newEventOn: "New event on {{date}}",
       externalCalendarSource: "External calendar",
+      householdCalendars: "Households",
+      importedCalendars: "Imported calendars",
+      selectedCalendars: "{{count}} calendars",
     },
     polls: {
       title: "Polls",
@@ -434,6 +442,8 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       externalCalendarSyncFailed: "External calendar synchronization failed",
       externalCalendarSyncComplete: "Synchronization complete: {{created}} created, {{updated}} updated, {{removed}} removed.",
       externalCalendarUrlRequired: "Please enter an iCal subscription URL.",
+      externalCalendarNew: "New imported calendar",
+      externalCalendarShareWithHousehold: "Show for all members of a household",
     },
   },
   de: {
@@ -563,6 +573,9 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       noMembersLoaded: "Keine Mitglieder geladen.",
       newEventOn: "Neuer Termin am {{date}}",
       externalCalendarSource: "Externer Kalender",
+      householdCalendars: "WGs",
+      importedCalendars: "Importierte Kalender",
+      selectedCalendars: "{{count}} Kalender",
     },
     polls: {
       title: "Umfragen",
@@ -643,6 +656,8 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       externalCalendarSyncFailed: "Die Synchronisierung des externen Kalenders ist fehlgeschlagen",
       externalCalendarSyncComplete: "Synchronisierung abgeschlossen: {{created}} erstellt, {{updated}} aktualisiert, {{removed}} entfernt.",
       externalCalendarUrlRequired: "Bitte eine iCal-Abonnement-URL eingeben.",
+      externalCalendarNew: "Neuer importierter Kalender",
+      externalCalendarShareWithHousehold: "Für alle Mitglieder einer WG anzeigen",
     },
   },
 };

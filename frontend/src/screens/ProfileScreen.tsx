@@ -26,7 +26,7 @@ import {
 } from "../lib/members";
 import {
   CalendarSubscription,
-  loadCalendarSubscription,
+  loadOwnedCalendarSubscriptions,
   saveCalendarSubscription,
   syncCalendarSubscription,
 } from "../lib/calendar-subscriptions";
@@ -80,6 +80,10 @@ export function ProfileScreen({
     useState<PendingMemberAction | null>(null);
   const [calendarSubscription, setCalendarSubscription] =
     useState<CalendarSubscription | null>(null);
+  const [calendarSubscriptions, setCalendarSubscriptions] = useState<
+    CalendarSubscription[]
+  >([]);
+  const [calendarMenuVisible, setCalendarMenuVisible] = useState(false);
   const [calendarName, setCalendarName] = useState(
     t("profile.externalCalendarDefaultName")
   );
@@ -90,9 +94,8 @@ export function ProfileScreen({
   const [calendarHouseholdId, setCalendarHouseholdId] = useState(household.id);
   const [calendarHouseholdMenuVisible, setCalendarHouseholdMenuVisible] =
     useState(false);
-  const [calendarMembershipRole, setCalendarMembershipRole] = useState<
-    "admin" | "member" | null
-  >(null);
+  const [calendarSharedWithHousehold, setCalendarSharedWithHousehold] =
+    useState(false);
 
   const currentMembership = useMemo(
     () => members.find((member) => member.userId === user?.id) ?? null,
@@ -100,35 +103,31 @@ export function ProfileScreen({
   );
 
   const canManageMembers = currentMembership?.role === "admin";
-  const canManageCalendar = calendarMembershipRole === "admin";
   const calendarHousehold =
     households.find((item) => item.id === calendarHouseholdId) ?? household;
 
-  const loadSubscription = useCallback(async () => {
+  const loadSubscriptions = useCallback(async () => {
     setCalendarLoading(true);
     try {
-      const [subscription, membership] = await Promise.all([
-        loadCalendarSubscription(calendarHouseholdId),
-        pb.collection("household_members").getFirstListItem(
-          `household = "${calendarHouseholdId}" && user = "${user?.id ?? ""}"`
-        ),
-      ]);
+      const subscriptions = await loadOwnedCalendarSubscriptions();
+      const subscription = subscriptions[0] ?? null;
+      setCalendarSubscriptions(subscriptions);
       setCalendarSubscription(subscription);
       setCalendarName(
         subscription?.name || t("profile.externalCalendarDefaultName")
       );
       setCalendarUrl(subscription?.url || "");
       setCalendarEnabled(Boolean(subscription?.enabled));
-      setCalendarMembershipRole(
-        membership.role === "admin" ? "admin" : "member"
+      setCalendarSharedWithHousehold(
+        Boolean(subscription?.sharedWithHousehold)
       );
+      setCalendarHouseholdId(subscription?.household || household.id);
     } catch (error: any) {
-      setCalendarMembershipRole(null);
       alert(`${t("profile.externalCalendarSyncFailed")}: ${error?.message ?? "Unknown"}`);
     } finally {
       setCalendarLoading(false);
     }
-  }, [calendarHouseholdId, t, user?.id]);
+  }, [household.id, t]);
 
   const loadMembers = useCallback(async () => {
     setMembersLoading(true);
@@ -151,8 +150,8 @@ export function ProfileScreen({
   }, [loadMembers]);
 
   useEffect(() => {
-    void loadSubscription();
-  }, [loadSubscription]);
+    void loadSubscriptions();
+  }, [loadSubscriptions]);
 
   useEffect(() => {
     setCalendarHouseholdId(household.id);
@@ -259,9 +258,12 @@ export function ProfileScreen({
         name: calendarName,
         url: calendarUrl,
         enabled: calendarEnabled,
+        sharedWithHousehold: calendarSharedWithHousehold,
       });
       setCalendarSubscription(saved);
       setCalendarUrl(saved.url || calendarUrl);
+      setCalendarSubscriptions(await loadOwnedCalendarSubscriptions());
+      selectCalendarSubscription(saved);
     } catch (error: any) {
       alert(`${t("profile.externalCalendarSaveFailed")}: ${error?.response?.message ?? error?.message ?? "Unknown"}`);
     } finally {
@@ -272,14 +274,40 @@ export function ProfileScreen({
   async function handleSyncCalendarSubscription() {
     setCalendarBusy(true);
     try {
-      const result = await syncCalendarSubscription(calendarHouseholdId);
-      await loadSubscription();
+      if (!calendarSubscription) return;
+      const result = await syncCalendarSubscription(calendarSubscription.id);
+      const subscriptions = await loadOwnedCalendarSubscriptions();
+      setCalendarSubscriptions(subscriptions);
+      const refreshed = subscriptions.find(
+        (item) => item.id === calendarSubscription.id
+      );
+      if (refreshed) selectCalendarSubscription(refreshed);
       alert(t("profile.externalCalendarSyncComplete", result));
     } catch (error: any) {
       alert(`${t("profile.externalCalendarSyncFailed")}: ${error?.response?.data?.message ?? error?.message ?? "Unknown"}`);
     } finally {
       setCalendarBusy(false);
     }
+  }
+
+  function selectCalendarSubscription(subscription: CalendarSubscription) {
+    setCalendarSubscription(subscription);
+    setCalendarName(subscription.name);
+    setCalendarUrl(subscription.url || "");
+    setCalendarEnabled(subscription.enabled);
+    setCalendarSharedWithHousehold(subscription.sharedWithHousehold);
+    setCalendarHouseholdId(subscription.household || household.id);
+    setCalendarMenuVisible(false);
+  }
+
+  function startNewCalendarSubscription() {
+    setCalendarSubscription(null);
+    setCalendarName(t("profile.externalCalendarDefaultName"));
+    setCalendarUrl("");
+    setCalendarEnabled(true);
+    setCalendarSharedWithHousehold(false);
+    setCalendarHouseholdId(household.id);
+    setCalendarMenuVisible(false);
   }
 
   function formatLastSync(subscription: CalendarSubscription | null) {
@@ -572,38 +600,42 @@ export function ProfileScreen({
         <Card style={layout.card}>
           <Card.Title title={t("profile.externalCalendarTitle")} />
           <Card.Content style={layout.formContent}>
-            <Text variant="labelMedium">{t("common.chooseHousehold")}</Text>
             <Menu
-              visible={calendarHouseholdMenuVisible}
-              onDismiss={() => setCalendarHouseholdMenuVisible(false)}
+              visible={calendarMenuVisible}
+              onDismiss={() => setCalendarMenuVisible(false)}
               anchor={
                 <Button
                   mode="outlined"
-                  icon="home-group"
-                  onPress={() => setCalendarHouseholdMenuVisible(true)}
+                  icon="calendar-import"
+                  onPress={() => setCalendarMenuVisible(true)}
                   disabled={calendarBusy}
                 >
-                  {calendarHousehold.name}
+                  {calendarSubscription?.name ||
+                    t("profile.externalCalendarNew")}
                 </Button>
               }
             >
-              {households.map((item) => (
+              <Menu.Item
+                title={t("profile.externalCalendarNew")}
+                leadingIcon="plus"
+                onPress={startNewCalendarSubscription}
+              />
+              {calendarSubscriptions.map((item) => (
                 <Menu.Item
                   key={item.id}
                   title={item.name}
                   leadingIcon={
-                    item.id === calendarHouseholdId ? "check" : "home"
+                    item.id === calendarSubscription?.id
+                      ? "check"
+                      : "calendar-import"
                   }
-                  onPress={() => {
-                    setCalendarHouseholdId(item.id);
-                    setCalendarHouseholdMenuVisible(false);
-                  }}
+                  onPress={() => selectCalendarSubscription(item)}
                 />
               ))}
             </Menu>
             {calendarLoading ? (
               <Text>{t("common.loading")}</Text>
-            ) : canManageCalendar ? (
+            ) : (
               <>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                   <Switch
@@ -629,6 +661,47 @@ export function ProfileScreen({
                   autoCorrect={false}
                   disabled={calendarBusy}
                 />
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                  <Switch
+                    value={calendarSharedWithHousehold}
+                    onValueChange={setCalendarSharedWithHousehold}
+                    disabled={calendarBusy}
+                  />
+                  <Text>{t("profile.externalCalendarShareWithHousehold")}</Text>
+                </View>
+                {calendarSharedWithHousehold && (
+                  <>
+                    <Text variant="labelMedium">{t("common.chooseHousehold")}</Text>
+                    <Menu
+                      visible={calendarHouseholdMenuVisible}
+                      onDismiss={() => setCalendarHouseholdMenuVisible(false)}
+                      anchor={
+                        <Button
+                          mode="outlined"
+                          icon="home-group"
+                          onPress={() => setCalendarHouseholdMenuVisible(true)}
+                          disabled={calendarBusy}
+                        >
+                          {calendarHousehold.name}
+                        </Button>
+                      }
+                    >
+                      {households.map((item) => (
+                        <Menu.Item
+                          key={item.id}
+                          title={item.name}
+                          leadingIcon={
+                            item.id === calendarHouseholdId ? "check" : "home"
+                          }
+                          onPress={() => {
+                            setCalendarHouseholdId(item.id);
+                            setCalendarHouseholdMenuVisible(false);
+                          }}
+                        />
+                      ))}
+                    </Menu>
+                  </>
+                )}
                 <Text variant="bodySmall">{formatLastSync(calendarSubscription)}</Text>
                 {calendarSubscription?.lastSyncMessage ? (
                   <Text variant="bodySmall">
@@ -653,13 +726,6 @@ export function ProfileScreen({
                 >
                   {t("profile.externalCalendarSync")}
                 </Button>
-              </>
-            ) : (
-              <>
-                <Text variant="titleMedium">
-                  {calendarSubscription?.name || t("profile.externalCalendarTitle")}
-                </Text>
-                <Text>{formatLastSync(calendarSubscription)}</Text>
               </>
             )}
           </Card.Content>
