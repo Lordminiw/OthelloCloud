@@ -9,6 +9,7 @@ services:
     volumes:
       - ./backend/pocketbase/pb_data:/pb_data
       - ./backend/pocketbase/pb_migrations:/pb_migrations:ro
+      - ./backend/pocketbase/pb_hooks:/pb_hooks:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8090/api/health >/dev/null"]

@@ -131,6 +131,7 @@ export type TranslationTree = {
     noFurtherEvents: string;
     noMembersLoaded: string;
     newEventOn: string;
+    externalCalendarSource: string;
   };
   polls: {
     title: string;
@@ -197,6 +198,20 @@ export type TranslationTree = {
     errorLoadedText: string;
     householdManageTitle: string;
     profileSetupTitle: string;
+    externalCalendarTitle: string;
+    externalCalendarEnabled: string;
+    externalCalendarDisabled: string;
+    externalCalendarName: string;
+    externalCalendarDefaultName: string;
+    externalCalendarUrl: string;
+    externalCalendarSave: string;
+    externalCalendarSync: string;
+    externalCalendarNeverSynced: string;
+    externalCalendarLastUpdated: string;
+    externalCalendarSaveFailed: string;
+    externalCalendarSyncFailed: string;
+    externalCalendarSyncComplete: string;
+    externalCalendarUrlRequired: string;
   };
 };
 
@@ -338,6 +353,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       noFurtherEvents: "No further events",
       noMembersLoaded: "No members loaded.",
       newEventOn: "New event on {{date}}",
+      externalCalendarSource: "External calendar",
     },
     polls: {
       title: "Polls",
@@ -404,6 +420,20 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       errorLoadedText: "Could not load members:",
       householdManageTitle: "Manage household",
       profileSetupTitle: "Profile",
+      externalCalendarTitle: "External calendar",
+      externalCalendarEnabled: "Enabled",
+      externalCalendarDisabled: "Disabled",
+      externalCalendarName: "Calendar name",
+      externalCalendarDefaultName: "External calendar",
+      externalCalendarUrl: "iCal subscription URL",
+      externalCalendarSave: "Save settings",
+      externalCalendarSync: "Check for updates",
+      externalCalendarNeverSynced: "Not synchronized yet",
+      externalCalendarLastUpdated: "Last successful update: {{date}}",
+      externalCalendarSaveFailed: "External calendar settings could not be saved",
+      externalCalendarSyncFailed: "External calendar synchronization failed",
+      externalCalendarSyncComplete: "Synchronization complete: {{created}} created, {{updated}} updated, {{removed}} removed.",
+      externalCalendarUrlRequired: "Please enter an iCal subscription URL.",
     },
   },
   de: {
@@ -532,6 +562,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       noFurtherEvents: "Keine weiteren Termine",
       noMembersLoaded: "Keine Mitglieder geladen.",
       newEventOn: "Neuer Termin am {{date}}",
+      externalCalendarSource: "Externer Kalender",
     },
     polls: {
       title: "Umfragen",
@@ -598,6 +629,20 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       errorLoadedText: "Mitglieder konnten nicht geladen werden:",
       householdManageTitle: "WG verwalten",
       profileSetupTitle: "Profil",
+      externalCalendarTitle: "Externer Kalender",
+      externalCalendarEnabled: "Aktiviert",
+      externalCalendarDisabled: "Deaktiviert",
+      externalCalendarName: "Kalendername",
+      externalCalendarDefaultName: "Externer Kalender",
+      externalCalendarUrl: "iCal-Abonnement-URL",
+      externalCalendarSave: "Einstellungen speichern",
+      externalCalendarSync: "Nach Updates suchen",
+      externalCalendarNeverSynced: "Noch nicht synchronisiert",
+      externalCalendarLastUpdated: "Letzte erfolgreiche Aktualisierung: {{date}}",
+      externalCalendarSaveFailed: "Die Einstellungen des externen Kalenders konnten nicht gespeichert werden",
+      externalCalendarSyncFailed: "Die Synchronisierung des externen Kalenders ist fehlgeschlagen",
+      externalCalendarSyncComplete: "Synchronisierung abgeschlossen: {{created}} erstellt, {{updated}} aktualisiert, {{removed}} entfernt.",
+      externalCalendarUrlRequired: "Bitte eine iCal-Abonnement-URL eingeben.",
     },
   },
 };

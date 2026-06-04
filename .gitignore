@@ -46,6 +46,9 @@ backend/pocketbase/pocketbase.exe
 # PocketBase runtime data: database, logs, uploaded files
 backend/pocketbase/pb_data/
 backend/pocketbase/pb_migrations/
+!backend/pocketbase/pb_migrations/
+backend/pocketbase/pb_migrations/*
+!backend/pocketbase/pb_migrations/1780600000_added_calendar_subscriptions.js
 
 # Optional PocketBase hooks, keep if you start writing custom backend code
 # backend/pocketbase/pb_hooks/

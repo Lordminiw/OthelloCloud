@@ -67,7 +67,7 @@ Lege dafuer in `frontend/.env` die lokale oder entfernte PocketBase-URL fest:
 EXPO_PUBLIC_POCKETBASE_URL=http://localhost:8090
 ```
 
-Der vollstaendige Ablauf steht in `docs/development.md`.
+Der vollstaendige Ablauf steht in `documentation/development.md`.
 
 ## Docker auf dem Raspberry Pi
 

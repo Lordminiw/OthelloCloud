@@ -9,6 +9,10 @@ export type CalendarEvent = {
   location?: string;
   description?: string;
   createdBy?: string;
+  source?: "manual" | "ical";
+  externalUid?: string;
+  subscription?: string;
+  allDay?: boolean;
 };
 
 export type CalendarEventMeta = {

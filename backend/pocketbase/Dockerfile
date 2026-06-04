@@ -21,7 +21,9 @@ RUN set -eux; \
   chmod +x /pb/pocketbase; \
   rm /tmp/pocketbase.zip
 
+COPY pb_hooks /pb_hooks
+
 VOLUME ["/pb_data"]
 EXPOSE 8090
 
-CMD ["/pb/pocketbase", "serve", "--http=0.0.0.0:8090", "--dir=/pb_data", "--migrationsDir=/pb_migrations", "--indexFallback"]
+CMD ["/pb/pocketbase", "serve", "--http=0.0.0.0:8090", "--dir=/pb_data", "--migrationsDir=/pb_migrations", "--hooksDir=/pb_hooks", "--indexFallback"]

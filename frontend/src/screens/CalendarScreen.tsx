@@ -127,6 +127,7 @@ const DEFAULT_COLOR_PALETTE = [
   "#4f46e5",
   "#ca8a04",
 ];
+const EXTERNAL_CALENDAR_COLOR = "#0f766e";
 
 function pad2(value: number) {
   return String(value).padStart(2, "0");
@@ -150,6 +151,9 @@ function makeLocalIso(dateKey: string, time: string) {
 }
 
 function getEventDateKey(event: CalendarEvent) {
+  if (event.allDay) {
+    return event.start.slice(0, 10);
+  }
   return toDateKeyFromIso(event.start);
 }
 
@@ -158,6 +162,9 @@ function getEventEndDateKey(event: CalendarEvent) {
     return getEventDateKey(event);
   }
 
+  if (event.allDay) {
+    return event.end.slice(0, 10);
+  }
   return toDateKeyFromIso(event.end);
 }
 
@@ -233,6 +240,11 @@ function formatDateKey(dateKey: string, locale: string) {
 function getEventDateRangeLabel(event: CalendarEvent, locale: string) {
   const startKey = getEventDateKey(event);
   const endKey = getEventEndDateKey(event);
+  if (event.allDay) {
+    return startKey === endKey
+      ? formatDateKey(startKey, locale)
+      : `${formatDateKey(startKey, locale)} - ${formatDateKey(endKey, locale)}`;
+  }
   const startTime = getEventTimeLabel(event, locale);
   const endTime = getEventEndTimeLabel(event, locale);
 
@@ -251,7 +263,7 @@ function getStorageKey(householdId: string, suffix: string) {
 }
 
 export function CalendarScreen({ householdId }: CalendarScreenProps) {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const isGerman = language === "de";
   const locale = isGerman ? "de-DE" : "en-US";
   LocaleConfig.defaultLocale = isGerman ? "de" : "en";
@@ -428,7 +440,10 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
       const startKey = getEventDateKey(event);
       const endKey = getEventEndDateKey(event);
       const dateKeys = getDateKeysBetween(startKey, endKey);
-      const color = getMemberColor(event.createdBy ?? "");
+      const color =
+        event.source === "ical"
+          ? EXTERNAL_CALENDAR_COLOR
+          : getMemberColor(event.createdBy ?? "");
 
       dateKeys.forEach((dateKey, index) => {
         const isStart = index === 0;
@@ -694,9 +709,14 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   }
 
   const selectedEventViews = selectedEvents.map((event) => {
+    const isExternal = event.source === "ical";
     const meta = getEventMeta(event);
-    const creatorLabel = getMemberLabel(event.createdBy ?? "");
-    const creatorColor = getMemberColor(event.createdBy ?? "");
+    const creatorLabel = isExternal
+      ? t("calendar.externalCalendarSource")
+      : getMemberLabel(event.createdBy ?? "");
+    const creatorColor = isExternal
+      ? EXTERNAL_CALENDAR_COLOR
+      : getMemberColor(event.createdBy ?? "");
     const requestStatus = getRequestStatusForCurrentUser(event);
     const requestedMemberIds = meta.requestedMemberIds ?? [];
     const responses = meta.responses ?? {};
@@ -766,9 +786,13 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
             meta.notes ? `\n${isGerman ? "Notiz" : "Note"}: ${meta.notes}` : ""
           }${requestLabel}${responseLabel}`}
           left={(props) => (
-            <List.Icon {...props} icon="calendar-clock" color={creatorColor} />
+            <List.Icon
+              {...props}
+              icon={isExternal ? "calendar-import" : "calendar-clock"}
+              color={creatorColor}
+            />
           )}
-          right={() => (
+          right={() => isExternal ? null : (
             <View style={styles.eventActions}>
               {requestStatus === "pending" && (
                 <>
@@ -808,9 +832,14 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   });
 
   const upcomingEventViews = upcomingEvents.map((event) => {
+    const isExternal = event.source === "ical";
     const meta = getEventMeta(event);
-    const creatorLabel = getMemberLabel(event.createdBy ?? "");
-    const creatorColor = getMemberColor(event.createdBy ?? "");
+    const creatorLabel = isExternal
+      ? t("calendar.externalCalendarSource")
+      : getMemberLabel(event.createdBy ?? "");
+    const creatorColor = isExternal
+      ? EXTERNAL_CALENDAR_COLOR
+      : getMemberColor(event.createdBy ?? "");
     const requestStatus = getRequestStatusForCurrentUser(event);
 
     return (
@@ -835,7 +864,11 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
               : ""
           }`}
           left={(props) => (
-            <List.Icon {...props} icon="calendar-month" color={creatorColor} />
+            <List.Icon
+              {...props}
+              icon={isExternal ? "calendar-import" : "calendar-month"}
+              color={creatorColor}
+            />
           )}
           right={() =>
             requestStatus === "pending" ? (
