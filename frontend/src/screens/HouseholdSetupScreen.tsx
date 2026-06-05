@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { useWindowDimensions, View } from "react-native";
-import { Button, Card, Text, TextInput } from "react-native-paper";
+import { Card, Text } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
+import {
+  BrandButton as Button,
+  BrandTextInput as TextInput,
+  SectionEyebrow,
+  SurfaceChip,
+  useBrandSurfaceStyles,
+} from "@/components/brand-ui";
 import { createHousehold, joinHousehold } from "../lib/household";
 import { useLanguage } from "@/context/language-context";
 
@@ -13,6 +20,7 @@ export function HouseholdSetupScreen({
   onHouseholdReady: () => void;
 }) {
   const { t } = useLanguage();
+  const brandStyles = useBrandSurfaceStyles();
   const { width } = useWindowDimensions();
   const isWide = width >= 820;
   const [newHouseholdName, setNewHouseholdName] = useState("");
@@ -90,14 +98,21 @@ export function HouseholdSetupScreen({
   }
 
   return (
-    <AppScreen title={t("setup.title")} centered>
+    <AppScreen
+      title={t("setup.title")}
+      eyebrow="Household Network"
+      subtitle="Stand up a new household cell or attach to one through an invite relay."
+      centered
+    >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
-      <Card style={[layout.card, layout.twoColumnCard]}>
+      <Card style={[layout.card, layout.twoColumnCard, brandStyles.panelCard]}>
         <Card.Title title={t("setup.createHouseholdTitle")} />
         <Card.Content style={layout.formContent}>
+          <SectionEyebrow>Launch</SectionEyebrow>
           <Text variant="bodyMedium">
             {t("setup.createDescription")}
           </Text>
+          <SurfaceChip label="Primary Household Node" active />
 
           <TextInput
             label={t("setup.householdNameLabel")}
@@ -118,12 +133,14 @@ export function HouseholdSetupScreen({
         </Card.Content>
       </Card>
 
-      <Card style={[layout.card, layout.twoColumnCard]}>
+      <Card style={[layout.card, layout.twoColumnCard, brandStyles.panelCard]}>
         <Card.Title title={t("setup.joinHouseholdTitle")} />
         <Card.Content style={layout.formContent}>
+          <SectionEyebrow>Link</SectionEyebrow>
           <Text variant="bodyMedium">
             {t("setup.joinDescription")}
           </Text>
+          <SurfaceChip label="Invite Relay" />
 
           <TextInput
             label={t("setup.inviteCodeLabel")}

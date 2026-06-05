@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
-import { Button, Card, Divider, List, Text, TextInput } from "react-native-paper";
+import { Card, Divider, List, Text } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
+import {
+  BrandButton as Button,
+  BrandTextInput as TextInput,
+  SectionEyebrow,
+  SurfaceChip,
+  useBrandSurfaceStyles,
+} from "@/components/brand-ui";
 import { HouseholdDropdown } from "@/components/household-dropdown";
 import { useLanguage } from "@/context/language-context";
 import { pb } from "../lib/pocketbase";
@@ -27,6 +34,7 @@ const MAX_CHECKED_ITEMS = 10;
 
 export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
   const { t, language } = useLanguage();
+  const brandStyles = useBrandSurfaceStyles();
   const isGerman = language === "de";
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
@@ -171,13 +179,16 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
   return (
     <AppScreen
       title={t("shopping.title")}
+      eyebrow="Procurement Grid"
+      subtitle="Capture demand, recycle common purchases, and clear household shopping queues quickly."
       right={<HouseholdDropdown />}
       browserTitle={t("shopping.browserTitle")}
     >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
-          <Card style={[layout.card, isWide && layout.wideForm]}>
+          <Card style={[layout.card, isWide && layout.wideForm, brandStyles.panelCard]}>
           <Card.Title title={t("shopping.newItemTitle")} />
           <Card.Content style={layout.formContent}>
+            <SectionEyebrow>Input Queue</SectionEyebrow>
             <TextInput
               label={t("shopping.itemLabel")}
               value={name}
@@ -186,7 +197,7 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
             />
 
             {suggestions.length > 0 && (
-              <View style={styles.suggestionsCard}>
+              <View style={[styles.suggestionsCard, brandStyles.softBlock]}>
                 <Text variant="labelMedium" style={styles.suggestionsLabel}>
                   {isGerman ? "Vorschläge" : "Suggestions"}
                 </Text>
@@ -208,7 +219,7 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
                       onPress={() => applySuggestion(suggestion)}
                       style={styles.suggestionItem}
                     />
-                    {index < suggestions.length - 1 && <Divider />}
+                    {index < suggestions.length - 1 && <Divider style={brandStyles.divider} />}
                   </View>
                 ))}
               </View>
@@ -222,6 +233,8 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
               placeholder={isGerman ? "z. B. 2x, 1 kg, 500 g" : "e.g. 2x, 1 kg, 500 g"}
             />
 
+            <SurfaceChip label={isGerman ? "Live mit Haushalt synchron" : "Live synced with household"} active />
+
             <Button mode="contained" onPress={addItem}>
               {t("shopping.addButton")}
             </Button>
@@ -229,7 +242,7 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
         </Card>
 
         <View style={[layout.stack, isWide && layout.widePanel]}>
-          <Card style={layout.card}>
+          <Card style={[layout.card, brandStyles.panelCard]}>
             <Card.Title
               title={isGerman ? `Offen (${openItems.length})` : `Open (${openItems.length})`}
             />
@@ -253,7 +266,7 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
                         left={(props) => <List.Icon {...props} icon="checkbox-blank-outline" />}
                         onPress={() => toggleItem(item)}
                       />
-                      <Divider />
+                      <Divider style={brandStyles.divider} />
                     </View>
                   ))}
                 </ScrollView>
@@ -261,7 +274,7 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
             </Card.Content>
           </Card>
 
-          <Card style={layout.card}>
+          <Card style={[layout.card, brandStyles.panelCard]}>
             <Card.Title title={`${t("shopping.completedSection")} (${checkedItems.length})`} />
             <Card.Content style={layout.listCardContent}>
               {checkedItems.length === 0 && (
@@ -284,7 +297,7 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
                         left={(props) => <List.Icon {...props} icon="checkbox-marked" />}
                         onPress={() => toggleItem(item)}
                       />
-                      <Divider />
+                      <Divider style={brandStyles.divider} />
                     </View>
                   ))}
                 </ScrollView>
@@ -304,9 +317,6 @@ const styles = StyleSheet.create({
   suggestionsCard: {
     borderRadius: 12,
     overflow: "hidden",
-    backgroundColor: "rgba(127, 127, 127, 0.08)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(127, 127, 127, 0.18)",
   },
   suggestionsLabel: {
     paddingHorizontal: 16,

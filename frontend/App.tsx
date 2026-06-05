@@ -2,62 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import * as Linking from "expo-linking";
 import { StatusBar } from "expo-status-bar";
-import { NavigationContainer, DarkTheme, DefaultTheme } from "@react-navigation/native";
+import { NavigationContainer } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { PaperProvider, MD3LightTheme, MD3DarkTheme, Text } from "react-native-paper";
+import { PaperProvider, Text } from "react-native-paper";
 import { ThemeProvider, useThemeContext } from "@/context/theme-context";
 import { HouseholdProvider, useHousehold } from "@/context/household-context";
 import { LanguageProvider, useLanguage } from "@/context/language-context";
+import { appThemes, navigationThemes } from "@/constants/theme";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { HouseholdSetupScreen } from "./src/screens/HouseholdSetupScreen";
 import { MainTabs } from "./src/screens/MainTabs";
 import { pb } from "./src/lib/pocketbase";
 import { resolveTabKey, TabKey } from "@/constants/navigation";
-
-const lightTheme = {
-  ...MD3LightTheme,
-  colors: {
-    ...MD3LightTheme.colors,
-    primary: "#2563eb",
-    background: "#f6f6f6",
-    surface: "#ffffff",
-  },
-};
-
-const darkTheme = {
-  ...MD3DarkTheme,
-  colors: {
-    ...MD3DarkTheme.colors,
-    primary: "#3b82f6",
-    background: "#121212",
-    surface: "#1e1e1e",
-  },
-};
-
-const customLightTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: "#2563eb",
-    background: "#f6f6f6",
-    card: "#ffffff",
-    text: "#111827",
-    border: "rgba(0,0,0,0.08)",
-  },
-};
-
-const customDarkTheme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    primary: "#3b82f6",
-    background: "#121212",
-    card: "#1e1e1e",
-    text: "#ecedee",
-    border: "rgba(255,255,255,0.08)",
-  },
-};
 
 function parseInitialTab(url: string | null) {
   if (!url) {
@@ -110,8 +67,9 @@ function parseInviteCode(url: string | null) {
 function AppShell() {
   const { colorScheme } = useThemeContext();
   const { t } = useLanguage();
-  const paperTheme = colorScheme === "dark" ? darkTheme : lightTheme;
-  const navTheme = colorScheme === "dark" ? customDarkTheme : customLightTheme;
+  const paperTheme = colorScheme === "dark" ? appThemes.dark : appThemes.light;
+  const navTheme =
+    colorScheme === "dark" ? navigationThemes.dark : navigationThemes.light;
   const url = Linking.useURL();
   const [loggedIn, setLoggedIn] = useState(pb.authStore.isValid);
   const { households, loading, refreshHouseholds } = useHousehold();
@@ -204,7 +162,7 @@ function AppShell() {
 
 function AppProviders() {
   const { colorScheme } = useThemeContext();
-  const paperTheme = colorScheme === "dark" ? darkTheme : lightTheme;
+  const paperTheme = colorScheme === "dark" ? appThemes.dark : appThemes.light;
 
   return (
     <LanguageProvider>
@@ -223,7 +181,7 @@ export default function App() {
       <SafeAreaProvider>
         <ThemeProvider>
           <AppProviders />
-          <StatusBar style="auto" />
+          <StatusBar style="light" />
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

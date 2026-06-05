@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { Calendar, CalendarProps, DateData, LocaleConfig } from "react-native-calendars";
 import {
-  Button,
   Card,
   Dialog,
   Divider,
@@ -10,10 +9,15 @@ import {
   Portal,
   Switch,
   Text,
-  TextInput,
-  useTheme,
 } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
+import {
+  BrandButton as Button,
+  BrandTextInput as TextInput,
+  SurfaceChip,
+  useBrandSurfaceStyles,
+} from "@/components/brand-ui";
+import { useAppTheme } from "@/constants/theme";
 import { useLanguage } from "@/context/language-context";
 import {
   CalendarEvent,
@@ -275,7 +279,8 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   const isGerman = language === "de";
   const locale = isGerman ? "de-DE" : "en-US";
   LocaleConfig.defaultLocale = isGerman ? "de" : "en";
-  const theme = useTheme();
+  const theme = useAppTheme();
+  const brandStyles = useBrandSurfaceStyles();
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
 
@@ -940,7 +945,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
           )}
         />
         {responseSummary}
-        <Divider />
+        <Divider style={brandStyles.divider} />
       </View>
     );
   });
@@ -1012,7 +1017,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
             ) : null
           }
         />
-        <Divider />
+        <Divider style={brandStyles.divider} />
       </View>
     );
   });
@@ -1020,6 +1025,8 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   return (
     <AppScreen
       title={isGerman ? "Kalender" : "Calendar"}
+      eyebrow="Schedule Matrix"
+      subtitle="Balance household events, imports, and requests in a sharper planning surface."
       right={
         <CalendarDisplayDropdown
           subscriptions={calendarSubscriptions}
@@ -1032,9 +1039,10 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
       browserTitle={isGerman ? "OthelloCloud - Kalender" : "OthelloCloud - Calendar"}
     >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
-        <Card style={[layout.card, isWide && layout.wideForm]}>
+        <Card style={[layout.card, isWide && layout.wideForm, brandStyles.panelCard]}>
           <Card.Title title={isGerman ? "Monatsansicht" : "Month view"} />
           <Card.Content>
+            <SurfaceChip label={isGerman ? "Mehrquellen-Ansicht" : "Multi-source view"} active />
             <View style={styles.calendarActions}>
               <Button mode="outlined" onPress={openCreateDialog}>
                 {isGerman ? "Termin hinzufügen" : "Add event"}
@@ -1058,7 +1066,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
         </Card>
 
         <View style={[layout.stack, isWide && layout.widePanel]}>
-          <Card style={layout.card}>
+          <Card style={[layout.card, brandStyles.panelCard]}>
             <Card.Title
               title={`${isGerman ? "Agenda für" : "Agenda for"} ${formatDateKey(
                 selectedDateKey,
@@ -1086,7 +1094,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
             </Card.Content>
           </Card>
 
-          <Card style={layout.card}>
+          <Card style={[layout.card, brandStyles.panelCard]}>
             <Card.Title
               title={isGerman ? "Kommende Termine" : "Upcoming events"}
               subtitle={

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform, ScrollView, Share, StyleSheet, useWindowDimensions, View } from "react-native";
 import * as ExpoLinking from "expo-linking";
 import {
-  Button,
   Card,
   Checkbox,
   Divider,
@@ -10,9 +9,14 @@ import {
   ProgressBar,
   Switch,
   Text,
-  TextInput,
 } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
+import {
+  BrandButton as Button,
+  BrandTextInput as TextInput,
+  SurfaceChip,
+  useBrandSurfaceStyles,
+} from "@/components/brand-ui";
 import { HouseholdDropdown } from "@/components/household-dropdown";
 import { useLanguage } from "@/context/language-context";
 import { pb } from "../lib/pocketbase";
@@ -118,6 +122,7 @@ function isRequestCancellationError(error: unknown) {
 }
 
 export function PollsScreen({ householdId }: PollsScreenProps) {
+  const brandStyles = useBrandSurfaceStyles();
   const { t, language } = useLanguage();
   const isGerman = language === "de";
   const locale = isGerman ? "de-DE" : "en-US";
@@ -369,7 +374,7 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
         : (isGerman ? "Offen" : "Open");
 
     return (
-      <Card key={poll.id} style={layout.card}>
+      <Card key={poll.id} style={[layout.card, brandStyles.panelCard]}>
         <Card.Title
           title={poll.question}
           subtitle={`${getPollAuthorLabel(poll)} · ${
@@ -426,7 +431,7 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
                   color={selected ? undefined : "#2563eb"}
                   style={{ marginHorizontal: 16, marginBottom: 8 }}
                 />
-                {index < poll.options.length - 1 && <Divider />}
+                {index < poll.options.length - 1 && <Divider style={brandStyles.divider} />}
               </View>
             );
           })}
@@ -453,7 +458,7 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
     ) as Record<string, string[]>;
 
     return (
-      <Card key={poll.id} style={layout.card}>
+      <Card key={poll.id} style={[layout.card, brandStyles.panelCard]}>
         <Card.Title
           title={poll.question}
           subtitle={`${getPollAuthorLabel(poll)} · ${
@@ -484,7 +489,7 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
                   color="#6b7280"
                   style={{ marginHorizontal: 16, marginBottom: 8, opacity: 0.8 }}
                 />
-                {index < poll.options.length - 1 && <Divider />}
+                {index < poll.options.length - 1 && <Divider style={brandStyles.divider} />}
               </View>
             );
           })}
@@ -496,13 +501,16 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
   return (
     <AppScreen
       title={t("polls.title")}
+      eyebrow="Consensus Engine"
+      subtitle="Frame decisions, collect signal, and close household votes with clearer hierarchy."
       right={<HouseholdDropdown />}
       browserTitle={t("polls.browserTitle")}
     >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
-        <Card style={[layout.card, isWide && layout.wideForm]}>
+        <Card style={[layout.card, isWide && layout.wideForm, brandStyles.panelCard]}>
           <Card.Title title={t("polls.newPollTitle")} />
           <Card.Content style={layout.formContent}>
+            <SurfaceChip label="Live voting flow" active />
             <TextInput
               label={t("polls.questionLabel")}
               value={question}
@@ -584,7 +592,7 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
         </Card>
 
         <View style={[layout.stack, isWide && layout.widePanel]}>
-          <Card style={layout.card}>
+          <Card style={[layout.card, brandStyles.panelCard]}>
             <Card.Title
               title={t("polls.activePollsTitle")}
               subtitle={
@@ -608,7 +616,7 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
             </Card.Content>
           </Card>
 
-          <Card style={layout.card}>
+          <Card style={[layout.card, brandStyles.panelCard]}>
             <Card.Title
               title={t("polls.pastPollsTitle")}
               subtitle={

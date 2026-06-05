@@ -1,6 +1,13 @@
 import { useState } from "react";
-import { Button, Card, Text, TextInput } from "react-native-paper";
+import { Card, Text } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
+import {
+  BrandButton as Button,
+  BrandTextInput as TextInput,
+  SectionEyebrow,
+  SurfaceChip,
+  useBrandSurfaceStyles,
+} from "@/components/brand-ui";
 import { pb } from "../lib/pocketbase";
 import { useLanguage } from "@/context/language-context";
 
@@ -10,6 +17,7 @@ export function LoginScreen({
   onLogin: () => Promise<void> | void;
 }) {
   const { t } = useLanguage();
+  const brandStyles = useBrandSurfaceStyles();
   const [mode, setMode] = useState<"login" | "register">("login");
 
   const [name, setName] = useState("");
@@ -112,20 +120,32 @@ export function LoginScreen({
   return (
     <AppScreen
       title={t("app.brand")}
+      eyebrow={isLogin ? "Access Node" : "New Operator"}
+      subtitle={
+        isLogin
+          ? "Household operations, calendars, expenses, and polls in one controlled interface."
+          : "Create your account and step into the shared command layer."
+      }
       centered
       maxWidth={460}
       showBrand={false}
       browserTitle={t("app.brand")}
     >
-      <Card style={layout.card}>
+      <Card style={[layout.card, brandStyles.panelCard]}>
         <Card.Title title={isLogin ? t("auth.loginTitle") : t("auth.registerTitle")} />
 
         <Card.Content style={layout.formContent}>
+          <SectionEyebrow>{isLogin ? "Secure Session" : "Identity Provisioning"}</SectionEyebrow>
           <Text variant="bodyMedium">
             {isLogin
               ? t("auth.loginDescription")
               : t("auth.registerDescription")}
           </Text>
+
+          <SurfaceChip
+            label={isLogin ? "Executive Noir Access" : "Account Initialization"}
+            active
+          />
 
           {!isLogin && (
             <TextInput

@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Button, Menu } from "react-native-paper";
-import { headerControlStyles } from "@/components/header-control-styles";
+import { useAppTheme } from "@/constants/theme";
+import { getHeaderControlStyles } from "@/components/header-control-styles";
 import { useLanguage } from "@/context/language-context";
 
 export function LanguageSelector() {
   const { language, languages, setLanguage, t } = useLanguage();
+  const theme = useAppTheme();
+  const headerControlStyles = getHeaderControlStyles(theme);
   const [menuVisible, setMenuVisible] = useState(false);
 
   const currentLabel = language === "de" ? "DE" : "EN";
@@ -23,7 +26,8 @@ export function LanguageSelector() {
             onPress={() => setMenuVisible(true)}
             style={headerControlStyles.button}
             contentStyle={headerControlStyles.content}
-            labelStyle={headerControlStyles.label}
+            labelStyle={[headerControlStyles.label, { color: theme.brand.palette.text }]}
+            textColor={theme.brand.palette.text}
           >
             {currentLabel}
           </Button>

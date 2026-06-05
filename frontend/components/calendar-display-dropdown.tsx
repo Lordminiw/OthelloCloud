@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Button, Menu } from "react-native-paper";
-import { headerControlStyles } from "@/components/header-control-styles";
+import { useAppTheme } from "@/constants/theme";
+import { getHeaderControlStyles } from "@/components/header-control-styles";
 import { useHousehold } from "@/context/household-context";
 import { useLanguage } from "@/context/language-context";
 import { CalendarSubscription } from "@/src/lib/calendar-subscriptions";
@@ -19,6 +20,8 @@ export function CalendarDisplayDropdown({
   onToggleHousehold: (householdId: string) => void;
   onToggleSubscription: (subscriptionId: string) => void;
 }) {
+  const theme = useAppTheme();
+  const headerControlStyles = getHeaderControlStyles(theme);
   const { households } = useHousehold();
   const { t } = useLanguage();
   const [visible, setVisible] = useState(false);
@@ -37,7 +40,8 @@ export function CalendarDisplayDropdown({
             icon="calendar-multiple"
             style={[headerControlStyles.button, styles.button]}
             contentStyle={headerControlStyles.content}
-            labelStyle={headerControlStyles.label}
+            labelStyle={[headerControlStyles.label, { color: theme.brand.palette.text }]}
+            textColor={theme.brand.palette.text}
             compact
           >
             {t("calendar.selectedCalendars", { count: selectedCount })}

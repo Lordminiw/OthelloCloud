@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import {
-  Button,
   Card,
   Checkbox,
   Dialog,
@@ -11,9 +10,14 @@ import {
   RadioButton,
   SegmentedButtons,
   Text,
-  TextInput,
 } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
+import {
+  BrandButton as Button,
+  BrandTextInput as TextInput,
+  SurfaceChip,
+  useBrandSurfaceStyles,
+} from "@/components/brand-ui";
 import {
   calculateBalances,
   createExpense,
@@ -35,6 +39,7 @@ import { useLanguage } from "@/context/language-context";
 
 export function ExpensesScreen({ householdId }: { householdId: string }) {
   const { language } = useLanguage();
+  const brandStyles = useBrandSurfaceStyles();
   const isGerman = language === "de";
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
@@ -74,7 +79,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
     Record<string, string>
   >({});
 
-  async function reload() {
+  const reload = useCallback(async () => {
     try {
       const [expenseRecords, settlementRecords, memberRecords] =
         await Promise.all([
@@ -107,11 +112,11 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
       console.log("RESPONSE:", error?.response);
       alert(JSON.stringify(error?.response, null, 2));
     }
-  }
+  }, [householdId, paidBy, settlementFromUser, settlementToUser, splitBetween.length]);
 
   useEffect(() => {
-    reload();
-  }, [householdId]);
+    void reload();
+  }, [reload]);
 
   function getMemberLabel(userId: string) {
     const member = members.find((member) => member.userId === userId);
@@ -458,13 +463,16 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
   return (
     <AppScreen
       title={isGerman ? "Ausgaben" : "Expenses"}
+      eyebrow="Finance Deck"
+      subtitle="Track household spend, balances, and settlements in a more deliberate command-center layout."
       right={<HouseholdDropdown />}
       browserTitle={isGerman ? "OthelloCloud - Ausgaben" : "OthelloCloud - Expenses"}
     >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
-        <Card style={[layout.card, isWide && layout.wideForm]}>
+        <Card style={[layout.card, isWide && layout.wideForm, brandStyles.panelCard]}>
           <Card.Title title={isGerman ? "Neue Ausgabe" : "New expense"} />
           <Card.Content style={layout.formContent}>
+            <SurfaceChip label={isGerman ? "Live Salden" : "Live balances"} active />
             <TextInput
               label={isGerman ? "Beschreibung" : "Description"}
               value={description}
@@ -537,7 +545,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
 
         <View style={[layout.stack, isWide && layout.widePanel]}>
         <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
-        <Card style={[layout.card, layout.twoColumnCard]}>
+        <Card style={[layout.card, layout.twoColumnCard, brandStyles.panelCard]}>
           <Card.Title title={isGerman ? "Salden" : "Balances"} />
           <Card.Content style={layout.listCardContent}>
             {balances.length === 0 && (
@@ -564,7 +572,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
           </Card.Content>
         </Card>
 
-        <Card style={[layout.card, layout.twoColumnCard]}>
+        <Card style={[layout.card, layout.twoColumnCard, brandStyles.panelCard]}>
           <Card.Title title={isGerman ? "Zahlungsvorschläge" : "Payment suggestions"} />
           <Card.Content style={layout.listCardContent}>
             {paymentSuggestions.length === 0 && (
@@ -597,7 +605,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                         </Button>
                       )}
                     />
-                    <Divider />
+                    <Divider style={brandStyles.divider} />
                   </View>
                 ))}
               </ScrollView>
@@ -615,7 +623,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
         </View>
 
         <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
-        <Card style={[layout.card, layout.twoColumnCard]}>
+        <Card style={[layout.card, layout.twoColumnCard, brandStyles.panelCard]}>
           <Card.Title title={isGerman ? "Letzte Ausgaben" : "Recent expenses"} />
           <Card.Content style={layout.listCardContent}>
             {expenses.length === 0 && (
@@ -654,7 +662,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                         </View>
                       )}
                     />
-                    <Divider />
+                    <Divider style={brandStyles.divider} />
                   </View>
                 ))}
               </ScrollView>
@@ -662,7 +670,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
           </Card.Content>
         </Card>
 
-        <Card style={[layout.card, layout.twoColumnCard]}>
+        <Card style={[layout.card, layout.twoColumnCard, brandStyles.panelCard]}>
           <Card.Title title={isGerman ? "Ausgleichszahlungen" : "Settlements"} />
           <Card.Content style={layout.listCardContent}>
             {settlements.length === 0 && (
@@ -698,7 +706,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                         </Button>
                       )}
                     />
-                    <Divider />
+                    <Divider style={brandStyles.divider} />
                   </View>
                 ))}
               </ScrollView>

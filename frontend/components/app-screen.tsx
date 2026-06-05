@@ -1,11 +1,15 @@
 import { ReactNode, useEffect } from "react";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
-import { Text, useTheme } from "react-native-paper";
+import { Text } from "react-native-paper";
+import { useAppTheme } from "@/constants/theme";
+import { BrandBackdrop, ScreenReveal, SectionEyebrow } from "@/components/brand-ui";
 import { LanguageSelector } from "@/components/language-selector";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 type AppScreenProps = {
   title: string;
+  eyebrow?: string;
+  subtitle?: string;
   right?: ReactNode;
   children: ReactNode;
   centered?: boolean;
@@ -16,6 +20,8 @@ type AppScreenProps = {
 
 export function AppScreen({
   title,
+  eyebrow,
+  subtitle,
   right,
   children,
   centered = false,
@@ -23,9 +29,9 @@ export function AppScreen({
   showBrand = true,
   browserTitle,
 }: AppScreenProps) {
-  const theme = useTheme();
+  const theme = useAppTheme();
   const { width } = useWindowDimensions();
-  const contentMaxWidth = maxWidth ?? (width >= 900 ? 1040 : 640);
+  const contentMaxWidth = maxWidth ?? (width >= 1240 ? 1180 : width >= 900 ? 1040 : 680);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -37,6 +43,7 @@ export function AppScreen({
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <BrandBackdrop />
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
@@ -44,27 +51,53 @@ export function AppScreen({
           centered && styles.centeredScroll,
         ]}
       >
-        <View style={[styles.content, { maxWidth: contentMaxWidth }]}>
-          <View style={styles.header}>
-            <View style={styles.brandBlock}>
-              {showBrand ? (
-                <Text variant="labelSmall" style={[styles.brand, { color: theme.colors.primary }]}>
-                  OthelloCloud
+        <ScreenReveal style={[styles.content, { maxWidth: contentMaxWidth }]}>
+          <View
+            style={[
+              styles.header,
+              {
+                backgroundColor: theme.brand.palette.chrome,
+                borderColor: theme.brand.palette.chromeStrong,
+                shadowColor: theme.brand.shadowColor,
+              },
+            ]}
+          >
+            <View style={styles.headerRail}>
+              <View style={styles.brandBlock}>
+                {showBrand ? (
+                  <SectionEyebrow style={{ marginBottom: 6 }}>
+                    OthelloCloud
+                  </SectionEyebrow>
+                ) : null}
+                {eyebrow ? <SectionEyebrow>{eyebrow}</SectionEyebrow> : null}
+                <Text variant="headlineMedium" style={styles.title}>
+                  {title}
                 </Text>
-              ) : null}
-              <Text variant="headlineMedium" style={styles.title}>
-                {title}
-              </Text>
+                {subtitle ? (
+                  <Text
+                    variant="bodyMedium"
+                    style={{ color: theme.brand.palette.textMuted, maxWidth: 680 }}
+                  >
+                    {subtitle}
+                  </Text>
+                ) : null}
+              </View>
+              <View style={styles.headerRight}>
+                {right ? <View style={styles.headerAction}>{right}</View> : null}
+                <LanguageSelector />
+                <ThemeToggle />
+              </View>
             </View>
-            <View style={styles.headerRight}>
-              {right ? <View style={styles.headerAction}>{right}</View> : null}
-              <LanguageSelector />
-              <ThemeToggle />
-            </View>
+            <View
+              style={[
+                styles.headerRule,
+                { backgroundColor: theme.brand.palette.chromeStrong },
+              ]}
+            />
           </View>
 
           {children}
-        </View>
+        </ScreenReveal>
       </ScrollView>
     </View>
   );
@@ -72,14 +105,15 @@ export function AppScreen({
 
 export const layout = StyleSheet.create({
   stack: {
-    gap: 12,
+    gap: 18,
   },
   sectionGrid: {
-    gap: 12,
+    gap: 18,
   },
   wideRow: {
     flexDirection: "row",
     alignItems: "flex-start",
+    gap: 18,
   },
   wideForm: {
     width: 360,
@@ -93,13 +127,15 @@ export const layout = StyleSheet.create({
     minWidth: 280,
   },
   card: {
-    borderRadius: 8,
+    borderRadius: 24,
+    overflow: "hidden",
   },
   listCardContent: {
     paddingHorizontal: 0,
+    paddingBottom: 8,
   },
   formContent: {
-    gap: 12,
+    gap: 14,
   },
   inlineActions: {
     flexDirection: "row",
@@ -115,8 +151,8 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 16,
-    paddingTop: 18,
-    paddingBottom: 96,
+    paddingTop: 20,
+    paddingBottom: 112,
     alignItems: "center",
   },
   centeredScroll: {
@@ -124,37 +160,43 @@ const styles = StyleSheet.create({
   },
   content: {
     width: "100%",
-    gap: 12,
+    gap: 18,
   },
   header: {
+    borderWidth: 1,
+    borderRadius: 28,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    gap: 16,
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
+  },
+  headerRail: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    gap: 16,
+    gap: 18,
     flexWrap: "wrap",
-    marginBottom: 2,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    backgroundColor: "rgba(127, 127, 127, 0.08)",
+  },
+  headerRule: {
+    height: 1,
+    opacity: 0.75,
   },
   brandBlock: {
-    gap: 2,
+    gap: 4,
     flexShrink: 1,
-  },
-  brand: {
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-    fontWeight: "700",
   },
   title: {
     flexShrink: 1,
+    letterSpacing: -0.6,
   },
   headerRight: {
     flexShrink: 0,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
     flexWrap: "wrap",
     justifyContent: "flex-end",
   },

@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useColorScheme as useRNColorScheme } from 'react-native';
-
-export type ThemeMode = 'light' | 'dark';
+import { ThemeMode } from "@/constants/theme";
 
 interface ThemeContextType {
   colorScheme: ThemeMode;

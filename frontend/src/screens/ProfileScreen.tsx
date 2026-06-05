@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import {
-  Button,
   Card,
   Dialog,
   Divider,
@@ -10,9 +9,14 @@ import {
   Portal,
   Switch,
   Text,
-  TextInput,
 } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
+import {
+  BrandButton as Button,
+  BrandTextInput as TextInput,
+  SurfaceChip,
+  useBrandSurfaceStyles,
+} from "@/components/brand-ui";
 import { useLanguage } from "@/context/language-context";
 import { Household } from "../lib/household";
 import { pb } from "../lib/pocketbase";
@@ -63,6 +67,7 @@ export function ProfileScreen({
   onLogout: () => void;
 }) {
   const { language, t } = useLanguage();
+  const brandStyles = useBrandSurfaceStyles();
   const isGerman = language === "de";
   const user = pb.authStore.model;
   const { households, createNewHousehold, joinNewHousehold, refreshHouseholds } =
@@ -511,13 +516,16 @@ export function ProfileScreen({
   return (
     <AppScreen
       title={isGerman ? "Profil" : "Profile"}
+      eyebrow="Identity Deck"
+      subtitle="Manage household memberships, invite flows, personal identity, and shared calendar relays."
       right={<HouseholdDropdown />}
       browserTitle={isGerman ? "OthelloCloud - Profil" : "OthelloCloud - Profile"}
     >
       <View style={layout.stack}>
-        <Card style={layout.card}>
+        <Card style={[layout.card, brandStyles.panelCard]}>
           <Card.Title title={displayName || (isGerman ? "Benutzer" : "User")} subtitle={user?.email} />
           <Card.Content style={layout.formContent}>
+            <SurfaceChip label={isGerman ? "Persönliche Konsole" : "Personal console"} active />
             <Button
               mode="outlined"
               icon="account-edit"
@@ -531,7 +539,7 @@ export function ProfileScreen({
           </Card.Content>
         </Card>
 
-        <Card style={layout.card}>
+        <Card style={[layout.card, brandStyles.panelCard]}>
           <Card.Title
             title={isGerman ? "Mitglieder" : "Members"}
             subtitle={
@@ -606,14 +614,14 @@ export function ProfileScreen({
                         </View>
                       )}
                     />
-                    {index < members.length - 1 && <Divider />}
+                    {index < members.length - 1 && <Divider style={brandStyles.divider} />}
                   </View>
                 );
               })}
           </Card.Content>
         </Card>
 
-        <Card style={layout.card}>
+        <Card style={[layout.card, brandStyles.panelCard]}>
           <Card.Title
             title={isGerman ? "Meine WGs" : "My households"}
             subtitle={`${households.length} ${isGerman ? "WG" : "household"}${households.length !== 1 ? (isGerman ? "s" : "s") : ""}`}
@@ -645,13 +653,13 @@ export function ProfileScreen({
                     </Button>
                   )}
                 />
-                {index < households.length - 1 && <Divider />}
+                {index < households.length - 1 && <Divider style={brandStyles.divider} />}
               </View>
             ))}
           </Card.Content>
         </Card>
 
-        <Card style={layout.card}>
+        <Card style={[layout.card, brandStyles.panelCard]}>
           <Card.Title title={t("profile.externalCalendarTitle")} />
           <Card.Content style={layout.formContent}>
             <Menu
@@ -809,7 +817,7 @@ export function ProfileScreen({
           </Card.Content>
         </Card>
 
-        <Card style={layout.card}>
+        <Card style={[layout.card, brandStyles.panelCard]}>
           <Card.Title title={isGerman ? "WG verwalten" : "Manage household"} />
           <Card.Content style={layout.formContent}>
             <Button
