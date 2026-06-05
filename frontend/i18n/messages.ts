@@ -220,6 +220,18 @@ export type TranslationTree = {
     externalCalendarShareWithHousehold: string;
     externalCalendarSubscribedForMe: string;
     externalCalendarSharedByOwner: string;
+    calendarExportTitle: string;
+    calendarExportSubtitle: string;
+    calendarExportHelp: string;
+    calendarExportUrlLabel: string;
+    calendarExportHint: string;
+    calendarExportCopy: string;
+    calendarExportCopied: string;
+    calendarExportCopyTitle: string;
+    calendarExportRotate: string;
+    calendarExportRotateSuccess: string;
+    calendarExportRotateFailed: string;
+    calendarExportLoadFailed: string;
   };
 };
 
@@ -450,6 +462,18 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       externalCalendarShareWithHousehold: 'Show for all members of a household',
       externalCalendarSubscribedForMe: 'Active for me (subscribed)',
       externalCalendarSharedByOwner: 'Shared calendar (read-only)',
+      calendarExportTitle: "WG calendar export",
+      calendarExportSubtitle: "Subscription link for Google, Apple, or Outlook calendar",
+      calendarExportHelp: "Use this private iCal link in external calendar apps to subscribe to your WG calendar.",
+      calendarExportUrlLabel: "Subscription URL",
+      calendarExportHint: "Anyone with this link can subscribe. Rotate it if it was shared too widely.",
+      calendarExportCopy: "Copy link",
+      calendarExportCopied: "Subscription link copied",
+      calendarExportCopyTitle: "Copy subscription link",
+      calendarExportRotate: "Generate new link",
+      calendarExportRotateSuccess: "A new calendar subscription link was generated.",
+      calendarExportRotateFailed: "The calendar subscription link could not be regenerated",
+      calendarExportLoadFailed: "The calendar export link could not be loaded",
     },
   },
   de: {
@@ -667,6 +691,18 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       externalCalendarShareWithHousehold: 'Für alle Mitglieder einer WG anzeigen',
       externalCalendarSubscribedForMe: 'Aktiv für mich (abonniert)',
       externalCalendarSharedByOwner: 'Freigegebener Kalender (schreibgeschützt)',
+      calendarExportTitle: "WG-Kalender exportieren",
+      calendarExportSubtitle: "Abo-Link für Google-, Apple- oder Outlook-Kalender",
+      calendarExportHelp: "Nutze diesen privaten iCal-Link in externen Kalender-Apps, um den WG-Kalender zu abonnieren.",
+      calendarExportUrlLabel: "Abonnement-URL",
+      calendarExportHint: "Jede Person mit diesem Link kann den Kalender abonnieren. Erzeuge einen neuen Link, falls er zu weit geteilt wurde.",
+      calendarExportCopy: "Link kopieren",
+      calendarExportCopied: "Abonnement-Link kopiert",
+      calendarExportCopyTitle: "Abonnement-Link kopieren",
+      calendarExportRotate: "Neuen Link erzeugen",
+      calendarExportRotateSuccess: "Ein neuer Kalender-Abonnement-Link wurde erzeugt.",
+      calendarExportRotateFailed: "Der Kalender-Abonnement-Link konnte nicht neu erzeugt werden",
+      calendarExportLoadFailed: "Der Kalender-Export-Link konnte nicht geladen werden",
     },
   },
 };

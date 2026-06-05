@@ -34,6 +34,11 @@ import {
   unsubscribeFromCalendarSubscription,
   subscribeToCalendarSubscription,
 } from "../lib/calendar-subscriptions";
+import {
+  CalendarExportSettings,
+  loadCalendarExportSettings,
+  rotateCalendarExportLink,
+} from "../lib/calendar-export";
 
 type PendingMemberAction =
   | {
@@ -102,6 +107,17 @@ export function ProfileScreen({
     useState(false);
   const [userUnsubscribes, setUserUnsubscribes] = useState<string[]>([]);
   const [personalSubscribed, setPersonalSubscribed] = useState(true);
+  const [calendarExport, setCalendarExport] =
+    useState<CalendarExportSettings | null>(null);
+  const [calendarExportLoading, setCalendarExportLoading] = useState(false);
+  const [calendarExportBusy, setCalendarExportBusy] = useState(false);
+  const [calendarExportCopied, setCalendarExportCopied] = useState(false);
+  const [calendarExportHouseholdId, setCalendarExportHouseholdId] = useState(
+    household.id
+  );
+  const [calendarExportHouseholdMenuVisible, setCalendarExportHouseholdMenuVisible] =
+    useState(false);
+  const [adminHouseholdIds, setAdminHouseholdIds] = useState<string[]>([]);
 
   const currentMembership = useMemo(
     () => members.find((member) => member.userId === user?.id) ?? null,
@@ -112,6 +128,14 @@ export function ProfileScreen({
   const calendarHousehold =
     households.find((item) => item.id === calendarHouseholdId) ?? household;
   const isOwned = !calendarSubscription || calendarSubscription.owner === user?.id;
+  const adminHouseholds = useMemo(
+    () => households.filter((item) => adminHouseholdIds.includes(item.id)),
+    [adminHouseholdIds, households]
+  );
+  const selectedExportHousehold =
+    adminHouseholds.find((item) => item.id === calendarExportHouseholdId) ??
+    adminHouseholds[0] ??
+    null;
 
   const loadSubscriptions = useCallback(async () => {
     setCalendarLoading(true);
@@ -190,11 +214,60 @@ export function ProfileScreen({
   }, [household.id]);
 
   useEffect(() => {
+    const userId = user?.id;
+    if (!userId) {
+      setAdminHouseholdIds([]);
+      return;
+    }
+
+    pb.collection("household_members")
+      .getFullList({
+        filter: `user = "${userId}" && role = "admin"`,
+        requestKey: null,
+      })
+      .then((records) => {
+        const ids = records
+          .map((record: any) => String(record.household || ""))
+          .filter(Boolean);
+        setAdminHouseholdIds(ids);
+        setCalendarExportHouseholdId((current) =>
+          ids.includes(current) ? current : ids[0] || household.id
+        );
+      })
+      .catch(() => setAdminHouseholdIds([]));
+  }, [household.id, user?.id]);
+
+  useEffect(() => {
     if (initialInviteCode) {
       setInviteCode(initialInviteCode);
       setJoinDialogVisible(true);
     }
   }, [initialInviteCode]);
+
+  const loadCalendarExport = useCallback(async () => {
+    if (!selectedExportHousehold) {
+      setCalendarExport(null);
+      return;
+    }
+
+    setCalendarExportLoading(true);
+    try {
+      const result = await loadCalendarExportSettings(selectedExportHousehold.id);
+      setCalendarExport(result);
+    } catch (error: any) {
+      alert(
+        `${t("profile.calendarExportLoadFailed")}: ${
+          error?.response?.message ?? error?.message ?? "Unknown"
+        }`
+      );
+    } finally {
+      setCalendarExportLoading(false);
+    }
+  }, [selectedExportHousehold, t]);
+
+  useEffect(() => {
+    void loadCalendarExport();
+  }, [loadCalendarExport]);
 
   function logout() {
     pb.authStore.clear();
@@ -407,6 +480,58 @@ export function ProfileScreen({
       alert(link);
     } catch {
       alert(link);
+    }
+  }
+
+  async function copyCalendarExportUrl() {
+    if (!calendarExport?.feedUrl) {
+      return;
+    }
+
+    try {
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.clipboard?.writeText
+      ) {
+        await navigator.clipboard.writeText(calendarExport.feedUrl);
+        setCalendarExportCopied(true);
+        window.setTimeout(() => setCalendarExportCopied(false), 1800);
+        return;
+      }
+
+      if (typeof window !== "undefined" && window.prompt) {
+        window.prompt(
+          t("profile.calendarExportCopyTitle"),
+          calendarExport.feedUrl
+        );
+        return;
+      }
+
+      alert(calendarExport.feedUrl);
+    } catch {
+      alert(calendarExport.feedUrl);
+    }
+  }
+
+  async function handleRotateCalendarExport() {
+    if (!selectedExportHousehold) {
+      return;
+    }
+
+    setCalendarExportBusy(true);
+    try {
+      const result = await rotateCalendarExportLink(selectedExportHousehold.id);
+      setCalendarExport(result);
+      setCalendarExportCopied(false);
+      alert(t("profile.calendarExportRotateSuccess"));
+    } catch (error: any) {
+      alert(
+        `${t("profile.calendarExportRotateFailed")}: ${
+          error?.response?.message ?? error?.message ?? "Unknown"
+        }`
+      );
+    } finally {
+      setCalendarExportBusy(false);
     }
   }
 
@@ -808,6 +933,84 @@ export function ProfileScreen({
             )}
           </Card.Content>
         </Card>
+
+        {adminHouseholds.length > 0 && (
+          <Card style={layout.card}>
+            <Card.Title
+              title={t("profile.calendarExportTitle")}
+              subtitle={t("profile.calendarExportSubtitle")}
+            />
+            <Card.Content style={layout.formContent}>
+              <Text variant="labelMedium">{t("common.chooseHousehold")}</Text>
+              <Menu
+                visible={calendarExportHouseholdMenuVisible}
+                onDismiss={() => setCalendarExportHouseholdMenuVisible(false)}
+                anchor={
+                  <Button
+                    mode="outlined"
+                    icon="home-group"
+                    onPress={() => setCalendarExportHouseholdMenuVisible(true)}
+                    disabled={calendarExportBusy || calendarExportLoading}
+                  >
+                    {selectedExportHousehold?.name || t("common.chooseHousehold")}
+                  </Button>
+                }
+              >
+                {adminHouseholds.map((item) => (
+                  <Menu.Item
+                    key={item.id}
+                    title={item.name}
+                    leadingIcon={
+                      item.id === selectedExportHousehold?.id ? "check" : "home"
+                    }
+                    onPress={() => {
+                      setCalendarExportHouseholdId(item.id);
+                      setCalendarExportHouseholdMenuVisible(false);
+                    }}
+                  />
+                ))}
+              </Menu>
+              {calendarExportLoading ? (
+                <Text>{t("common.loading")}</Text>
+              ) : (
+                <>
+                  <Text variant="bodyMedium">
+                    {t("profile.calendarExportHelp")}
+                  </Text>
+                  <TextInput
+                    mode="outlined"
+                    label={t("profile.calendarExportUrlLabel")}
+                    value={calendarExport?.feedUrl || ""}
+                    editable={false}
+                    multiline
+                  />
+                  <Text variant="bodySmall">
+                    {calendarExportCopied
+                      ? t("profile.calendarExportCopied")
+                      : t("profile.calendarExportHint")}
+                  </Text>
+                  <Button
+                    mode="contained"
+                    icon="content-copy"
+                    onPress={copyCalendarExportUrl}
+                    disabled={calendarExportBusy || !calendarExport?.feedUrl}
+                  >
+                    {t("profile.calendarExportCopy")}
+                  </Button>
+                  <Button
+                    mode="outlined"
+                    icon="refresh"
+                    onPress={handleRotateCalendarExport}
+                    loading={calendarExportBusy}
+                    disabled={calendarExportBusy}
+                  >
+                    {t("profile.calendarExportRotate")}
+                  </Button>
+                </>
+              )}
+            </Card.Content>
+          </Card>
+        )}
 
         <Card style={layout.card}>
           <Card.Title title={isGerman ? "WG verwalten" : "Manage household"} />
