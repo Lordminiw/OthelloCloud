@@ -29,7 +29,6 @@ export async function loadOwnedCalendarSubscriptions() {
     requestKey: null,
   });
 }
-
 export async function loadAccessibleCalendarSubscriptions() {
   return await pb.collection("calendar_subscriptions").getFullList<CalendarSubscription>({
     filter: "enabled = true",
@@ -111,4 +110,3 @@ export async function subscribeToCalendarSubscription(subscriptionId: string) {
     await pb.collection("calendar_subscription_unsubscribes").delete(records[0].id);
   }
 }
-
