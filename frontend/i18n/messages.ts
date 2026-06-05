@@ -212,6 +212,7 @@ export type TranslationTree = {
     externalCalendarNeverSynced: string;
     externalCalendarLastUpdated: string;
     externalCalendarSaveFailed: string;
+    externalCalendarLoadFailed: string;
     externalCalendarSyncFailed: string;
     externalCalendarSyncComplete: string;
     externalCalendarUrlRequired: string;
@@ -441,6 +442,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       externalCalendarNeverSynced: "Not synchronized yet",
       externalCalendarLastUpdated: "Last successful update: {{date}}",
       externalCalendarSaveFailed: "External calendar settings could not be saved",
+      externalCalendarLoadFailed: "External calendar settings could not be loaded",
       externalCalendarSyncFailed: "External calendar synchronization failed",
       externalCalendarSyncComplete: "Synchronization complete: {{created}} created, {{updated}} updated, {{removed}} removed.",
       externalCalendarUrlRequired: "Please enter an iCal subscription URL.",
@@ -657,6 +659,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       externalCalendarNeverSynced: "Noch nicht synchronisiert",
       externalCalendarLastUpdated: "Letzte erfolgreiche Aktualisierung: {{date}}",
       externalCalendarSaveFailed: "Die Einstellungen des externen Kalenders konnten nicht gespeichert werden",
+      externalCalendarLoadFailed: "Die Einstellungen des externen Kalenders konnten nicht geladen werden",
       externalCalendarSyncFailed: "Die Synchronisierung des externen Kalenders ist fehlgeschlagen",
       externalCalendarSyncComplete: "Synchronisierung abgeschlossen: {{created}} erstellt, {{updated}} aktualisiert, {{removed}} entfernt.",
       externalCalendarUrlRequired: "Bitte eine iCal-Abonnement-URL eingeben.",

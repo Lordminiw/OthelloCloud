@@ -77,34 +77,76 @@ export type CalendarSubscriptionUnsubscribe = {
   subscription: string;
 };
 
+function isMissingCollectionContext(error: any) {
+  const message = String(
+    error?.response?.message ??
+      error?.response?.data?.message ??
+      error?.message ??
+      ""
+  );
+
+  return message.includes("Missing collection context");
+}
+
 export async function loadUserUnsubscribes(): Promise<CalendarSubscriptionUnsubscribe[]> {
   const userId = pb.authStore.model?.id;
   if (!userId) return [];
 
-  return await pb.collection("calendar_subscription_unsubscribes").getFullList<CalendarSubscriptionUnsubscribe>({
-    filter: `user = "${userId}"`,
-    requestKey: null,
-  });
+  try {
+    return await pb
+      .collection("calendar_subscription_unsubscribes")
+      .getFullList<CalendarSubscriptionUnsubscribe>({
+        filter: `user = "${userId}"`,
+        requestKey: null,
+      });
+  } catch (error) {
+    if (isMissingCollectionContext(error)) {
+      return [];
+    }
+
+    throw error;
+  }
 }
 
 export async function unsubscribeFromCalendarSubscription(subscriptionId: string) {
   const userId = pb.authStore.model?.id;
   if (!userId) throw new Error("User not authenticated");
 
-  return await pb.collection("calendar_subscription_unsubscribes").create({
-    user: userId,
-    subscription: subscriptionId,
-  });
+  try {
+    return await pb.collection("calendar_subscription_unsubscribes").create({
+      user: userId,
+      subscription: subscriptionId,
+    });
+  } catch (error) {
+    if (isMissingCollectionContext(error)) {
+      throw new Error(
+        "Calendar subscription preferences are not available on this server yet."
+      );
+    }
+
+    throw error;
+  }
 }
 
 export async function subscribeToCalendarSubscription(subscriptionId: string) {
   const userId = pb.authStore.model?.id;
   if (!userId) throw new Error("User not authenticated");
 
-  const records = await pb.collection("calendar_subscription_unsubscribes").getFullList({
-    filter: `user = "${userId}" && subscription = "${subscriptionId}"`,
-    requestKey: null,
-  });
+  let records;
+  try {
+    records = await pb.collection("calendar_subscription_unsubscribes").getFullList({
+      filter: `user = "${userId}" && subscription = "${subscriptionId}"`,
+      requestKey: null,
+    });
+  } catch (error) {
+    if (isMissingCollectionContext(error)) {
+      throw new Error(
+        "Calendar subscription preferences are not available on this server yet."
+      );
+    }
+
+    throw error;
+  }
 
   if (records.length > 0) {
     await pb.collection("calendar_subscription_unsubscribes").delete(records[0].id);

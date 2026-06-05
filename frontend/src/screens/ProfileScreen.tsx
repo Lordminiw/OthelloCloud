@@ -155,7 +155,7 @@ export function ProfileScreen({
         setPersonalSubscribed(true);
       }
     } catch (error: any) {
-      alert(`${t("profile.externalCalendarSyncFailed")}: ${error?.message ?? "Unknown"}`);
+      alert(`${t("profile.externalCalendarLoadFailed")}: ${error?.message ?? "Unknown"}`);
     } finally {
       setCalendarLoading(false);
     }
