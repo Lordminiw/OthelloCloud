@@ -50,6 +50,7 @@ backend/pocketbase/pb_migrations/
 backend/pocketbase/pb_migrations/*
 !backend/pocketbase/pb_migrations/1780600000_added_calendar_subscriptions.js
 !backend/pocketbase/pb_migrations/1780600100_personal_calendar_subscriptions.js
+!backend/pocketbase/pb_migrations/1780600200_calendar_subscription_unsubscribes.js
 
 # Optional PocketBase hooks, keep if you start writing custom backend code
 # backend/pocketbase/pb_hooks/
