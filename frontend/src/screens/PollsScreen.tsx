@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform, ScrollView, Share, StyleSheet, useWindowDimensions, View } from "react-native";
 import * as ExpoLinking from "expo-linking";
 import {
@@ -92,6 +92,31 @@ function buildPollShareLink(pollId: string) {
   });
 }
 
+function isRequestCancellationError(error: unknown) {
+  const candidate = error as
+    | {
+        isAbort?: boolean;
+        name?: string;
+        message?: string;
+        originalError?: { name?: string; message?: string };
+      }
+    | undefined;
+
+  if (!candidate) {
+    return false;
+  }
+
+  const message = String(candidate.message ?? candidate.originalError?.message ?? "").toLowerCase();
+
+  return (
+    candidate.isAbort === true ||
+    candidate.name === "AbortError" ||
+    candidate.originalError?.name === "AbortError" ||
+    message.includes("autocancel") ||
+    message.includes("aborted")
+  );
+}
+
 export function PollsScreen({ householdId }: PollsScreenProps) {
   const { t, language } = useLanguage();
   const isGerman = language === "de";
@@ -110,6 +135,11 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
   const [endTime, setEndTime] = useState("23:59");
   const [busy, setBusy] = useState(false);
   const [, setClockTick] = useState(0);
+  const isGermanRef = useRef(isGerman);
+
+  useEffect(() => {
+    isGermanRef.current = isGerman;
+  }, [isGerman]);
 
   const reloadPolls = useCallback(async (options?: { silent?: boolean }) => {
     try {
@@ -121,16 +151,20 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
       setPolls(pollRecords);
       setMembers(memberRecords);
     } catch (error: any) {
+      if (isRequestCancellationError(error)) {
+        return;
+      }
+
       console.log("POLLS LOAD ERROR:", error);
       if (!options?.silent) {
         alert(
-          isGerman
+          isGermanRef.current
             ? "Umfragen konnten nicht geladen werden. Prüfe, ob die PocketBase-Collection `polls` existiert."
             : "Polls could not be loaded. Check whether the PocketBase collection `polls` exists."
         );
       }
     }
-  }, [householdId, isGerman]);
+  }, [householdId]);
 
   useEffect(() => {
     void reloadPolls();

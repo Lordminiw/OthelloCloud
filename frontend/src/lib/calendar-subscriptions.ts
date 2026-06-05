@@ -26,6 +26,7 @@ export async function loadOwnedCalendarSubscriptions() {
   return await pb.collection("calendar_subscriptions").getFullList<CalendarSubscription>({
     filter: `owner = "${userId}"`,
     sort: "name",
+    requestKey: null,
   });
 }
 
@@ -33,6 +34,7 @@ export async function loadAccessibleCalendarSubscriptions() {
   return await pb.collection("calendar_subscriptions").getFullList<CalendarSubscription>({
     filter: "enabled = true",
     sort: "name",
+    requestKey: null,
   });
 }
 
@@ -69,3 +71,44 @@ export async function syncCalendarSubscription(subscriptionId: string) {
     { method: "POST" }
   );
 }
+
+export type CalendarSubscriptionUnsubscribe = {
+  id: string;
+  user: string;
+  subscription: string;
+};
+
+export async function loadUserUnsubscribes(): Promise<CalendarSubscriptionUnsubscribe[]> {
+  const userId = pb.authStore.model?.id;
+  if (!userId) return [];
+
+  return await pb.collection("calendar_subscription_unsubscribes").getFullList<CalendarSubscriptionUnsubscribe>({
+    filter: `user = "${userId}"`,
+    requestKey: null,
+  });
+}
+
+export async function unsubscribeFromCalendarSubscription(subscriptionId: string) {
+  const userId = pb.authStore.model?.id;
+  if (!userId) throw new Error("User not authenticated");
+
+  return await pb.collection("calendar_subscription_unsubscribes").create({
+    user: userId,
+    subscription: subscriptionId,
+  });
+}
+
+export async function subscribeToCalendarSubscription(subscriptionId: string) {
+  const userId = pb.authStore.model?.id;
+  if (!userId) throw new Error("User not authenticated");
+
+  const records = await pb.collection("calendar_subscription_unsubscribes").getFullList({
+    filter: `user = "${userId}" && subscription = "${subscriptionId}"`,
+    requestKey: null,
+  });
+
+  if (records.length > 0) {
+    await pb.collection("calendar_subscription_unsubscribes").delete(records[0].id);
+  }
+}
+

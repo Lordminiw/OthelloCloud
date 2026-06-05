@@ -217,6 +217,8 @@ export type TranslationTree = {
     externalCalendarUrlRequired: string;
     externalCalendarNew: string;
     externalCalendarShareWithHousehold: string;
+    externalCalendarSubscribedForMe: string;
+    externalCalendarSharedByOwner: string;
   };
 };
 
@@ -443,7 +445,9 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       externalCalendarSyncComplete: "Synchronization complete: {{created}} created, {{updated}} updated, {{removed}} removed.",
       externalCalendarUrlRequired: "Please enter an iCal subscription URL.",
       externalCalendarNew: "New imported calendar",
-      externalCalendarShareWithHousehold: "Show for all members of a household",
+      externalCalendarShareWithHousehold: 'Show for all members of a household',
+      externalCalendarSubscribedForMe: 'Active for me (subscribed)',
+      externalCalendarSharedByOwner: 'Shared calendar (read-only)',
     },
   },
   de: {
@@ -657,7 +661,9 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       externalCalendarSyncComplete: "Synchronisierung abgeschlossen: {{created}} erstellt, {{updated}} aktualisiert, {{removed}} entfernt.",
       externalCalendarUrlRequired: "Bitte eine iCal-Abonnement-URL eingeben.",
       externalCalendarNew: "Neuer importierter Kalender",
-      externalCalendarShareWithHousehold: "Für alle Mitglieder einer WG anzeigen",
+      externalCalendarShareWithHousehold: 'Für alle Mitglieder einer WG anzeigen',
+      externalCalendarSubscribedForMe: 'Aktiv für mich (abonniert)',
+      externalCalendarSharedByOwner: 'Freigegebener Kalender (schreibgeschützt)',
     },
   },
 };

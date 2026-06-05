@@ -29,6 +29,10 @@ import {
   loadOwnedCalendarSubscriptions,
   saveCalendarSubscription,
   syncCalendarSubscription,
+  loadAccessibleCalendarSubscriptions,
+  loadUserUnsubscribes,
+  unsubscribeFromCalendarSubscription,
+  subscribeToCalendarSubscription,
 } from "../lib/calendar-subscriptions";
 
 type PendingMemberAction =
@@ -96,6 +100,8 @@ export function ProfileScreen({
     useState(false);
   const [calendarSharedWithHousehold, setCalendarSharedWithHousehold] =
     useState(false);
+  const [userUnsubscribes, setUserUnsubscribes] = useState<string[]>([]);
+  const [personalSubscribed, setPersonalSubscribed] = useState(true);
 
   const currentMembership = useMemo(
     () => members.find((member) => member.userId === user?.id) ?? null,
@@ -105,23 +111,49 @@ export function ProfileScreen({
   const canManageMembers = currentMembership?.role === "admin";
   const calendarHousehold =
     households.find((item) => item.id === calendarHouseholdId) ?? household;
+  const isOwned = !calendarSubscription || calendarSubscription.owner === user?.id;
 
   const loadSubscriptions = useCallback(async () => {
     setCalendarLoading(true);
     try {
-      const subscriptions = await loadOwnedCalendarSubscriptions();
-      const subscription = subscriptions[0] ?? null;
-      setCalendarSubscriptions(subscriptions);
+      const [owned, accessible, unsubscribes] = await Promise.all([
+        loadOwnedCalendarSubscriptions(),
+        loadAccessibleCalendarSubscriptions(),
+        loadUserUnsubscribes(),
+      ]);
+
+      const unsubscribedIds = unsubscribes.map((u) => u.subscription);
+      setUserUnsubscribes(unsubscribedIds);
+
+      // Merge owned and accessible. Make sure there are no duplicates.
+      const ownedIds = new Set(owned.map((s) => s.id));
+      const shared = accessible.filter((s) => !ownedIds.has(s.id));
+      const merged = [...owned, ...shared];
+
+      setCalendarSubscriptions(merged);
+
+      const subscription = merged[0] ?? null;
       setCalendarSubscription(subscription);
-      setCalendarName(
-        subscription?.name || t("profile.externalCalendarDefaultName")
-      );
-      setCalendarUrl(subscription?.url || "");
-      setCalendarEnabled(Boolean(subscription?.enabled));
-      setCalendarSharedWithHousehold(
-        Boolean(subscription?.sharedWithHousehold)
-      );
-      setCalendarHouseholdId(subscription?.household || household.id);
+
+      if (subscription) {
+        setCalendarName(
+          subscription.name || t("profile.externalCalendarDefaultName")
+        );
+        setCalendarUrl(subscription.url || "");
+        setCalendarEnabled(Boolean(subscription.enabled));
+        setCalendarSharedWithHousehold(
+          Boolean(subscription.sharedWithHousehold)
+        );
+        setCalendarHouseholdId(subscription.household || household.id);
+        setPersonalSubscribed(!unsubscribedIds.includes(subscription.id));
+      } else {
+        setCalendarName(t("profile.externalCalendarDefaultName"));
+        setCalendarUrl("");
+        setCalendarEnabled(false);
+        setCalendarSharedWithHousehold(false);
+        setCalendarHouseholdId(household.id);
+        setPersonalSubscribed(true);
+      }
     } catch (error: any) {
       alert(`${t("profile.externalCalendarSyncFailed")}: ${error?.message ?? "Unknown"}`);
     } finally {
@@ -298,6 +330,7 @@ export function ProfileScreen({
     setCalendarSharedWithHousehold(subscription.sharedWithHousehold);
     setCalendarHouseholdId(subscription.household || household.id);
     setCalendarMenuVisible(false);
+    setPersonalSubscribed(!userUnsubscribes.includes(subscription.id));
   }
 
   function startNewCalendarSubscription() {
@@ -308,6 +341,27 @@ export function ProfileScreen({
     setCalendarSharedWithHousehold(false);
     setCalendarHouseholdId(household.id);
     setCalendarMenuVisible(false);
+    setPersonalSubscribed(true);
+  }
+
+  async function handleTogglePersonalSubscription(val: boolean) {
+    if (!calendarSubscription) return;
+    setCalendarBusy(true);
+    try {
+      if (val) {
+        await subscribeToCalendarSubscription(calendarSubscription.id);
+        setUserUnsubscribes((prev) => prev.filter((id) => id !== calendarSubscription.id));
+        setPersonalSubscribed(true);
+      } else {
+        await unsubscribeFromCalendarSubscription(calendarSubscription.id);
+        setUserUnsubscribes((prev) => [...prev, calendarSubscription.id]);
+        setPersonalSubscribed(false);
+      }
+    } catch (error: any) {
+      alert(`Action failed: ${error?.message ?? "Unknown"}`);
+    } finally {
+      setCalendarBusy(false);
+    }
   }
 
   function formatLastSync(subscription: CalendarSubscription | null) {
@@ -623,7 +677,7 @@ export function ProfileScreen({
               {calendarSubscriptions.map((item) => (
                 <Menu.Item
                   key={item.id}
-                  title={item.name}
+                  title={item.owner === user?.id ? item.name : `${item.name} (${isGerman ? "freigegeben" : "shared"})`}
                   leadingIcon={
                     item.id === calendarSubscription?.id
                       ? "check"
@@ -637,95 +691,119 @@ export function ProfileScreen({
               <Text>{t("common.loading")}</Text>
             ) : (
               <>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                  <Switch
-                    value={calendarEnabled}
-                    onValueChange={setCalendarEnabled}
-                    disabled={calendarBusy}
-                  />
-                  <Text>{t("profile.externalCalendarEnabled")}</Text>
-                </View>
-                <TextInput
-                  mode="outlined"
-                  label={t("profile.externalCalendarName")}
-                  value={calendarName}
-                  onChangeText={setCalendarName}
-                  disabled={calendarBusy}
-                />
-                <TextInput
-                  mode="outlined"
-                  label={t("profile.externalCalendarUrl")}
-                  value={calendarUrl}
-                  onChangeText={setCalendarUrl}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  disabled={calendarBusy}
-                />
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                  <Switch
-                    value={calendarSharedWithHousehold}
-                    onValueChange={setCalendarSharedWithHousehold}
-                    disabled={calendarBusy}
-                  />
-                  <Text>{t("profile.externalCalendarShareWithHousehold")}</Text>
-                </View>
-                {calendarSharedWithHousehold && (
+                {!isOwned ? (
                   <>
-                    <Text variant="labelMedium">{t("common.chooseHousehold")}</Text>
-                    <Menu
-                      visible={calendarHouseholdMenuVisible}
-                      onDismiss={() => setCalendarHouseholdMenuVisible(false)}
-                      anchor={
-                        <Button
-                          mode="outlined"
-                          icon="home-group"
-                          onPress={() => setCalendarHouseholdMenuVisible(true)}
-                          disabled={calendarBusy}
-                        >
-                          {calendarHousehold.name}
-                        </Button>
-                      }
-                    >
-                      {households.map((item) => (
-                        <Menu.Item
-                          key={item.id}
-                          title={item.name}
-                          leadingIcon={
-                            item.id === calendarHouseholdId ? "check" : "home"
+                    <Text style={{ fontStyle: "italic", opacity: 0.8, marginBottom: 12 }}>
+                      {t("profile.externalCalendarSharedByOwner")}
+                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                      <Switch
+                        value={personalSubscribed}
+                        onValueChange={handleTogglePersonalSubscription}
+                        disabled={calendarBusy}
+                      />
+                      <Text>{t("profile.externalCalendarSubscribedForMe")}</Text>
+                    </View>
+                    <Text variant="bodySmall">{formatLastSync(calendarSubscription)}</Text>
+                    {calendarSubscription?.lastSyncMessage ? (
+                      <Text variant="bodySmall" style={{ marginTop: 4 }}>
+                        {calendarSubscription.lastSyncMessage}
+                      </Text>
+                    ) : null}
+                  </>
+                ) : (
+                  <>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <Switch
+                        value={calendarEnabled}
+                        onValueChange={setCalendarEnabled}
+                        disabled={calendarBusy}
+                      />
+                      <Text>{t("profile.externalCalendarEnabled")}</Text>
+                    </View>
+                    <TextInput
+                      mode="outlined"
+                      label={t("profile.externalCalendarName")}
+                      value={calendarName}
+                      onChangeText={setCalendarName}
+                      disabled={calendarBusy}
+                    />
+                    <TextInput
+                      mode="outlined"
+                      label={t("profile.externalCalendarUrl")}
+                      value={calendarUrl}
+                      onChangeText={setCalendarUrl}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      disabled={calendarBusy}
+                    />
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <Switch
+                        value={calendarSharedWithHousehold}
+                        onValueChange={setCalendarSharedWithHousehold}
+                        disabled={calendarBusy}
+                      />
+                      <Text>{t("profile.externalCalendarShareWithHousehold")}</Text>
+                    </View>
+                    {calendarSharedWithHousehold && (
+                      <>
+                        <Text variant="labelMedium">{t("common.chooseHousehold")}</Text>
+                        <Menu
+                          visible={calendarHouseholdMenuVisible}
+                          onDismiss={() => setCalendarHouseholdMenuVisible(false)}
+                          anchor={
+                            <Button
+                              mode="outlined"
+                              icon="home-group"
+                              onPress={() => setCalendarHouseholdMenuVisible(true)}
+                              disabled={calendarBusy}
+                            >
+                              {calendarHousehold.name}
+                            </Button>
                           }
-                          onPress={() => {
-                            setCalendarHouseholdId(item.id);
-                            setCalendarHouseholdMenuVisible(false);
-                          }}
-                        />
-                      ))}
-                    </Menu>
+                        >
+                          {households.map((item) => (
+                            <Menu.Item
+                              key={item.id}
+                              title={item.name}
+                              leadingIcon={
+                                item.id === calendarHouseholdId ? "check" : "home"
+                              }
+                              onPress={() => {
+                                setCalendarHouseholdId(item.id);
+                                setCalendarHouseholdMenuVisible(false);
+                              }}
+                            />
+                          ))}
+                        </Menu>
+                      </>
+                    )}
+                    <Text variant="bodySmall">{formatLastSync(calendarSubscription)}</Text>
+                    {calendarSubscription?.lastSyncMessage ? (
+                      <Text variant="bodySmall">
+                        {calendarSubscription.lastSyncMessage}
+                      </Text>
+                    ) : null}
+                    <Button
+                      mode="contained"
+                      icon="content-save"
+                      loading={calendarBusy}
+                      disabled={calendarBusy}
+                      onPress={handleSaveCalendarSubscription}
+                    >
+                      {t("profile.externalCalendarSave")}
+                    </Button>
+                    <Button
+                      mode="outlined"
+                      icon="sync"
+                      loading={calendarBusy}
+                      disabled={calendarBusy || !calendarSubscription || !calendarEnabled}
+                      onPress={handleSyncCalendarSubscription}
+                    >
+                      {t("profile.externalCalendarSync")}
+                    </Button>
                   </>
                 )}
-                <Text variant="bodySmall">{formatLastSync(calendarSubscription)}</Text>
-                {calendarSubscription?.lastSyncMessage ? (
-                  <Text variant="bodySmall">
-                    {calendarSubscription.lastSyncMessage}
-                  </Text>
-                ) : null}
-                <Button
-                  mode="contained"
-                  icon="content-save"
-                  loading={calendarBusy}
-                  disabled={calendarBusy}
-                  onPress={handleSaveCalendarSubscription}
-                >
-                  {t("profile.externalCalendarSave")}
-                </Button>
-                <Button
-                  mode="outlined"
-                  icon="sync"
-                  loading={calendarBusy}
-                  disabled={calendarBusy || !calendarSubscription || !calendarEnabled}
-                  onPress={handleSyncCalendarSubscription}
-                >
-                  {t("profile.externalCalendarSync")}
-                </Button>
               </>
             )}
           </Card.Content>

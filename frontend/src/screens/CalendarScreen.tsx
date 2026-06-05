@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
-import { Calendar, DateData, LocaleConfig } from "react-native-calendars";
+import { Calendar, CalendarProps, DateData, LocaleConfig } from "react-native-calendars";
 import {
   Button,
   Card,
@@ -30,6 +30,7 @@ import { HouseholdMember, loadHouseholdMembers } from "../lib/members";
 import {
   CalendarSubscription,
   loadAccessibleCalendarSubscriptions,
+  loadUserUnsubscribes,
 } from "../lib/calendar-subscriptions";
 
 LocaleConfig.locales.de = {
@@ -119,6 +120,8 @@ LocaleConfig.locales.en = {
 type CalendarScreenProps = {
   householdId: string;
 };
+
+type CalendarTheme = NonNullable<CalendarProps["theme"]>;
 
 type RequestResponse = "pending" | "yes" | "no";
 
@@ -369,10 +372,15 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   }, [reloadMembers]);
 
   useEffect(() => {
-    void loadAccessibleCalendarSubscriptions()
-      .then((subscriptions) => {
-        setCalendarSubscriptions(subscriptions);
-        setSelectedSubscriptionIds(subscriptions.map((item) => item.id));
+    Promise.all([
+      loadAccessibleCalendarSubscriptions(),
+      loadUserUnsubscribes(),
+    ])
+      .then(([subscriptions, unsubscribes]) => {
+        const unsubscribedIds = new Set(unsubscribes.map((u) => u.subscription));
+        const active = subscriptions.filter((sub) => !unsubscribedIds.has(sub.id));
+        setCalendarSubscriptions(active);
+        setSelectedSubscriptionIds(active.map((item) => item.id));
       })
       .catch((error) => console.log("CALENDAR SUBSCRIPTIONS LOAD ERROR:", error));
   }, [householdId]);
@@ -535,18 +543,59 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
     return marked;
   }, [events, getMemberColor, selectedDateKey, theme.colors.primary]);
 
+  const calendarTheme = useMemo<CalendarTheme>(
+    () => ({
+      calendarBackground: theme.colors.surface,
+      textSectionTitleColor: theme.colors.onSurface,
+      dayTextColor: theme.colors.onSurface,
+      monthTextColor: theme.colors.onSurface,
+      arrowColor: theme.colors.primary,
+      todayBackgroundColor: theme.colors.primaryContainer,
+      todayTextColor: theme.colors.primary,
+      selectedDayBackgroundColor: theme.colors.primary,
+      selectedDayTextColor: theme.colors.onPrimary,
+      textDisabledColor: theme.dark ? "#555" : "#d9e1e8",
+      "stylesheet.day.basic": {
+        today: {
+          backgroundColor: theme.colors.primaryContainer,
+          borderColor: theme.colors.primary,
+          borderRadius: 16,
+          borderWidth: 1.5,
+        },
+        todayText: {
+          color: theme.colors.primary,
+          fontWeight: "700",
+        },
+      },
+      "stylesheet.day.period": {
+        today: {
+          backgroundColor: theme.colors.primaryContainer,
+          borderColor: theme.colors.primary,
+          borderRadius: 17,
+          borderWidth: 1.5,
+        },
+        todayText: {
+          color: theme.colors.primary,
+          fontWeight: "700",
+        },
+      },
+    }),
+    [
+      theme.colors.onPrimary,
+      theme.colors.onSurface,
+      theme.colors.primary,
+      theme.colors.primaryContainer,
+      theme.colors.surface,
+      theme.dark,
+    ]
+  );
+
   function handleMonthChange(month: DateData) {
     setVisibleMonth(new Date(month.year, month.month - 1, 1));
   }
 
   function handleDayPress(day: DateData) {
     setSelectedDateKey(day.dateString);
-  }
-
-  function jumpToToday() {
-    const todayKey = toDateKey(new Date());
-    setSelectedDateKey(todayKey);
-    setVisibleMonth(new Date());
   }
 
   function openCreateDialog() {
@@ -987,9 +1036,6 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
           <Card.Title title={isGerman ? "Monatsansicht" : "Month view"} />
           <Card.Content>
             <View style={styles.calendarActions}>
-              <Button mode="outlined" onPress={jumpToToday}>
-                {isGerman ? "Heute" : "Today"}
-              </Button>
               <Button mode="outlined" onPress={openCreateDialog}>
                 {isGerman ? "Termin hinzufügen" : "Add event"}
               </Button>
@@ -1006,17 +1052,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
               onMonthChange={handleMonthChange}
               enableSwipeMonths
               markingType="multi-period"
-              theme={{
-                calendarBackground: theme.colors.surface,
-                textSectionTitleColor: theme.colors.onSurface,
-                dayTextColor: theme.colors.onSurface,
-                monthTextColor: theme.colors.onSurface,
-                arrowColor: theme.colors.primary,
-                todayTextColor: theme.colors.primary,
-                selectedDayBackgroundColor: theme.colors.primary,
-                selectedDayTextColor: theme.colors.onPrimary,
-                textDisabledColor: theme.dark ? "#555" : "#d9e1e8",
-              }}
+              theme={calendarTheme}
             />
           </Card.Content>
         </Card>
@@ -1335,17 +1371,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                 );
                 setEndDatePickerVisible(false);
               }}
-              theme={{
-                calendarBackground: theme.colors.surface,
-                textSectionTitleColor: theme.colors.onSurface,
-                dayTextColor: theme.colors.onSurface,
-                monthTextColor: theme.colors.onSurface,
-                arrowColor: theme.colors.primary,
-                todayTextColor: theme.colors.primary,
-                selectedDayBackgroundColor: theme.colors.primary,
-                selectedDayTextColor: theme.colors.onPrimary,
-                textDisabledColor: theme.dark ? "#555" : "#d9e1e8",
-              }}
+              theme={calendarTheme}
             />
           </Dialog.Content>
 
@@ -1393,17 +1419,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                 setNewEndDate(day.dateString === baseDateKey ? "" : day.dateString);
                 setEditEndDatePickerVisible(false);
               }}
-              theme={{
-                calendarBackground: theme.colors.surface,
-                textSectionTitleColor: theme.colors.onSurface,
-                dayTextColor: theme.colors.onSurface,
-                monthTextColor: theme.colors.onSurface,
-                arrowColor: theme.colors.primary,
-                todayTextColor: theme.colors.primary,
-                selectedDayBackgroundColor: theme.colors.primary,
-                selectedDayTextColor: theme.colors.onPrimary,
-                textDisabledColor: theme.dark ? "#555" : "#d9e1e8",
-              }}
+              theme={calendarTheme}
             />
           </Dialog.Content>
 
