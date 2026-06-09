@@ -117,14 +117,12 @@ routerAdd("GET", "/api/calendar-export/{token}", (e) => {
       'inline; filename="' + calendarExportFilename(household.getString("name")) + '.ics"'
     )
     e.response.header().set("Cache-Control", "no-store")
-    e.response.writeHeader(200)
-    e.response.writeString(payload)
-    return
+    return e.string(200, payload)
   } catch (error) {
-    throw new BadRequestError("Calendar export failed.", {
-      message: String(error && error.message ? error.message : error),
-      name: String(error && error.name ? error.name : ""),
-    })
+    console.log("calendar export failed:", error)
+    throw new BadRequestError(
+      "Calendar export failed: " + String(error && error.message ? error.message : error)
+    )
   }
 })
 
