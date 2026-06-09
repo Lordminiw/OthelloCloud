@@ -2,8 +2,15 @@ function calendarExportPad(value) {
   return String(value).padStart(2, "0")
 }
 
-function calendarExportFormatUtc(value) {
+function calendarExportParseDate(value) {
   var date = new Date(value)
+  if (isNaN(date.getTime())) return null
+  return date
+}
+
+function calendarExportFormatUtc(value) {
+  var date = calendarExportParseDate(value)
+  if (!date) return ""
   return (
     date.getUTCFullYear() +
     calendarExportPad(date.getUTCMonth() + 1) +
@@ -17,7 +24,8 @@ function calendarExportFormatUtc(value) {
 }
 
 function calendarExportFormatDate(value) {
-  var date = new Date(value)
+  var date = calendarExportParseDate(value)
+  if (!date) return ""
   return (
     date.getUTCFullYear() +
     calendarExportPad(date.getUTCMonth() + 1) +
@@ -61,7 +69,8 @@ function calendarExportDescription(raw) {
 }
 
 function calendarExportAllDayEnd(value) {
-  var date = new Date(value)
+  var date = calendarExportParseDate(value)
+  if (!date) return ""
   date.setUTCDate(date.getUTCDate() + 1)
   return date.toISOString()
 }
@@ -140,6 +149,36 @@ function calendarExportIsManualEvent(event) {
   return source === "" || source === "manual"
 }
 
+function calendarExportNormalizeEvent(event) {
+  if (!event) return null
+
+  var normalized = {
+    id: event.id,
+    title: event.title,
+    start: event.start,
+    end: event.end,
+    location: event.location,
+    description: event.description,
+    allDay: Boolean(event.allDay),
+    created: event.created,
+    updated: event.updated,
+  }
+
+  if (!calendarExportFormatUtc(normalized.start) && !calendarExportFormatDate(normalized.start)) {
+    return null
+  }
+
+  if (normalized.end) {
+    if (normalized.allDay) {
+      if (!calendarExportAllDayEnd(normalized.end)) normalized.end = ""
+    } else if (!calendarExportFormatUtc(normalized.end)) {
+      normalized.end = ""
+    }
+  }
+
+  return normalized
+}
+
 function buildCalendarExport(input) {
   var calendarName = input && input.calendarName ? input.calendarName : "WG Calendar"
   var productId = input && input.productId ? input.productId : "-//OthelloCloud//WG Calendar//EN"
@@ -159,6 +198,10 @@ function buildCalendarExport(input) {
   }
 
   events.forEach(function (event) {
+    var normalized = calendarExportNormalizeEvent(event)
+    if (!normalized) return
+
+    event = normalized
     var updated = event.updated || event.created || event.start
     var description = calendarExportDescription(event.description)
     lines.push("BEGIN:VEVENT")
@@ -197,4 +240,5 @@ module.exports = {
   isHouseholdAdmin: calendarExportIsHouseholdAdmin,
   ensureToken: calendarExportEnsureToken,
   isManualEvent: calendarExportIsManualEvent,
+  normalizeEvent: calendarExportNormalizeEvent,
 }

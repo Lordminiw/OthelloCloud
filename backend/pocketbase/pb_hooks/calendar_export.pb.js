@@ -91,32 +91,38 @@ routerAdd("GET", "/api/calendar-export/{token}", (e) => {
     )
   }
 
-  var payload = helpers.buildCalendarExport({
-    calendarName: household.getString("name"),
-    productId: "-//OthelloCloud//WG Calendar//EN",
-    calendarUrl: "",
-    events: events.filter(helpers.isManualEvent).map(function (record) {
-      return {
-        id: record.id,
-        title: record.getString("title"),
-        start: record.getString("start"),
-        end: record.getString("end"),
-        location: record.getString("location"),
-        description: record.getString("description"),
-        allDay: record.getBool("allDay"),
-        created: record.getString("created"),
-        updated: record.getString("updated"),
-      }
-    }),
-  })
+  try {
+    var payload = helpers.buildCalendarExport({
+      calendarName: household.getString("name"),
+      productId: "-//OthelloCloud//WG Calendar//EN",
+      calendarUrl: "",
+      events: events.filter(helpers.isManualEvent).map(function (record) {
+        return {
+          id: record.id,
+          title: record.getString("title"),
+          start: record.getString("start"),
+          end: record.getString("end"),
+          location: record.getString("location"),
+          description: record.getString("description"),
+          allDay: record.getBool("allDay"),
+          created: record.getString("created"),
+          updated: record.getString("updated"),
+        }
+      }),
+    })
 
-  e.response.header().set("Content-Type", "text/calendar; charset=utf-8")
-  e.response.header().set(
-    "Content-Disposition",
-    'inline; filename="' + calendarExportFilename(household.getString("name")) + '.ics"'
-  )
-  e.response.header().set("Cache-Control", "no-store")
-  return e.blob(200, "text/calendar; charset=utf-8", toBytes(payload))
+    e.response.header().set("Content-Type", "text/calendar; charset=utf-8")
+    e.response.header().set(
+      "Content-Disposition",
+      'inline; filename="' + calendarExportFilename(household.getString("name")) + '.ics"'
+    )
+    e.response.header().set("Cache-Control", "no-store")
+    return e.blob(200, "text/calendar; charset=utf-8", toBytes(payload))
+  } catch (error) {
+    throw new BadRequestError("Calendar export failed.", {
+      message: String(error && error.message ? error.message : error),
+    })
+  }
 })
 
 onRecordCreateRequest((e) => {
