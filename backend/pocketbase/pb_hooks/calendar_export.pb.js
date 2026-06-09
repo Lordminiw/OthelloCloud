@@ -1,13 +1,5 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-function calendarExportFilename(name) {
-  return String(name || "wg-calendar")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "wg-calendar"
-}
-
 routerAdd("GET", "/api/households/{householdId}/calendar-export", (e) => {
   var helpers = require(__hooks + "/calendar_export.js")
   var household
@@ -111,10 +103,16 @@ routerAdd("GET", "/api/calendar-export/{token}", (e) => {
       }),
     })
 
+    var filename = String(household.getString("name") || "wg-calendar")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "wg-calendar"
+
     e.response.header().set("Content-Type", "text/calendar; charset=utf-8")
     e.response.header().set(
       "Content-Disposition",
-      'inline; filename="' + calendarExportFilename(household.getString("name")) + '.ics"'
+      'inline; filename="' + filename + '.ics"'
     )
     e.response.header().set("Cache-Control", "no-store")
     return e.string(200, payload)
