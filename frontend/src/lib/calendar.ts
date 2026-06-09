@@ -9,7 +9,7 @@ export type CalendarEvent = {
   location?: string;
   description?: string;
   createdBy?: string;
-  source?: "manual" | "ical";
+  source?: "manual" | "ical" | "upload";
   externalUid?: string;
   subscription?: string;
   allDay?: boolean;
@@ -96,7 +96,7 @@ export async function loadCalendarEventsForMonth(input: {
   return await pb.collection("calendar_events").getFullList<CalendarEvent>({
     filter:
       `household = "${input.householdId}" && ` +
-      `(source = "" || source = "manual") && ` +
+      `(source = "" || source = "manual" || source = "upload") && ` +
       `start < "${monthEnd.toISOString()}" && ` +
       `(end = "" || end >= "${monthStart.toISOString()}")`,
     sort: "start",

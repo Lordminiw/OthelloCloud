@@ -223,6 +223,10 @@ function compareDateKeys(a: string, b: string) {
   return a.localeCompare(b);
 }
 
+function isImportedEvent(event: CalendarEvent) {
+  return event.source === "ical" || event.source === "upload";
+}
+
 function eventTouchesDate(event: CalendarEvent, dateKey: string) {
   const startKey = getEventDateKey(event);
   const endKey = getEventEndDateKey(event);
@@ -450,6 +454,10 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   }
 
   function getSubscriptionLabel(subscriptionId?: string) {
+    if (!subscriptionId) {
+      return t("profile.externalCalendarUploadedSource");
+    }
+
     return (
       calendarSubscriptions.find((item) => item.id === subscriptionId)?.name ??
       t("calendar.externalCalendarSource")
@@ -511,7 +519,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
       const endKey = getEventEndDateKey(event);
       const dateKeys = getDateKeysBetween(startKey, endKey);
       const color =
-        event.source === "ical"
+        isImportedEvent(event)
           ? EXTERNAL_CALENDAR_COLOR
           : getMemberColor(event.createdBy ?? "");
 
@@ -820,7 +828,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   }
 
   const selectedEventViews = selectedEvents.map((event) => {
-    const isExternal = event.source === "ical";
+    const isExternal = isImportedEvent(event);
     const meta = getEventMeta(event);
     const creatorLabel = isExternal
       ? getSubscriptionLabel(event.subscription)
@@ -946,7 +954,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   });
 
   const upcomingEventViews = upcomingEvents.map((event) => {
-    const isExternal = event.source === "ical";
+    const isExternal = isImportedEvent(event);
     const meta = getEventMeta(event);
     const creatorLabel = isExternal
       ? getSubscriptionLabel(event.subscription)

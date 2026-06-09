@@ -53,6 +53,7 @@ backend/pocketbase/pb_migrations/*
 !backend/pocketbase/pb_migrations/1780600200_calendar_subscription_unsubscribes.js
 !backend/pocketbase/pb_migrations/1780600200_household_calendar_export.js
 !backend/pocketbase/pb_migrations/1780600300_backfill_household_calendar_export_tokens.js
+!backend/pocketbase/pb_migrations/1781182000_updated_calendar_events_upload_source.js
 
 # Optional PocketBase hooks, keep if you start writing custom backend code
 # backend/pocketbase/pb_hooks/

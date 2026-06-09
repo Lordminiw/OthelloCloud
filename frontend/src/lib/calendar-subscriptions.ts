@@ -19,6 +19,11 @@ export type CalendarSyncResult = {
   removed: number;
 };
 
+export type CalendarUploadFile = {
+  name: string;
+  blob: Blob;
+};
+
 export async function loadOwnedCalendarSubscriptions() {
   const userId = pb.authStore.model?.id;
   if (!userId) return [];
@@ -69,6 +74,22 @@ export async function syncCalendarSubscription(subscriptionId: string) {
     `/api/calendar-subscriptions/${subscriptionId}/sync`,
     { method: "POST" }
   );
+}
+
+export async function uploadCalendarFile(input: {
+  householdId: string;
+  name?: string;
+  file: CalendarUploadFile;
+}) {
+  const formData = new FormData();
+  formData.append("householdId", input.householdId);
+  formData.append("name", input.name?.trim() || input.file.name);
+  formData.append("file", input.file.blob, input.file.name);
+
+  return await pb.send<CalendarSyncResult>("/api/calendar-imports/upload", {
+    method: "POST",
+    body: formData,
+  });
 }
 
 export type CalendarSubscriptionUnsubscribe = {

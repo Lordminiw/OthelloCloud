@@ -8,6 +8,7 @@ import {
   List,
   Menu,
   Portal,
+  SegmentedButtons,
   Switch,
   Text,
   TextInput,
@@ -25,6 +26,7 @@ import {
   updateHouseholdMemberRole,
 } from "../lib/members";
 import {
+  CalendarUploadFile,
   CalendarSubscription,
   loadOwnedCalendarSubscriptions,
   saveCalendarSubscription,
@@ -33,6 +35,7 @@ import {
   loadUserUnsubscribes,
   unsubscribeFromCalendarSubscription,
   subscribeToCalendarSubscription,
+  uploadCalendarFile,
 } from "../lib/calendar-subscriptions";
 import {
   CalendarExportSettings,
@@ -57,6 +60,25 @@ type PendingMemberAction =
       type: "leave";
       member: HouseholdMember;
     };
+
+type CalendarImportMode = "url" | "file";
+
+function pickCalendarUploadFile(): Promise<CalendarUploadFile | null | undefined> {
+  if (typeof document === "undefined") {
+    return Promise.resolve(null);
+  }
+
+  return new Promise((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".ics,text/calendar";
+    input.onchange = () => {
+      const file = input.files?.[0];
+      resolve(file ? { name: file.name, blob: file } : undefined);
+    };
+    input.click();
+  });
+}
 
 export function ProfileScreen({
   household,
@@ -97,6 +119,10 @@ export function ProfileScreen({
     t("profile.externalCalendarDefaultName")
   );
   const [calendarUrl, setCalendarUrl] = useState("");
+  const [calendarImportMode, setCalendarImportMode] =
+    useState<CalendarImportMode>("url");
+  const [calendarUploadFile, setCalendarUploadFile] =
+    useState<CalendarUploadFile | null>(null);
   const [calendarEnabled, setCalendarEnabled] = useState(false);
   const [calendarBusy, setCalendarBusy] = useState(false);
   const [calendarLoading, setCalendarLoading] = useState(true);
@@ -160,6 +186,8 @@ export function ProfileScreen({
       setCalendarSubscription(subscription);
 
       if (subscription) {
+        setCalendarImportMode("url");
+        setCalendarUploadFile(null);
         setCalendarName(
           subscription.name || t("profile.externalCalendarDefaultName")
         );
@@ -171,6 +199,8 @@ export function ProfileScreen({
         setCalendarHouseholdId(subscription.household || household.id);
         setPersonalSubscribed(!unsubscribedIds.includes(subscription.id));
       } else {
+        setCalendarImportMode("url");
+        setCalendarUploadFile(null);
         setCalendarName(t("profile.externalCalendarDefaultName"));
         setCalendarUrl("");
         setCalendarEnabled(false);
@@ -395,7 +425,59 @@ export function ProfileScreen({
     }
   }
 
+  async function handlePickCalendarUploadFile() {
+    const file = await pickCalendarUploadFile();
+
+    if (file === null) {
+      alert(t("profile.externalCalendarUploadUnsupported"));
+      return;
+    }
+
+    if (!file) {
+      return;
+    }
+
+    setCalendarUploadFile(file);
+    if (
+      !calendarName.trim() ||
+      calendarName === t("profile.externalCalendarDefaultName")
+    ) {
+      setCalendarName(file.name);
+    }
+  }
+
+  async function handleUploadCalendarImport() {
+    if (!calendarUploadFile) {
+      alert(t("profile.externalCalendarUploadNoFile"));
+      return;
+    }
+
+    setCalendarBusy(true);
+    try {
+      const result = await uploadCalendarFile({
+        householdId: calendarHouseholdId,
+        name: calendarName,
+        file: calendarUploadFile,
+      });
+      setCalendarUploadFile(null);
+      alert(t("profile.externalCalendarUploadSuccess", result));
+    } catch (error: any) {
+      alert(
+        `${t("profile.externalCalendarUploadFailed")}: ${
+          error?.response?.data?.message ??
+          error?.response?.message ??
+          error?.message ??
+          "Unknown"
+        }`
+      );
+    } finally {
+      setCalendarBusy(false);
+    }
+  }
+
   function selectCalendarSubscription(subscription: CalendarSubscription) {
+    setCalendarImportMode("url");
+    setCalendarUploadFile(null);
     setCalendarSubscription(subscription);
     setCalendarName(subscription.name);
     setCalendarUrl(subscription.url || "");
@@ -406,7 +488,9 @@ export function ProfileScreen({
     setPersonalSubscribed(!userUnsubscribes.includes(subscription.id));
   }
 
-  function startNewCalendarSubscription() {
+  function startNewCalendarSubscription(mode: CalendarImportMode = "url") {
+    setCalendarImportMode(mode);
+    setCalendarUploadFile(null);
     setCalendarSubscription(null);
     setCalendarName(t("profile.externalCalendarDefaultName"));
     setCalendarUrl("");
@@ -415,6 +499,18 @@ export function ProfileScreen({
     setCalendarHouseholdId(household.id);
     setCalendarMenuVisible(false);
     setPersonalSubscribed(true);
+  }
+
+  function handleChangeCalendarImportMode(value: string) {
+    const mode = value as CalendarImportMode;
+
+    if (mode === "file") {
+      startNewCalendarSubscription("file");
+      return;
+    }
+
+    setCalendarImportMode("url");
+    setCalendarUploadFile(null);
   }
 
   async function handleTogglePersonalSubscription(val: boolean) {
@@ -797,7 +893,12 @@ export function ProfileScreen({
               <Menu.Item
                 title={t("profile.externalCalendarNew")}
                 leadingIcon="plus"
-                onPress={startNewCalendarSubscription}
+                onPress={() => startNewCalendarSubscription("url")}
+              />
+              <Menu.Item
+                title={t("profile.externalCalendarUploadSubmit")}
+                leadingIcon="file-upload-outline"
+                onPress={() => startNewCalendarSubscription("file")}
               />
               {calendarSubscriptions.map((item) => (
                 <Menu.Item
@@ -838,40 +939,129 @@ export function ProfileScreen({
                   </>
                 ) : (
                   <>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                      <Switch
-                        value={calendarEnabled}
-                        onValueChange={setCalendarEnabled}
-                        disabled={calendarBusy}
-                      />
-                      <Text>{t("profile.externalCalendarEnabled")}</Text>
-                    </View>
-                    <TextInput
-                      mode="outlined"
-                      label={t("profile.externalCalendarName")}
-                      value={calendarName}
-                      onChangeText={setCalendarName}
-                      disabled={calendarBusy}
+                    <Text variant="labelMedium">
+                      {t("profile.externalCalendarMethodLabel")}
+                    </Text>
+                    <SegmentedButtons
+                      value={calendarImportMode}
+                      onValueChange={handleChangeCalendarImportMode}
+                      buttons={[
+                        {
+                          value: "url",
+                          label: t("profile.externalCalendarMethodUrl"),
+                          icon: "link-variant",
+                        },
+                        {
+                          value: "file",
+                          label: t("profile.externalCalendarMethodFile"),
+                          icon: "file-upload-outline",
+                        },
+                      ]}
                     />
-                    <TextInput
-                      mode="outlined"
-                      label={t("profile.externalCalendarUrl")}
-                      value={calendarUrl}
-                      onChangeText={setCalendarUrl}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      disabled={calendarBusy}
-                    />
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                      <Switch
-                        value={calendarSharedWithHousehold}
-                        onValueChange={setCalendarSharedWithHousehold}
-                        disabled={calendarBusy}
-                      />
-                      <Text>{t("profile.externalCalendarShareWithHousehold")}</Text>
-                    </View>
-                    {calendarSharedWithHousehold && (
+                    {calendarImportMode === "url" ? (
                       <>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                          <Switch
+                            value={calendarEnabled}
+                            onValueChange={setCalendarEnabled}
+                            disabled={calendarBusy}
+                          />
+                          <Text>{t("profile.externalCalendarEnabled")}</Text>
+                        </View>
+                        <TextInput
+                          mode="outlined"
+                          label={t("profile.externalCalendarName")}
+                          value={calendarName}
+                          onChangeText={setCalendarName}
+                          disabled={calendarBusy}
+                        />
+                        <TextInput
+                          mode="outlined"
+                          label={t("profile.externalCalendarUrl")}
+                          value={calendarUrl}
+                          onChangeText={setCalendarUrl}
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          disabled={calendarBusy}
+                        />
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                          <Switch
+                            value={calendarSharedWithHousehold}
+                            onValueChange={setCalendarSharedWithHousehold}
+                            disabled={calendarBusy}
+                          />
+                          <Text>{t("profile.externalCalendarShareWithHousehold")}</Text>
+                        </View>
+                        {calendarSharedWithHousehold && (
+                          <>
+                            <Text variant="labelMedium">{t("common.chooseHousehold")}</Text>
+                            <Menu
+                              visible={calendarHouseholdMenuVisible}
+                              onDismiss={() => setCalendarHouseholdMenuVisible(false)}
+                              anchor={
+                                <Button
+                                  mode="outlined"
+                                  icon="home-group"
+                                  onPress={() => setCalendarHouseholdMenuVisible(true)}
+                                  disabled={calendarBusy}
+                                >
+                                  {calendarHousehold.name}
+                                </Button>
+                              }
+                            >
+                              {households.map((item) => (
+                                <Menu.Item
+                                  key={item.id}
+                                  title={item.name}
+                                  leadingIcon={
+                                    item.id === calendarHouseholdId ? "check" : "home"
+                                  }
+                                  onPress={() => {
+                                    setCalendarHouseholdId(item.id);
+                                    setCalendarHouseholdMenuVisible(false);
+                                  }}
+                                />
+                              ))}
+                            </Menu>
+                          </>
+                        )}
+                        <Text variant="bodySmall">{formatLastSync(calendarSubscription)}</Text>
+                        {calendarSubscription?.lastSyncMessage ? (
+                          <Text variant="bodySmall">
+                            {calendarSubscription.lastSyncMessage}
+                          </Text>
+                        ) : null}
+                        <Button
+                          mode="contained"
+                          icon="content-save"
+                          loading={calendarBusy}
+                          disabled={calendarBusy}
+                          onPress={handleSaveCalendarSubscription}
+                        >
+                          {t("profile.externalCalendarSave")}
+                        </Button>
+                        <Button
+                          mode="outlined"
+                          icon="sync"
+                          loading={calendarBusy}
+                          disabled={calendarBusy || !calendarSubscription || !calendarEnabled}
+                          onPress={handleSyncCalendarSubscription}
+                        >
+                          {t("profile.externalCalendarSync")}
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <TextInput
+                          mode="outlined"
+                          label={t("profile.externalCalendarUploadName")}
+                          value={calendarName}
+                          onChangeText={setCalendarName}
+                          disabled={calendarBusy}
+                        />
+                        <Text variant="bodySmall">
+                          {t("profile.externalCalendarUploadNameHint")}
+                        </Text>
                         <Text variant="labelMedium">{t("common.chooseHousehold")}</Text>
                         <Menu
                           visible={calendarHouseholdMenuVisible}
@@ -901,32 +1091,32 @@ export function ProfileScreen({
                             />
                           ))}
                         </Menu>
+                        <Text variant="labelMedium">
+                          {t("profile.externalCalendarUploadFile")}
+                        </Text>
+                        <Button
+                          mode="outlined"
+                          icon="file-upload-outline"
+                          onPress={handlePickCalendarUploadFile}
+                          disabled={calendarBusy}
+                        >
+                          {calendarUploadFile?.name ||
+                            t("profile.externalCalendarUploadChoose")}
+                        </Button>
+                        <Text variant="bodySmall">
+                          {t("profile.externalCalendarUploadReplaceHint")}
+                        </Text>
+                        <Button
+                          mode="contained"
+                          icon="file-import"
+                          loading={calendarBusy}
+                          disabled={calendarBusy}
+                          onPress={handleUploadCalendarImport}
+                        >
+                          {t("profile.externalCalendarUploadSubmit")}
+                        </Button>
                       </>
                     )}
-                    <Text variant="bodySmall">{formatLastSync(calendarSubscription)}</Text>
-                    {calendarSubscription?.lastSyncMessage ? (
-                      <Text variant="bodySmall">
-                        {calendarSubscription.lastSyncMessage}
-                      </Text>
-                    ) : null}
-                    <Button
-                      mode="contained"
-                      icon="content-save"
-                      loading={calendarBusy}
-                      disabled={calendarBusy}
-                      onPress={handleSaveCalendarSubscription}
-                    >
-                      {t("profile.externalCalendarSave")}
-                    </Button>
-                    <Button
-                      mode="outlined"
-                      icon="sync"
-                      loading={calendarBusy}
-                      disabled={calendarBusy || !calendarSubscription || !calendarEnabled}
-                      onPress={handleSyncCalendarSubscription}
-                    >
-                      {t("profile.externalCalendarSync")}
-                    </Button>
                   </>
                 )}
               </>

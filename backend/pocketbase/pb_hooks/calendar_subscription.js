@@ -1,5 +1,7 @@
 /// <reference path="../pb_data/types.d.ts" />
 
+var CALENDAR_SUBSCRIPTION_MAX_ICS_BYTES = 2 * 1024 * 1024
+
 function calendarSubscriptionIsHouseholdMember(app, householdId, userId) {
   if (!householdId) return false
   try {
@@ -47,6 +49,67 @@ function calendarSubscriptionValidateUrl(rawUrl) {
   }
 
   return value
+}
+
+function calendarSubscriptionValidateUploadName(name) {
+  var value = String(name || "").trim()
+  if (!value || !value.toLowerCase().endsWith(".ics")) {
+    throw new BadRequestError("Please upload a .ics calendar file.")
+  }
+  return value
+}
+
+function calendarSubscriptionRequireMember(app, householdId, userId) {
+  var value = String(householdId || "").trim()
+  if (!value) {
+    throw new BadRequestError("Please choose a household for the calendar import.")
+  }
+  if (!calendarSubscriptionIsHouseholdMember(app, value, userId)) {
+    throw new ForbiddenError("You can only import calendars into your households.")
+  }
+  return value
+}
+
+function calendarSubscriptionNormalizeUploadSourceKey(rawName, fallbackName) {
+  var source = String(rawName || "").trim() || String(fallbackName || "").trim()
+  var normalized = source
+    .toLowerCase()
+    .replace(/\.ics$/i, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+
+  if (!normalized) {
+    throw new BadRequestError("Please provide a name or filename for the calendar import.")
+  }
+  return normalized.slice(0, 120)
+}
+
+function calendarSubscriptionReadUploadedText(file) {
+  if (!file) {
+    throw new BadRequestError("Please choose a .ics file to import.")
+  }
+  if (Number(file.size || 0) <= 0) {
+    throw new BadRequestError("The uploaded .ics file is empty.")
+  }
+  if (Number(file.size || 0) > CALENDAR_SUBSCRIPTION_MAX_ICS_BYTES) {
+    throw new BadRequestError("The uploaded .ics file is larger than 2 MB.")
+  }
+
+  var reader = file.reader.open()
+  var text = ""
+
+  try {
+    text = toString(reader, CALENDAR_SUBSCRIPTION_MAX_ICS_BYTES + 1)
+  } catch (_) {
+    throw new BadRequestError("The uploaded .ics file could not be read as text.")
+  } finally {
+    reader.close()
+  }
+
+  if (!text.trim()) {
+    throw new BadRequestError("The uploaded .ics file is empty.")
+  }
+  return text
 }
 
 function calendarSubscriptionUnfold(raw) {
@@ -152,9 +215,96 @@ function calendarSubscriptionParse(raw) {
   return events
 }
 
+function calendarSubscriptionEventRecordData(item, options) {
+  return {
+    household: options.householdId || "",
+    title: item.title,
+    start: item.start,
+    end: item.end || "",
+    location: item.location,
+    description: item.description,
+    source: options.source || "ical",
+    externalUid: item.uid,
+    subscription: options.subscriptionId || "",
+    allDay: item.allDay,
+  }
+}
+
+function calendarSubscriptionImportParsedEvents(txApp, options) {
+  // Shared import contract: preserve subscription imports as source="ical" with created/updated/removed counts.
+  var counts = { created: 0, updated: 0, removed: 0 }
+  var collection = txApp.findCollectionByNameOrId("calendar_events")
+  var current = []
+  var uploadPrefix = options.uploadSourceKey ? options.uploadSourceKey + "::" : ""
+
+  if (options.subscriptionId) {
+    current = txApp.findRecordsByFilter(
+        "calendar_events",
+        "subscription = {:subscription}",
+        "",
+        0,
+        0,
+        { subscription: options.subscriptionId }
+      )
+  } else if (options.source === "upload" && options.householdId) {
+    current = txApp.findRecordsByFilter(
+      "calendar_events",
+      "source = {:source} && household = {:household}",
+      "",
+      0,
+      0,
+      { source: "upload", household: options.householdId }
+    )
+  }
+  var byUid = {}
+
+  current.forEach(function (record) {
+    byUid[record.getString("externalUid")] = record
+  })
+
+  options.events.forEach(function (item) {
+    var record = byUid[item.uid]
+    if (record) {
+      counts.updated += 1
+      delete byUid[item.uid]
+    } else {
+      counts.created += 1
+      record = new Record(collection)
+    }
+
+    var data = calendarSubscriptionEventRecordData(item, options)
+    Object.keys(data).forEach(function (key) {
+      record.set(key, data[key])
+    })
+    txApp.save(record)
+  })
+
+  if (options.subscriptionId) {
+    Object.keys(byUid).forEach(function (uid) {
+      txApp.delete(byUid[uid])
+      counts.removed += 1
+    })
+  } else if (options.source === "upload" && uploadPrefix) {
+    Object.keys(byUid).forEach(function (uid) {
+      if (uid.indexOf(uploadPrefix) !== 0) return
+      txApp.delete(byUid[uid])
+      counts.removed += 1
+    })
+  }
+
+  return counts
+}
+
 module.exports = {
+  MAX_ICS_BYTES: CALENDAR_SUBSCRIPTION_MAX_ICS_BYTES,
+  eventRecordData: calendarSubscriptionEventRecordData,
+  importParsedEvents: calendarSubscriptionImportParsedEvents,
   isHouseholdMember: calendarSubscriptionIsHouseholdMember,
+  normalizeUploadSourceKey: calendarSubscriptionNormalizeUploadSourceKey,
+  readUploadedText: calendarSubscriptionReadUploadedText,
+  requireMember: calendarSubscriptionRequireMember,
   validateUrl: calendarSubscriptionValidateUrl,
+  validateUploadName: calendarSubscriptionValidateUploadName,
   parse: calendarSubscriptionParse,
   safeMessage: calendarSubscriptionSafeMessage,
 }

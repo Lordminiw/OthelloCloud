@@ -202,11 +202,25 @@ export type TranslationTree = {
     householdManageTitle: string;
     profileSetupTitle: string;
     externalCalendarTitle: string;
+    externalCalendarMethodLabel: string;
+    externalCalendarMethodUrl: string;
+    externalCalendarMethodFile: string;
     externalCalendarEnabled: string;
     externalCalendarDisabled: string;
     externalCalendarName: string;
     externalCalendarDefaultName: string;
     externalCalendarUrl: string;
+    externalCalendarUploadName: string;
+    externalCalendarUploadNameHint: string;
+    externalCalendarUploadFile: string;
+    externalCalendarUploadChoose: string;
+    externalCalendarUploadReplaceHint: string;
+    externalCalendarUploadSubmit: string;
+    externalCalendarUploadSuccess: string;
+    externalCalendarUploadFailed: string;
+    externalCalendarUploadNoFile: string;
+    externalCalendarUploadUnsupported: string;
+    externalCalendarUploadedSource: string;
     externalCalendarSave: string;
     externalCalendarSync: string;
     externalCalendarNeverSynced: string;
@@ -444,11 +458,25 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       householdManageTitle: "Manage household",
       profileSetupTitle: "Profile",
       externalCalendarTitle: "External calendar",
+      externalCalendarMethodLabel: "Import method",
+      externalCalendarMethodUrl: "Subscription URL",
+      externalCalendarMethodFile: ".ics file",
       externalCalendarEnabled: "Enabled",
       externalCalendarDisabled: "Disabled",
       externalCalendarName: "Calendar name",
       externalCalendarDefaultName: "External calendar",
       externalCalendarUrl: "iCal subscription URL",
+      externalCalendarUploadName: "Import name",
+      externalCalendarUploadNameHint: "Used to identify and replace earlier uploads.",
+      externalCalendarUploadFile: "Calendar file",
+      externalCalendarUploadChoose: "Choose .ics file",
+      externalCalendarUploadReplaceHint: "Use the same import name again to update or replace a previous upload.",
+      externalCalendarUploadSubmit: "Import .ics file",
+      externalCalendarUploadSuccess: "Import complete: {{created}} created, {{updated}} updated, {{removed}} removed.",
+      externalCalendarUploadFailed: "The .ics calendar file could not be imported",
+      externalCalendarUploadNoFile: "Please choose a .ics file.",
+      externalCalendarUploadUnsupported: "File upload is not available in this app environment yet.",
+      externalCalendarUploadedSource: "Uploaded .ics import",
       externalCalendarSave: "Save settings",
       externalCalendarSync: "Check for updates",
       externalCalendarNeverSynced: "Not synchronized yet",
@@ -673,11 +701,25 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       householdManageTitle: "WG verwalten",
       profileSetupTitle: "Profil",
       externalCalendarTitle: "Externer Kalender",
+      externalCalendarMethodLabel: "Import-Methode",
+      externalCalendarMethodUrl: "Abo-URL",
+      externalCalendarMethodFile: ".ics-Datei",
       externalCalendarEnabled: "Aktiviert",
       externalCalendarDisabled: "Deaktiviert",
       externalCalendarName: "Kalendername",
       externalCalendarDefaultName: "Externer Kalender",
       externalCalendarUrl: "iCal-Abonnement-URL",
+      externalCalendarUploadName: "Importname",
+      externalCalendarUploadNameHint: "Wird verwendet, um fruehere Uploads zu erkennen und zu ersetzen.",
+      externalCalendarUploadFile: "Kalenderdatei",
+      externalCalendarUploadChoose: ".ics-Datei auswaehlen",
+      externalCalendarUploadReplaceHint: "Nutze denselben Importnamen erneut, um einen frueheren Upload zu aktualisieren oder zu ersetzen.",
+      externalCalendarUploadSubmit: ".ics-Datei importieren",
+      externalCalendarUploadSuccess: "Import abgeschlossen: {{created}} erstellt, {{updated}} aktualisiert, {{removed}} entfernt.",
+      externalCalendarUploadFailed: "Die .ics-Kalenderdatei konnte nicht importiert werden",
+      externalCalendarUploadNoFile: "Bitte waehle eine .ics-Datei aus.",
+      externalCalendarUploadUnsupported: "Datei-Upload ist in dieser App-Umgebung noch nicht verfuegbar.",
+      externalCalendarUploadedSource: "Hochgeladener .ics-Import",
       externalCalendarSave: "Einstellungen speichern",
       externalCalendarSync: "Nach Updates suchen",
       externalCalendarNeverSynced: "Noch nicht synchronisiert",
