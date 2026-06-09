@@ -69,20 +69,33 @@ routerAdd("GET", "/api/calendar-export/{token}", (e) => {
     throw new NotFoundError("Calendar export not found.")
   }
 
-  var events = e.app.findRecordsByFilter(
-    "calendar_events",
-    "household = {:household} && (source = '' || source = 'manual')",
-    "start",
-    0,
-    0,
-    { household: household.id }
-  )
+  var events
+  try {
+    events = e.app.findRecordsByFilter(
+      "calendar_events",
+      "household = {:household} && (source = '' || source = 'manual')",
+      "start",
+      0,
+      0,
+      { household: household.id }
+    )
+  } catch (_) {
+    // Fallback for deployments whose schema or filter parser lags behind the hook code.
+    events = e.app.findRecordsByFilter(
+      "calendar_events",
+      "household = {:household}",
+      "start",
+      0,
+      0,
+      { household: household.id }
+    )
+  }
 
   var payload = helpers.buildCalendarExport({
     calendarName: household.getString("name"),
     productId: "-//OthelloCloud//WG Calendar//EN",
     calendarUrl: "",
-    events: events.map(function (record) {
+    events: events.filter(helpers.isManualEvent).map(function (record) {
       return {
         id: record.id,
         title: record.getString("title"),

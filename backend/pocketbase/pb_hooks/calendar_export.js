@@ -123,6 +123,23 @@ function createExportToken() {
   return calendarExportRandomTokenFallback()
 }
 
+function calendarExportEventSource(event) {
+  if (!event) return ""
+
+  try {
+    if (typeof event.getString === "function") {
+      return String(event.getString("source") || "").trim().toLowerCase()
+    }
+  } catch (_) {}
+
+  return String(event.source || "").trim().toLowerCase()
+}
+
+function calendarExportIsManualEvent(event) {
+  var source = calendarExportEventSource(event)
+  return source === "" || source === "manual"
+}
+
 function buildCalendarExport(input) {
   var calendarName = input && input.calendarName ? input.calendarName : "WG Calendar"
   var productId = input && input.productId ? input.productId : "-//OthelloCloud//WG Calendar//EN"
@@ -179,4 +196,5 @@ module.exports = {
   buildCalendarExport: buildCalendarExport,
   isHouseholdAdmin: calendarExportIsHouseholdAdmin,
   ensureToken: calendarExportEnsureToken,
+  isManualEvent: calendarExportIsManualEvent,
 }

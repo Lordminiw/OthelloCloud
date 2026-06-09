@@ -4,6 +4,7 @@ const assert = require("node:assert/strict")
 const {
   createExportToken,
   buildCalendarExport,
+  isManualEvent,
 } = require("./calendar_export.js")
 
 test("createExportToken returns a long URL-safe token", () => {
@@ -51,4 +52,18 @@ test("buildCalendarExport serializes manual WG events to ICS", () => {
   assert.match(text, /UID:event-day@othellocloud/)
   assert.match(text, /DTSTART;VALUE=DATE:20260610/)
   assert.match(text, /DTEND;VALUE=DATE:20260613/)
+})
+
+test("isManualEvent accepts blank/manual sources and rejects imported ones", () => {
+  assert.equal(isManualEvent({ source: "" }), true)
+  assert.equal(isManualEvent({ source: "manual" }), true)
+  assert.equal(isManualEvent({ source: "ical" }), false)
+  assert.equal(
+    isManualEvent({
+      getString(field) {
+        return field === "source" ? "manual" : ""
+      },
+    }),
+    true
+  )
 })
