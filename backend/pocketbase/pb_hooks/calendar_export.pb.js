@@ -116,7 +116,7 @@ routerAdd("GET", "/api/calendar-export/{token}", (e) => {
     'inline; filename="' + calendarExportFilename(household.getString("name")) + '.ics"'
   )
   e.response.header().set("Cache-Control", "no-store")
-  return e.blob(200, "text/calendar; charset=utf-8", payload)
+  return e.blob(200, "text/calendar; charset=utf-8", toBytes(payload))
 })
 
 onRecordCreateRequest((e) => {
