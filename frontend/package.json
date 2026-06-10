@@ -7,7 +7,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:theme": "node src/theme/brand.test.js"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^3.1.1",
