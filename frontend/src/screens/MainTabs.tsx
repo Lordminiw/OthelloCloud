@@ -1,9 +1,9 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { View } from "react-native";
 import { Icon, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CalendarScreen } from "./CalendarScreen";
 import { ExpensesScreen } from "./ExpensesScreen";
+import { HomeScreen } from "./HomeScreen";
 import { PollsScreen } from "./PollsScreen";
 import { ProfileScreen } from "./ProfileScreen";
 import { ShoppingListScreen } from "./ShoppingListScreen";
@@ -150,8 +150,4 @@ function TabIcon({
   icon: string;
 }) {
   return <Icon source={icon} color={color} size={Math.min(size, 22)} />;
-}
-
-function HomeScreen({ householdId: _householdId }: { householdId: string }) {
-  return <View style={{ flex: 1 }} />;
 }
