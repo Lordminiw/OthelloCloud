@@ -2,7 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import * as Linking from "expo-linking";
 import { StatusBar } from "expo-status-bar";
-import { NavigationContainer, DarkTheme, DefaultTheme } from "@react-navigation/native";
+import {
+  NavigationContainer,
+  DarkTheme,
+  DefaultTheme,
+  useNavigationContainerRef,
+} from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { PaperProvider, MD3LightTheme, MD3DarkTheme, Text } from "react-native-paper";
@@ -112,6 +117,7 @@ function AppShell() {
   const { t } = useLanguage();
   const paperTheme = colorScheme === "dark" ? darkTheme : lightTheme;
   const navTheme = colorScheme === "dark" ? customDarkTheme : customLightTheme;
+  const navigationRef = useNavigationContainerRef();
   const url = Linking.useURL();
   const [loggedIn, setLoggedIn] = useState(pb.authStore.isValid);
   const { households, loading, refreshHouseholds } = useHousehold();
@@ -190,8 +196,35 @@ function AppShell() {
 
   return (
     <NavigationContainer
+      ref={navigationRef}
       theme={navTheme}
       documentTitle={{ enabled: false }}
+      onStateChange={() => {
+        if (typeof window === "undefined") {
+          return;
+        }
+
+        const nextTab = resolveTabKey(navigationRef.getCurrentRoute()?.name) ?? "home";
+        const search = new URLSearchParams(window.location.search);
+        const currentPoll = search.get("poll");
+        const currentInvite = search.get("invite");
+
+        const nextSearch = new URLSearchParams();
+        nextSearch.set("tab", nextTab);
+        if (currentPoll) {
+          nextSearch.set("poll", currentPoll);
+        }
+        if (currentInvite) {
+          nextSearch.set("invite", currentInvite);
+        }
+
+        const normalized = `/?${nextSearch.toString()}`;
+        const current = `${window.location.pathname}${window.location.search}`;
+
+        if (current !== normalized) {
+          window.history.replaceState({}, "", normalized);
+        }
+      }}
     >
       <MainTabs
         initialTabName={initialTabName}
