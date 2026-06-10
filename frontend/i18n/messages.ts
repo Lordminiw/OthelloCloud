@@ -63,6 +63,7 @@ export type TranslationTree = {
     title: string;
     browserTitle: string;
     welcome: string;
+    placeholderBody: string;
     quickActionsTitle: string;
     addExpense: string;
     createPoll: string;
@@ -341,6 +342,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       title: "Home",
       browserTitle: "Othello-Cloud | Home",
       welcome: "Welcome back",
+      placeholderBody: "Your dashboard is coming next.",
       quickActionsTitle: "Quick actions",
       addExpense: "Add expense",
       createPoll: "Create poll",
@@ -606,6 +608,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       title: "Start",
       browserTitle: "Othello-Cloud | Start",
       welcome: "Willkommen zurueck",
+      placeholderBody: "Dein Dashboard kommt als Naechstes.",
       quickActionsTitle: "Schnellzugriffe",
       addExpense: "Ausgabe erfassen",
       createPoll: "Umfrage erstellen",

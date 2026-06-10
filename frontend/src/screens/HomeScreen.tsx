@@ -9,7 +9,9 @@ type HomeScreenProps = {
 
 export function HomeScreen({ householdId }: HomeScreenProps) {
   const { t } = useLanguage();
-  const { activeHousehold } = useHousehold();
+  const { households } = useHousehold();
+  const householdName =
+    households.find((household) => household.id === householdId)?.name ?? t("home.title");
 
   return (
     <AppScreen
@@ -19,15 +21,11 @@ export function HomeScreen({ householdId }: HomeScreenProps) {
       <Card style={layout.card}>
         <Card.Content style={layout.stack}>
           <Text variant="titleMedium">{t("home.welcome")}</Text>
-          <Text variant="headlineSmall">
-            {activeHousehold?.id === householdId ? activeHousehold.name : t("home.title")}
-          </Text>
+          <Text variant="headlineSmall">{householdName}</Text>
           <Text variant="bodyMedium">
             {t("home.quickActionsTitle")}
           </Text>
-          <Text variant="bodyLarge">
-            Dashboard coming next.
-          </Text>
+          <Text variant="bodyLarge">{t("home.placeholderBody")}</Text>
         </Card.Content>
       </Card>
     </AppScreen>
