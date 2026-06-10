@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useState, useEffect } from 'react';
 import { pb } from '../src/lib/pocketbase';
 import { Household } from '../src/lib/household';
 
@@ -19,7 +19,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
   const [activeHousehold, setActiveHouseholdState] = useState<Household | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchHouseholds = async () => {
+  const fetchHouseholds = useCallback(async () => {
     const userId = pb.authStore.model?.id;
     if (!userId) {
       setHouseholds([]);
@@ -73,11 +73,11 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchHouseholds();
-  }, [pb.authStore.isValid]);
+  }, [fetchHouseholds]);
 
   const setActiveHousehold = (household: Household) => {
     setActiveHouseholdState(household);

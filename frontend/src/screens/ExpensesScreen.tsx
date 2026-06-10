@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import {
   Button,
@@ -74,7 +74,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
     Record<string, string>
   >({});
 
-  async function reload() {
+  const reload = useCallback(async () => {
     try {
       const [expenseRecords, settlementRecords, memberRecords] =
         await Promise.all([
@@ -87,31 +87,26 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
       setSettlements(settlementRecords);
       setMembers(memberRecords);
 
-      if (splitBetween.length === 0) {
-        setSplitBetween(memberRecords.map((member) => member.userId));
-      }
-
-      if (!paidBy) {
-        setPaidBy(pb.authStore.model?.id ?? memberRecords[0]?.userId ?? null);
-      }
-
-      if (!settlementFromUser) {
-        setSettlementFromUser(memberRecords[0]?.userId ?? null);
-      }
-
-      if (!settlementToUser) {
-        setSettlementToUser(memberRecords[1]?.userId ?? null);
-      }
+      setSplitBetween((current) =>
+        current.length === 0
+          ? memberRecords.map((member) => member.userId)
+          : current
+      );
+      setPaidBy(
+        (current) => current ?? pb.authStore.model?.id ?? memberRecords[0]?.userId ?? null
+      );
+      setSettlementFromUser((current) => current ?? memberRecords[0]?.userId ?? null);
+      setSettlementToUser((current) => current ?? memberRecords[1]?.userId ?? null);
     } catch (error: any) {
       console.log("EXPENSE LOAD ERROR:", error);
       console.log("RESPONSE:", error?.response);
       alert(JSON.stringify(error?.response, null, 2));
     }
-  }
+  }, [householdId]);
 
   useEffect(() => {
     reload();
-  }, [householdId]);
+  }, [reload]);
 
   function getMemberLabel(userId: string) {
     const member = members.find((member) => member.userId === userId);
