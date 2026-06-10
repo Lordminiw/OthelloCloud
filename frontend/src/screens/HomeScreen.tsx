@@ -20,6 +20,7 @@ import {
   type DashboardSectionErrors,
   loadHomeDashboardData,
 } from "@/src/lib/home-dashboard";
+import { brand } from "@/src/theme/brand";
 import { pb } from "../lib/pocketbase";
 
 type HomeScreenProps = {
@@ -56,6 +57,20 @@ export function HomeScreen({ householdId }: HomeScreenProps) {
     String(pb.authStore.model?.email ?? "").trim() ||
     householdName;
   const locale = language === "de" ? "de-DE" : "en-US";
+  const heroSurface = theme.dark
+    ? theme.colors.surfaceVariant
+    : theme.colors.primaryContainer;
+  const heroBorder = theme.colors.outline;
+  const heroAccent = theme.colors.primary;
+  const heroTitleColor = theme.colors.onSurface;
+  const heroBodyColor = theme.colors.onSurfaceVariant;
+  const heroMetaColor = theme.colors.onSurfaceVariant;
+  const supportCardBackground = theme.colors.surface;
+  const supportCardBorder = theme.colors.outline;
+  const actionPrimary = theme.colors.primary;
+  const actionPrimaryText = theme.colors.onPrimary;
+  const actionSecondaryBackground = theme.colors.secondaryContainer;
+  const actionSecondaryText = theme.colors.onSecondaryContainer;
 
   const [dashboard, setDashboard] = useState<DashboardData>(EMPTY_DASHBOARD);
   const [sectionErrors, setSectionErrors] =
@@ -118,32 +133,35 @@ export function HomeScreen({ householdId }: HomeScreenProps) {
           style={[
             layout.card,
             styles.heroCard,
-            { backgroundColor: theme.colors.primaryContainer },
+            {
+              backgroundColor: heroSurface,
+              borderColor: heroBorder,
+            },
           ]}
         >
           <Card.Content style={styles.heroContent}>
             <View style={styles.heroCopy}>
               <Text
-                variant="titleMedium"
-                style={{ color: theme.colors.onPrimaryContainer }}
+                variant="labelMedium"
+                style={[styles.heroEyebrow, { color: heroAccent }]}
               >
                 {t("home.welcome")}
               </Text>
               <Text
-                variant="headlineSmall"
-                style={{ color: theme.colors.onPrimaryContainer }}
+                variant="headlineLarge"
+                style={[styles.heroTitle, { color: heroTitleColor }]}
               >
                 {displayName}
               </Text>
               <Text
                 variant="bodyLarge"
-                style={{ color: theme.colors.onPrimaryContainer }}
+                style={[styles.heroBody, { color: heroBodyColor }]}
               >
                 {t("home.heroBody")}
               </Text>
               <Text
                 variant="bodyMedium"
-                style={{ color: theme.colors.onPrimaryContainer }}
+                style={[styles.heroMeta, { color: heroMetaColor }]}
               >
                 {t("home.householdLabel", { name: householdName })}
               </Text>
@@ -152,30 +170,43 @@ export function HomeScreen({ householdId }: HomeScreenProps) {
             <View style={styles.heroActions}>
               <Text
                 variant="titleSmall"
-                style={{ color: theme.colors.onPrimaryContainer }}
+                style={[styles.heroActionsTitle, { color: heroTitleColor }]}
               >
                 {t("home.quickActionsTitle")}
               </Text>
               <View style={layout.inlineActions}>
                 <Button
                   mode="contained"
-                  buttonColor={theme.colors.primary}
-                  textColor={theme.colors.onPrimary}
+                  buttonColor={actionPrimary}
+                  textColor={actionPrimaryText}
                   icon="receipt-text-plus-outline"
+                  contentStyle={styles.actionContent}
+                  style={styles.primaryAction}
+                  labelStyle={styles.actionLabel}
                   onPress={() => navigation.navigate("expenses")}
                 >
                   {t("home.addExpense")}
                 </Button>
                 <Button
                   mode="contained-tonal"
+                  buttonColor={actionSecondaryBackground}
+                  textColor={actionSecondaryText}
                   icon="poll"
+                  contentStyle={styles.actionContent}
+                  style={styles.secondaryAction}
+                  labelStyle={styles.actionLabel}
                   onPress={() => navigation.navigate("polls")}
                 >
                   {t("home.createPoll")}
                 </Button>
                 <Button
                   mode="contained-tonal"
+                  buttonColor={actionSecondaryBackground}
+                  textColor={actionSecondaryText}
                   icon="calendar-plus"
+                  contentStyle={styles.actionContent}
+                  style={styles.secondaryAction}
+                  labelStyle={styles.actionLabel}
                   onPress={() => navigation.navigate("calendar")}
                 >
                   {t("home.addEvent")}
@@ -186,10 +217,22 @@ export function HomeScreen({ householdId }: HomeScreenProps) {
         </Card>
 
         <View style={[styles.dashboardBody, isWide && styles.dashboardBodyWide]}>
-          <Card style={[layout.card, styles.feedCard]}>
+          <Card
+            style={[
+              layout.card,
+              styles.feedCard,
+              {
+                backgroundColor: supportCardBackground,
+                borderColor: supportCardBorder,
+              },
+            ]}
+          >
             <Card.Title
               title={t("home.activityTitle")}
               subtitle={t("home.activitySubtitle")}
+              titleStyle={{ color: theme.colors.onSurface }}
+              subtitleStyle={{ color: theme.colors.onSurfaceVariant }}
+              style={styles.cardTitle}
             />
             <Card.Content style={layout.listCardContent}>
               {renderActivityState({
@@ -204,8 +247,24 @@ export function HomeScreen({ householdId }: HomeScreenProps) {
           </Card>
 
           <View style={styles.supportColumn}>
-            <Card style={layout.card}>
-              <Card.Title title={t("home.upcomingEventsTitle")} />
+            <Card
+              style={[
+                layout.card,
+                styles.supportCard,
+                {
+                  backgroundColor: supportCardBackground,
+                  borderColor: supportCardBorder,
+                },
+              ]}
+            >
+              <Card.Title
+                title={t("home.upcomingEventsTitle")}
+                titleStyle={{
+                  color: theme.colors.onSurface,
+                  fontWeight: "700",
+                }}
+                style={styles.cardTitle}
+              />
               <Card.Content style={layout.listCardContent}>
                 {renderEventsState({
                   events: dashboard.upcomingEvents,
@@ -218,8 +277,24 @@ export function HomeScreen({ householdId }: HomeScreenProps) {
               </Card.Content>
             </Card>
 
-            <Card style={layout.card}>
-              <Card.Title title={t("home.openPollsTitle")} />
+            <Card
+              style={[
+                layout.card,
+                styles.supportCard,
+                {
+                  backgroundColor: supportCardBackground,
+                  borderColor: supportCardBorder,
+                },
+              ]}
+            >
+              <Card.Title
+                title={t("home.openPollsTitle")}
+                titleStyle={{
+                  color: theme.colors.onSurface,
+                  fontWeight: "700",
+                }}
+                style={styles.cardTitle}
+              />
               <Card.Content style={layout.listCardContent}>
                 {renderPollsState({
                   polls: dashboard.openPolls,
@@ -232,8 +307,24 @@ export function HomeScreen({ householdId }: HomeScreenProps) {
               </Card.Content>
             </Card>
 
-            <Card style={layout.card}>
-              <Card.Title title={t("home.yourReminderTitle")} />
+            <Card
+              style={[
+                layout.card,
+                styles.supportCard,
+                {
+                  backgroundColor: supportCardBackground,
+                  borderColor: supportCardBorder,
+                },
+              ]}
+            >
+              <Card.Title
+                title={t("home.yourReminderTitle")}
+                titleStyle={{
+                  color: theme.colors.onSurface,
+                  fontWeight: "700",
+                }}
+                style={styles.cardTitle}
+              />
               <Card.Content style={styles.reminderCardContent}>
                 {renderReminderState({
                   reminder: dashboard.reminder,
@@ -511,18 +602,53 @@ function StateText({
 const styles = StyleSheet.create({
   heroCard: {
     overflow: "hidden",
+    borderWidth: 1,
+    borderRadius: brand.radius.hero,
   },
   heroContent: {
-    gap: 18,
+    gap: brand.spacing.section + 4,
+    paddingVertical: brand.spacing.cluster,
   },
   heroCopy: {
-    gap: 6,
+    gap: 8,
   },
   heroActions: {
-    gap: 10,
+    gap: brand.spacing.cluster + 2,
+  },
+  heroEyebrow: {
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    fontWeight: "700",
+  },
+  heroTitle: {
+    fontWeight: "700",
+  },
+  heroBody: {
+    lineHeight: 24,
+    maxWidth: 720,
+  },
+  heroMeta: {
+    fontWeight: "500",
+  },
+  heroActionsTitle: {
+    fontWeight: "700",
+  },
+  actionContent: {
+    minHeight: 46,
+    paddingHorizontal: 4,
+  },
+  actionLabel: {
+    letterSpacing: 0.2,
+    fontWeight: "700",
+  },
+  primaryAction: {
+    borderRadius: brand.radius.control,
+  },
+  secondaryAction: {
+    borderRadius: brand.radius.control,
   },
   dashboardBody: {
-    gap: 12,
+    gap: brand.spacing.section,
   },
   dashboardBodyWide: {
     flexDirection: "row",
@@ -531,23 +657,32 @@ const styles = StyleSheet.create({
   feedCard: {
     flex: 1.7,
     minWidth: 0,
+    borderWidth: 1,
+    borderRadius: brand.radius.card + 4,
   },
   supportColumn: {
     flex: 1,
     minWidth: 280,
-    gap: 12,
+    gap: brand.spacing.section,
+  },
+  supportCard: {
+    borderWidth: 1,
+    borderRadius: brand.radius.card + 2,
+  },
+  cardTitle: {
+    paddingBottom: 2,
   },
   stateText: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingHorizontal: brand.spacing.card,
+    paddingBottom: brand.spacing.section,
   },
   stateWithAction: {
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingBottom: 8,
+    gap: 10,
+    paddingHorizontal: brand.spacing.card,
+    paddingBottom: 12,
   },
   reminderCardContent: {
-    gap: 8,
+    gap: 10,
   },
   supportingText: {
     opacity: 0.78,
