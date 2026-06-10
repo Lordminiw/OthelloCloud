@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import {
@@ -62,6 +62,7 @@ export function HomeScreen({ householdId }: HomeScreenProps) {
     useState<DashboardSectionErrors>(EMPTY_SECTION_ERRORS);
   const [loading, setLoading] = useState(true);
   const [globalUnavailable, setGlobalUnavailable] = useState(false);
+  const hasHandledInitialFocusRef = useRef(false);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -90,6 +91,11 @@ export function HomeScreen({ householdId }: HomeScreenProps) {
 
   useEffect(() => {
     return navigation.addListener("focus", () => {
+      if (!hasHandledInitialFocusRef.current) {
+        hasHandledInitialFocusRef.current = true;
+        return;
+      }
+
       void loadDashboard();
     });
   }, [loadDashboard, navigation]);

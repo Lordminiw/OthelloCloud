@@ -65,7 +65,6 @@ export type TranslationTree = {
     welcome: string;
     heroBody: string;
     householdLabel: string;
-    placeholderBody: string;
     quickActionsTitle: string;
     addExpense: string;
     createPoll: string;
@@ -88,7 +87,6 @@ export type TranslationTree = {
     reminderUnavailable: string;
     reminderAllCaughtUp: string;
     reminderVotePending: string;
-    reminderExpensePending: string;
     viewExpenses: string;
     viewCalendar: string;
     viewPolls: string;
@@ -356,7 +354,6 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       welcome: "Welcome back",
       heroBody: "Here is what needs your attention around the household.",
       householdLabel: "Current household: {{name}}",
-      placeholderBody: "Your dashboard is coming next.",
       quickActionsTitle: "Quick actions",
       addExpense: "Add expense",
       createPoll: "Create poll",
@@ -379,7 +376,6 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       reminderUnavailable: "Your reminder is currently unavailable.",
       reminderAllCaughtUp: "You're all caught up.",
       reminderVotePending: "You still have a poll to answer.",
-      reminderExpensePending: "You still have an expense to review.",
       viewExpenses: "View expenses",
       viewCalendar: "View calendar",
       viewPolls: "View polls",
@@ -634,7 +630,6 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       welcome: "Willkommen zurueck",
       heroBody: "Hier siehst du, was in deiner WG gerade Aufmerksamkeit braucht.",
       householdLabel: "Aktuelle WG: {{name}}",
-      placeholderBody: "Dein Dashboard kommt als Naechstes.",
       quickActionsTitle: "Schnellzugriffe",
       addExpense: "Ausgabe erfassen",
       createPoll: "Umfrage erstellen",
@@ -657,7 +652,6 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       reminderUnavailable: "Deine Erinnerung ist derzeit nicht verfuegbar.",
       reminderAllCaughtUp: "Du bist auf dem neuesten Stand.",
       reminderVotePending: "Du hast noch eine offene Umfrage.",
-      reminderExpensePending: "Du hast noch eine offene Ausgabe.",
       viewExpenses: "Zu den Ausgaben",
       viewCalendar: "Zum Kalender",
       viewPolls: "Zu den Umfragen",
