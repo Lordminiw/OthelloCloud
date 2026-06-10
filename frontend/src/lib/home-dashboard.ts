@@ -11,6 +11,7 @@ export type DashboardActivityItem =
       title: string;
       amount: number;
       createdAt?: string;
+      sortAt?: string;
       tab: "expenses";
     }
   | {
@@ -19,6 +20,7 @@ export type DashboardActivityItem =
       title: string;
       optionCount: number;
       createdAt?: string;
+      sortAt?: string;
       tab: "polls";
     }
   | {
@@ -27,6 +29,7 @@ export type DashboardActivityItem =
       title: string;
       location?: string;
       startsAt: string;
+      sortAt: string;
       tab: "calendar";
     };
 
@@ -99,6 +102,7 @@ export function buildDashboardActivity(input: {
       title: expense.description,
       amount: expense.amount,
       createdAt: expense.created,
+      sortAt: expense.created,
       tab: "expenses" as const,
     })),
     ...input.polls.map((poll) => ({
@@ -107,6 +111,7 @@ export function buildDashboardActivity(input: {
       title: poll.question,
       optionCount: poll.options.length,
       createdAt: poll.created,
+      sortAt: poll.created,
       tab: "polls" as const,
     })),
     ...input.events.map((event) => ({
@@ -115,9 +120,10 @@ export function buildDashboardActivity(input: {
       title: event.title,
       location: event.location || undefined,
       startsAt: event.start,
+      sortAt: event.start,
       tab: "calendar" as const,
     })),
-  ];
+  ].sort(compareDashboardActivityItems);
 }
 
 export function buildDashboardReminder(
@@ -135,4 +141,47 @@ export function buildDashboardReminder(
   }
 
   return { kind: "all-caught-up" };
+}
+
+function compareDashboardActivityItems(
+  a: DashboardActivityItem,
+  b: DashboardActivityItem
+) {
+  // Mixed feed rule: rank items by temporal closeness to now so recent
+  // activity and soon-upcoming events share one intentional ordering.
+  const now = Date.now();
+  const aDelta = getActivitySortDelta(a, now);
+  const bDelta = getActivitySortDelta(b, now);
+
+  if (aDelta !== bDelta) {
+    return aDelta - bDelta;
+  }
+
+  const aTime = getActivitySortTime(a);
+  const bTime = getActivitySortTime(b);
+
+  if (aTime !== bTime) {
+    return bTime - aTime;
+  }
+
+  return a.id.localeCompare(b.id);
+}
+
+function getActivitySortDelta(item: DashboardActivityItem, now: number) {
+  const time = getActivitySortTime(item);
+
+  if (time === Number.NEGATIVE_INFINITY) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return Math.abs(time - now);
+}
+
+function getActivitySortTime(item: DashboardActivityItem) {
+  if (!item.sortAt) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  const time = Date.parse(item.sortAt);
+  return Number.isFinite(time) ? time : Number.NEGATIVE_INFINITY;
 }
