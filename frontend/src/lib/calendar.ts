@@ -97,8 +97,10 @@ export async function loadCalendarEventsForMonth(input: {
     filter:
       `household = "${input.householdId}" && ` +
       `(source = "" || source = "manual" || source = "upload") && ` +
-      `start < "${monthEnd.toISOString()}" && ` +
-      `((end = "" || end = null) || end >= "${monthStart.toISOString()}")`,
+      `(((end = "" || end = null) && ` +
+      `start >= "${monthStart.toISOString()}" && start < "${monthEnd.toISOString()}") || ` +
+      `((end != "" && end != null) && start < "${monthEnd.toISOString()}" && ` +
+      `end >= "${monthStart.toISOString()}"))`,
     sort: "start",
     requestKey: null,
   });
@@ -137,8 +139,10 @@ export async function loadImportedCalendarEventsForMonth(input: {
   return await pb.collection("calendar_events").getFullList<CalendarEvent>({
     filter:
       `subscription = "${input.subscriptionId}" && ` +
-      `start < "${monthEnd.toISOString()}" && ` +
-      `((end = "" || end = null) || end >= "${monthStart.toISOString()}")`,
+      `(((end = "" || end = null) && ` +
+      `start >= "${monthStart.toISOString()}" && start < "${monthEnd.toISOString()}") || ` +
+      `((end != "" && end != null) && start < "${monthEnd.toISOString()}" && ` +
+      `end >= "${monthStart.toISOString()}"))`,
     sort: "start",
     requestKey: null,
   });
