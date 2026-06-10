@@ -95,7 +95,7 @@ Wichtig:
 
 ## Oeffentliche Domain mit Cloudflare Tunnel
 
-Wenn du die App von aussen erreichbar machen willst, ist Cloudflare Tunnel der deutlich einfachere Weg bei DS-Lite:
+Wenn du die App von aussen erreichbar machen willst, ist Cloudflare Tunnel der vorgesehene Weg bei DS-Lite:
 
 1. Domain zu Cloudflare umziehen
 
@@ -110,7 +110,7 @@ Wenn du die App von aussen erreichbar machen willst, ist Cloudflare Tunnel der d
    - Waehl `Cloudflared`.
    - Kopiere den Tunnel-Token aus der Cloudflare-Konfiguration.
 
-3. Public-Konfig anlegen
+3. Hostname in Cloudflare anlegen
 
    - Leite den Hostname `othello-cloud.de` in Cloudflare auf `http://localhost:80`.
    - Optional kannst du `www.othello-cloud.de` ebenfalls auf denselben Service zeigen lassen.
@@ -137,6 +137,7 @@ Wichtig:
 - Caddy laeuft intern nur als Reverse Proxy zwischen `frontend` und `pocketbase`.
 - Cloudflare Tunnel zeigt auf `http://localhost:80`, also auf den Caddy-Port auf dem Pi.
 - Die eigentliche TLS-Beendigung passiert bei Cloudflare.
+- Es gibt keinen separaten Public/DDNS-Deploy-Pfad mehr im Repo; die externe Bereitstellung laeuft ausschliesslich ueber `docker-compose.cloudflare.yml`.
 
 ## Wichtige Datenmodelle
 
