@@ -4,6 +4,7 @@ import { NavigationContext } from "@react-navigation/native";
 import { Text, useTheme } from "react-native-paper";
 import { LanguageSelector } from "@/components/language-selector";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { brand } from "@/src/theme/brand";
 
 type AppScreenProps = {
   title: string;
@@ -30,6 +31,10 @@ export function AppScreen({
   const { width } = useWindowDimensions();
   const navigation = useContext(NavigationContext);
   const contentMaxWidth = maxWidth ?? (width >= 900 ? 1040 : 640);
+  const headerSurface = theme.dark ? "rgba(58, 44, 38, 0.9)" : "rgba(255, 250, 246, 0.94)";
+  const headerBorder = theme.dark ? "rgba(110, 86, 72, 0.5)" : "rgba(231, 215, 201, 0.92)";
+  const headerInset = theme.dark ? "rgba(247, 237, 229, 0.04)" : "rgba(184, 92, 56, 0.07)";
+  const brandColor = theme.dark ? theme.colors.primary : theme.colors.onSurfaceVariant;
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -65,14 +70,35 @@ export function AppScreen({
         ]}
       >
         <View style={[styles.content, { maxWidth: contentMaxWidth }]}>
-          <View style={styles.header}>
+          <View
+            style={[
+              styles.header,
+              {
+                shadowColor: theme.colors.primary,
+              },
+            ]}
+          >
+            <View
+              pointerEvents="none"
+              style={[
+                styles.headerShell,
+                {
+                  backgroundColor: headerSurface,
+                  borderColor: headerBorder,
+                },
+              ]}
+            >
+              <View
+                style={[styles.headerInset, { backgroundColor: headerInset }]}
+              />
+            </View>
             <View style={styles.brandBlock}>
               {showBrand ? (
-                <Text variant="labelSmall" style={[styles.brand, { color: theme.colors.primary }]}>
+                <Text variant="labelSmall" style={[styles.brand, { color: brandColor }]}>
                   OthelloCloud
                 </Text>
               ) : null}
-              <Text variant="headlineMedium" style={styles.title}>
+              <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onSurface }]}>
                 {title}
               </Text>
             </View>
@@ -92,14 +118,15 @@ export function AppScreen({
 
 export const layout = StyleSheet.create({
   stack: {
-    gap: 12,
+    gap: brand.spacing.section,
   },
   sectionGrid: {
-    gap: 12,
+    gap: brand.spacing.section,
   },
   wideRow: {
     flexDirection: "row",
     alignItems: "flex-start",
+    gap: brand.spacing.section,
   },
   wideForm: {
     width: 360,
@@ -113,18 +140,18 @@ export const layout = StyleSheet.create({
     minWidth: 280,
   },
   card: {
-    borderRadius: 8,
+    borderRadius: brand.radius.card,
   },
   listCardContent: {
     paddingHorizontal: 0,
   },
   formContent: {
-    gap: 12,
+    gap: 14,
   },
   inlineActions: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: brand.spacing.cluster,
   },
 });
 
@@ -134,9 +161,9 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingTop: 18,
-    paddingBottom: 96,
+    paddingHorizontal: brand.spacing.pageX,
+    paddingTop: brand.spacing.pageTop,
+    paddingBottom: 112,
     alignItems: "center",
   },
   centeredScroll: {
@@ -144,23 +171,39 @@ const styles = StyleSheet.create({
   },
   content: {
     width: "100%",
-    gap: 12,
+    gap: 16,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    gap: 16,
+    gap: 18,
     flexWrap: "wrap",
-    marginBottom: 2,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    backgroundColor: "rgba(127, 127, 127, 0.08)",
+    marginBottom: 4,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    borderRadius: 28,
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 2,
+  },
+  headerShell: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 28,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  headerInset: {
+    ...StyleSheet.absoluteFillObject,
   },
   brandBlock: {
-    gap: 2,
+    gap: 4,
     flexShrink: 1,
+    minWidth: 220,
   },
   brand: {
     letterSpacing: 1.2,
@@ -174,7 +217,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
     flexWrap: "wrap",
     justifyContent: "flex-end",
   },
