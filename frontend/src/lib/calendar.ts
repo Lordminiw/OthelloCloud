@@ -118,7 +118,8 @@ export async function loadUpcomingCalendarEvents(input: {
       filter:
         `household = "${input.householdId}" && ` +
         `(source = "" || source = "manual" || source = "upload") && ` +
-        `((end = "" && start >= "${fromIso}") || (end != "" && end >= "${fromIso}"))`,
+        `(((end = "" || end = null) && start >= "${fromIso}") || ` +
+        `((end != "" && end != null) && end >= "${fromIso}"))`,
       sort: "start",
       requestKey: null,
     })

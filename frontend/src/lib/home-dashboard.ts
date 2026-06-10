@@ -9,30 +9,30 @@ export type DashboardActivityItem =
       id: string;
       type: "expense";
       title: string;
-      detail: string;
-      timestamp: string;
+      amount: number;
+      createdAt?: string;
       tab: "expenses";
-    }
-  | {
-      id: string;
-      type: "event";
-      title: string;
-      detail: string;
-      timestamp: string;
-      tab: "calendar";
     }
   | {
       id: string;
       type: "poll";
       title: string;
-      detail: string;
-      timestamp: string;
+      optionCount: number;
+      createdAt?: string;
       tab: "polls";
+    }
+  | {
+      id: string;
+      type: "event";
+      title: string;
+      location?: string;
+      startsAt: string;
+      tab: "calendar";
     };
 
 export type DashboardReminder =
-  | { kind: "vote-pending"; title: string; targetTab: "polls" }
-  | { kind: "all-caught-up"; title: string; targetTab?: undefined };
+  | { kind: "vote-pending"; pollQuestion: string; targetTab: "polls" }
+  | { kind: "all-caught-up"; targetTab?: undefined };
 
 export type DashboardData = {
   activity: DashboardActivityItem[];
@@ -97,27 +97,27 @@ export function buildDashboardActivity(input: {
       id: `expense-${expense.id}`,
       type: "expense" as const,
       title: expense.description,
-      detail: `${expense.amount.toFixed(2)} paid`,
-      timestamp: expense.created || expense.id,
+      amount: expense.amount,
+      createdAt: expense.created,
       tab: "expenses" as const,
-    })),
-    ...input.events.map((event) => ({
-      id: `event-${event.id}`,
-      type: "event" as const,
-      title: event.title,
-      detail: event.location || "",
-      timestamp: event.start,
-      tab: "calendar" as const,
     })),
     ...input.polls.map((poll) => ({
       id: `poll-${poll.id}`,
       type: "poll" as const,
       title: poll.question,
-      detail: `${poll.options.length} options`,
-      timestamp: poll.created || "",
+      optionCount: poll.options.length,
+      createdAt: poll.created,
       tab: "polls" as const,
     })),
-  ].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+    ...input.events.map((event) => ({
+      id: `event-${event.id}`,
+      type: "event" as const,
+      title: event.title,
+      location: event.location || undefined,
+      startsAt: event.start,
+      tab: "calendar" as const,
+    })),
+  ];
 }
 
 export function buildDashboardReminder(
@@ -129,10 +129,10 @@ export function buildDashboardReminder(
   if (unanswered) {
     return {
       kind: "vote-pending",
-      title: unanswered.question,
+      pollQuestion: unanswered.question,
       targetTab: "polls",
     };
   }
 
-  return { kind: "all-caught-up", title: "You're all caught up." };
+  return { kind: "all-caught-up" };
 }
