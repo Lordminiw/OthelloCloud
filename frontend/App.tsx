@@ -116,7 +116,7 @@ function AppShell() {
   const [loggedIn, setLoggedIn] = useState(pb.authStore.isValid);
   const { households, loading, refreshHouseholds } = useHousehold();
 
-  const initialTabName = useMemo(() => parseInitialTab(url), [url]);
+  const initialTabName = useMemo(() => parseInitialTab(url) ?? "home", [url]);
   const initialInviteCode = useMemo(() => parseInviteCode(url), [url]);
 
   useEffect(() => {

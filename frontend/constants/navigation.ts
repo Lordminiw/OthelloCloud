@@ -1,8 +1,16 @@
-export const TAB_KEYS = ["shopping", "expenses", "calendar", "polls", "profile"] as const;
+export const TAB_KEYS = [
+  "home",
+  "shopping",
+  "expenses",
+  "calendar",
+  "polls",
+  "profile",
+] as const;
 
 export type TabKey = (typeof TAB_KEYS)[number];
 
 const TAB_ALIASES: Record<TabKey, string[]> = {
+  home: ["home", "dashboard", "start"],
   shopping: ["shopping", "einkauf"],
   expenses: ["expenses", "ausgaben"],
   calendar: ["calendar", "kalender"],

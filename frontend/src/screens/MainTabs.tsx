@@ -1,4 +1,5 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { View } from "react-native";
 import { Icon, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CalendarScreen } from "./CalendarScreen";
@@ -58,6 +59,18 @@ export function MainTabs({
         },
       }}
     >
+      <Tab.Screen
+        name="home"
+        options={{
+          tabBarLabel: t("tabs.home"),
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon color={color} size={size} icon="view-dashboard-outline" />
+          ),
+        }}
+      >
+        {() => <HomeScreen householdId={activeHousehold.id} />}
+      </Tab.Screen>
+
       <Tab.Screen
         name="shopping"
         options={{
@@ -137,4 +150,8 @@ function TabIcon({
   icon: string;
 }) {
   return <Icon source={icon} color={color} size={Math.min(size, 22)} />;
+}
+
+function HomeScreen({ householdId: _householdId }: { householdId: string }) {
+  return <View style={{ flex: 1 }} />;
 }

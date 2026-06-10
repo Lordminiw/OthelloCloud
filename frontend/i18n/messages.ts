@@ -52,11 +52,33 @@ export type TranslationTree = {
     no: string;
   };
   tabs: {
+    home: string;
     shopping: string;
     expenses: string;
     calendar: string;
     polls: string;
     profile: string;
+  };
+  home: {
+    title: string;
+    browserTitle: string;
+    welcome: string;
+    quickActionsTitle: string;
+    addExpense: string;
+    createPoll: string;
+    addEvent: string;
+    activityTitle: string;
+    activityEmpty: string;
+    activityUnavailable: string;
+    upcomingEventsTitle: string;
+    openPollsTitle: string;
+    yourReminderTitle: string;
+    reminderAllCaughtUp: string;
+    reminderVotePending: string;
+    reminderExpensePending: string;
+    viewExpenses: string;
+    viewCalendar: string;
+    viewPolls: string;
   };
   auth: {
     loginTitle: string;
@@ -308,11 +330,33 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       no: "No",
     },
     tabs: {
+      home: "Home",
       shopping: "Shopping",
       expenses: "Expenses",
       calendar: "Calendar",
       polls: "Polls",
       profile: "Profile",
+    },
+    home: {
+      title: "Home",
+      browserTitle: "Othello-Cloud | Home",
+      welcome: "Welcome back",
+      quickActionsTitle: "Quick actions",
+      addExpense: "Add expense",
+      createPoll: "Create poll",
+      addEvent: "Add event",
+      activityTitle: "Recent activity",
+      activityEmpty: "No activity yet.",
+      activityUnavailable: "Activity is currently unavailable.",
+      upcomingEventsTitle: "Upcoming events",
+      openPollsTitle: "Open polls",
+      yourReminderTitle: "Your reminder",
+      reminderAllCaughtUp: "You're all caught up.",
+      reminderVotePending: "You still have a poll to answer.",
+      reminderExpensePending: "You still have an expense to review.",
+      viewExpenses: "View expenses",
+      viewCalendar: "View calendar",
+      viewPolls: "View polls",
     },
     auth: {
       loginTitle: "Log in",
@@ -551,11 +595,33 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       no: "Nein",
     },
     tabs: {
+      home: "Start",
       shopping: "Einkauf",
       expenses: "Ausgaben",
       calendar: "Kalender",
       polls: "Umfragen",
       profile: "Profil",
+    },
+    home: {
+      title: "Start",
+      browserTitle: "Othello-Cloud | Start",
+      welcome: "Willkommen zurueck",
+      quickActionsTitle: "Schnellzugriffe",
+      addExpense: "Ausgabe erfassen",
+      createPoll: "Umfrage erstellen",
+      addEvent: "Termin hinzufuegen",
+      activityTitle: "Letzte Aktivitaeten",
+      activityEmpty: "Noch keine Aktivitaet vorhanden.",
+      activityUnavailable: "Aktivitaet ist derzeit nicht verfuegbar.",
+      upcomingEventsTitle: "Anstehende Termine",
+      openPollsTitle: "Offene Umfragen",
+      yourReminderTitle: "Deine Erinnerung",
+      reminderAllCaughtUp: "Du bist auf dem neuesten Stand.",
+      reminderVotePending: "Du hast noch eine offene Umfrage.",
+      reminderExpensePending: "Du hast noch eine offene Ausgabe.",
+      viewExpenses: "Zu den Ausgaben",
+      viewCalendar: "Zum Kalender",
+      viewPolls: "Zu den Umfragen",
     },
     auth: {
       loginTitle: "Einloggen",
