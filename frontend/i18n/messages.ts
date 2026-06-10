@@ -353,7 +353,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
     },
     shopping: {
       title: "Shopping list",
-      browserTitle: "OthelloCloud - Shopping",
+      browserTitle: "Othello-Cloud | Shopping",
       newItemTitle: "New item",
       addButton: "Add",
       openItemsEmpty: "No open items.",
@@ -365,7 +365,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
     },
     expenses: {
       title: "Expenses",
-      browserTitle: "OthelloCloud - Expenses",
+      browserTitle: "Othello-Cloud | Expenses",
       newExpenseTitle: "New expense",
       lastExpensesTitle: "Recent expenses",
       settlementsTitle: "Settlements",
@@ -380,7 +380,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
     },
     calendar: {
       title: "Calendar",
-      browserTitle: "OthelloCloud - Calendar",
+      browserTitle: "Othello-Cloud | Calendar",
       newEventTitle: "New event",
       eventsForDay: "Events for this day",
       noEventsOnDay: "No events on this day.",
@@ -394,7 +394,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
     },
     polls: {
       title: "Polls",
-      browserTitle: "OthelloCloud - Polls",
+      browserTitle: "Othello-Cloud | Polls",
       newPollTitle: "New poll",
       activePollsTitle: "Active polls",
       pastPollsTitle: "Past polls",
@@ -414,7 +414,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
     },
     profile: {
       title: "Profile",
-      browserTitle: "OthelloCloud - Profile",
+      browserTitle: "Othello-Cloud | Profile",
       myHouseholdsTitle: "My households",
       manageHouseholdTitle: "Manage household",
       createHouseholdButton: "Create household",
@@ -596,7 +596,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
     },
     shopping: {
       title: "Einkaufsliste",
-      browserTitle: "OthelloCloud - Einkauf",
+      browserTitle: "Othello-Cloud | Einkauf",
       newItemTitle: "Neuer Artikel",
       addButton: "Hinzufügen",
       openItemsEmpty: "Keine offenen Einträge.",
@@ -608,7 +608,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
     },
     expenses: {
       title: "Ausgaben",
-      browserTitle: "OthelloCloud - Ausgaben",
+      browserTitle: "Othello-Cloud | Ausgaben",
       newExpenseTitle: "Neue Ausgabe",
       lastExpensesTitle: "Letzte Ausgaben",
       settlementsTitle: "Ausgleichszahlungen",
@@ -623,7 +623,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
     },
     calendar: {
       title: "Kalender",
-      browserTitle: "OthelloCloud - Kalender",
+      browserTitle: "Othello-Cloud | Kalender",
       newEventTitle: "Neuer Termin",
       eventsForDay: "Termine an diesem Tag",
       noEventsOnDay: "Keine Termine an diesem Tag.",
@@ -637,7 +637,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
     },
     polls: {
       title: "Umfragen",
-      browserTitle: "OthelloCloud - Umfragen",
+      browserTitle: "Othello-Cloud | Umfragen",
       newPollTitle: "Neue Umfrage",
       activePollsTitle: "Aktive Umfragen",
       pastPollsTitle: "Vergangene Umfragen",
@@ -657,7 +657,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
     },
     profile: {
       title: "Profil",
-      browserTitle: "OthelloCloud - Profil",
+      browserTitle: "Othello-Cloud | Profil",
       myHouseholdsTitle: "Meine WGs",
       manageHouseholdTitle: "WG verwalten",
       createHouseholdButton: "Neue WG erstellen",

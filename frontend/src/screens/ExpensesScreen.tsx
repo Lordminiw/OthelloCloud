@@ -454,7 +454,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
     <AppScreen
       title={isGerman ? "Ausgaben" : "Expenses"}
       right={<HouseholdDropdown />}
-      browserTitle={isGerman ? "OthelloCloud - Ausgaben" : "OthelloCloud - Expenses"}
+      browserTitle={isGerman ? "Othello-Cloud | Ausgaben" : "Othello-Cloud | Expenses"}
     >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
         <Card style={[layout.card, isWide && layout.wideForm]}>

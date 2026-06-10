@@ -189,7 +189,10 @@ function AppShell() {
   }
 
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer
+      theme={navTheme}
+      documentTitle={{ enabled: false }}
+    >
       <MainTabs
         initialTabName={initialTabName}
         initialInviteCode={initialInviteCode}

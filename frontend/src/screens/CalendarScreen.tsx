@@ -1037,7 +1037,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
           onToggleSubscription={toggleSelectedSubscription}
         />
       }
-      browserTitle={isGerman ? "OthelloCloud - Kalender" : "OthelloCloud - Calendar"}
+      browserTitle={isGerman ? "Othello-Cloud | Kalender" : "Othello-Cloud | Calendar"}
     >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
         <Card style={[layout.card, isWide && layout.wideForm]}>

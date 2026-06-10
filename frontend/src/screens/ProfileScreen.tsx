@@ -733,7 +733,7 @@ export function ProfileScreen({
     <AppScreen
       title={isGerman ? "Profil" : "Profile"}
       right={<HouseholdDropdown />}
-      browserTitle={isGerman ? "OthelloCloud - Profil" : "OthelloCloud - Profile"}
+      browserTitle={isGerman ? "Othello-Cloud | Profil" : "Othello-Cloud | Profile"}
     >
       <View style={layout.stack}>
         <Card style={layout.card}>

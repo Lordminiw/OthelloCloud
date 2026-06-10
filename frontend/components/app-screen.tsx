@@ -1,5 +1,6 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useContext, useEffect } from "react";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { NavigationContext } from "@react-navigation/native";
 import { Text, useTheme } from "react-native-paper";
 import { LanguageSelector } from "@/components/language-selector";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -14,6 +15,8 @@ type AppScreenProps = {
   browserTitle?: string;
 };
 
+const BROWSER_TITLE_BRAND = "Othello-Cloud";
+
 export function AppScreen({
   title,
   right,
@@ -25,6 +28,7 @@ export function AppScreen({
 }: AppScreenProps) {
   const theme = useTheme();
   const { width } = useWindowDimensions();
+  const navigation = useContext(NavigationContext);
   const contentMaxWidth = maxWidth ?? (width >= 900 ? 1040 : 640);
 
   useEffect(() => {
@@ -32,8 +36,24 @@ export function AppScreen({
       return;
     }
 
-    document.title = browserTitle ?? (title === "OthelloCloud" ? "OthelloCloud" : `OthelloCloud - ${title}`);
-  }, [browserTitle, title]);
+    const nextTitle =
+      browserTitle ?? (title === BROWSER_TITLE_BRAND ? BROWSER_TITLE_BRAND : `${BROWSER_TITLE_BRAND} | ${title}`);
+
+    const applyTitle = () => {
+      document.title = nextTitle;
+    };
+
+    if (!navigation) {
+      applyTitle();
+      return;
+    }
+
+    if (navigation.isFocused()) {
+      applyTitle();
+    }
+
+    return navigation.addListener("focus", applyTitle);
+  }, [browserTitle, navigation, title]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>

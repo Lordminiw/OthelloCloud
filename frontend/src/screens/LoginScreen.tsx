@@ -115,7 +115,7 @@ export function LoginScreen({
       centered
       maxWidth={460}
       showBrand={false}
-      browserTitle={t("app.brand")}
+      browserTitle="Othello-Cloud"
     >
       <Card style={layout.card}>
         <Card.Title title={isLogin ? t("auth.loginTitle") : t("auth.registerTitle")} />
