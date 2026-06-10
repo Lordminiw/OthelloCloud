@@ -25,6 +25,7 @@ export function MainTabs({
   const insets = useSafeAreaInsets();
   const { activeHousehold } = useHousehold();
   const { t } = useLanguage();
+  const tabBarHeight = 74 + insets.bottom;
 
   if (!activeHousehold) {
     return null;
@@ -37,21 +38,35 @@ export function MainTabs({
         headerShown: false,
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
+        tabBarActiveBackgroundColor: theme.colors.secondaryContainer,
         tabBarStyle: {
-          backgroundColor: theme.colors.surface,
-          borderTopColor: theme.colors.outlineVariant,
-          height: 70 + insets.bottom,
-          paddingTop: 8,
-          paddingBottom: 10 + insets.bottom,
+          backgroundColor: theme.colors.elevation.level1,
+          borderTopWidth: 0,
+          height: tabBarHeight,
+          paddingTop: 10,
+          paddingBottom: 12 + insets.bottom,
+          paddingHorizontal: 12,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+          shadowColor: theme.colors.onSurface,
+          shadowOpacity: 0.08,
+          shadowRadius: 18,
+          shadowOffset: {
+            width: 0,
+            height: -4,
+          },
+          elevation: 10,
         },
         tabBarItemStyle: {
+          borderRadius: 18,
+          marginHorizontal: 4,
           paddingVertical: 0,
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: "600",
+          fontWeight: "700",
           lineHeight: 12,
-          marginTop: 1,
+          marginTop: 3,
           marginBottom: 0,
         },
         tabBarIconStyle: {
@@ -149,5 +164,5 @@ function TabIcon({
   size: number;
   icon: string;
 }) {
-  return <Icon source={icon} color={color} size={Math.min(size, 22)} />;
+  return <Icon source={icon} color={color} size={Math.min(size, 21)} />;
 }
