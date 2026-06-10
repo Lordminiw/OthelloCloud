@@ -97,9 +97,9 @@ export function HomeScreen({ householdId }: HomeScreenProps) {
   const activityUnavailable =
     globalUnavailable ||
     (dashboard.activity.length === 0 &&
-      sectionErrors.recentExpenses &&
-      sectionErrors.upcomingEvents &&
-      sectionErrors.openPolls);
+      (sectionErrors.recentExpenses ||
+        sectionErrors.upcomingEvents ||
+        sectionErrors.openPolls));
 
   return (
     <AppScreen
