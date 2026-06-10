@@ -63,17 +63,29 @@ export type TranslationTree = {
     title: string;
     browserTitle: string;
     welcome: string;
+    heroBody: string;
+    householdLabel: string;
     placeholderBody: string;
     quickActionsTitle: string;
     addExpense: string;
     createPoll: string;
     addEvent: string;
     activityTitle: string;
+    activitySubtitle: string;
     activityEmpty: string;
     activityUnavailable: string;
+    expenseActivity: string;
+    pollMeta: string;
+    eventMetaWithLocation: string;
+    eventMetaWithoutLocation: string;
     upcomingEventsTitle: string;
+    upcomingEventsEmpty: string;
+    upcomingEventsUnavailable: string;
     openPollsTitle: string;
+    openPollsEmpty: string;
+    openPollsUnavailable: string;
     yourReminderTitle: string;
+    reminderUnavailable: string;
     reminderAllCaughtUp: string;
     reminderVotePending: string;
     reminderExpensePending: string;
@@ -342,17 +354,29 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       title: "Home",
       browserTitle: "Othello-Cloud | Home",
       welcome: "Welcome back",
+      heroBody: "Here is what needs your attention around the household.",
+      householdLabel: "Current household: {{name}}",
       placeholderBody: "Your dashboard is coming next.",
       quickActionsTitle: "Quick actions",
       addExpense: "Add expense",
       createPoll: "Create poll",
       addEvent: "Add event",
       activityTitle: "Recent activity",
+      activitySubtitle: "The latest expenses, polls, and events in one feed.",
       activityEmpty: "No activity yet.",
       activityUnavailable: "Activity is currently unavailable.",
+      expenseActivity: "{{amount}} added",
+      pollMeta: "{{count}} options",
+      eventMetaWithLocation: "{{date}} - {{location}}",
+      eventMetaWithoutLocation: "{{date}}",
       upcomingEventsTitle: "Upcoming events",
+      upcomingEventsEmpty: "No upcoming events yet.",
+      upcomingEventsUnavailable: "Upcoming events are currently unavailable.",
       openPollsTitle: "Open polls",
+      openPollsEmpty: "No open polls right now.",
+      openPollsUnavailable: "Open polls are currently unavailable.",
       yourReminderTitle: "Your reminder",
+      reminderUnavailable: "Your reminder is currently unavailable.",
       reminderAllCaughtUp: "You're all caught up.",
       reminderVotePending: "You still have a poll to answer.",
       reminderExpensePending: "You still have an expense to review.",
@@ -608,17 +632,29 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       title: "Start",
       browserTitle: "Othello-Cloud | Start",
       welcome: "Willkommen zurueck",
+      heroBody: "Hier siehst du, was in deiner WG gerade Aufmerksamkeit braucht.",
+      householdLabel: "Aktuelle WG: {{name}}",
       placeholderBody: "Dein Dashboard kommt als Naechstes.",
       quickActionsTitle: "Schnellzugriffe",
       addExpense: "Ausgabe erfassen",
       createPoll: "Umfrage erstellen",
       addEvent: "Termin hinzufuegen",
       activityTitle: "Letzte Aktivitaeten",
+      activitySubtitle: "Ausgaben, Umfragen und Termine in einem Feed.",
       activityEmpty: "Noch keine Aktivitaet vorhanden.",
       activityUnavailable: "Aktivitaet ist derzeit nicht verfuegbar.",
+      expenseActivity: "{{amount}} hinzugefuegt",
+      pollMeta: "{{count}} Optionen",
+      eventMetaWithLocation: "{{date}} - {{location}}",
+      eventMetaWithoutLocation: "{{date}}",
       upcomingEventsTitle: "Anstehende Termine",
+      upcomingEventsEmpty: "Noch keine anstehenden Termine.",
+      upcomingEventsUnavailable: "Anstehende Termine sind derzeit nicht verfuegbar.",
       openPollsTitle: "Offene Umfragen",
+      openPollsEmpty: "Gerade sind keine Umfragen offen.",
+      openPollsUnavailable: "Offene Umfragen sind derzeit nicht verfuegbar.",
       yourReminderTitle: "Deine Erinnerung",
+      reminderUnavailable: "Deine Erinnerung ist derzeit nicht verfuegbar.",
       reminderAllCaughtUp: "Du bist auf dem neuesten Stand.",
       reminderVotePending: "Du hast noch eine offene Umfrage.",
       reminderExpensePending: "Du hast noch eine offene Ausgabe.",
