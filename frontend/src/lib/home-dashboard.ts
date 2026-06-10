@@ -95,6 +95,8 @@ export function buildDashboardActivity(input: {
   events: CalendarEvent[];
   polls: ParsedPoll[];
 }): DashboardActivityItem[] {
+  const now = Date.now();
+
   return [
     ...input.expenses.map((expense) => ({
       id: `expense-${expense.id}`,
@@ -123,7 +125,7 @@ export function buildDashboardActivity(input: {
       sortAt: event.start,
       tab: "calendar" as const,
     })),
-  ].sort(compareDashboardActivityItems);
+  ].sort((a, b) => compareDashboardActivityItems(a, b, now));
 }
 
 export function buildDashboardReminder(
@@ -145,11 +147,11 @@ export function buildDashboardReminder(
 
 function compareDashboardActivityItems(
   a: DashboardActivityItem,
-  b: DashboardActivityItem
+  b: DashboardActivityItem,
+  now: number
 ) {
   // Mixed feed rule: rank items by temporal closeness to now so recent
   // activity and soon-upcoming events share one intentional ordering.
-  const now = Date.now();
   const aDelta = getActivitySortDelta(a, now);
   const bDelta = getActivitySortDelta(b, now);
 

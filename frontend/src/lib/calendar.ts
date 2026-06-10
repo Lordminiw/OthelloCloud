@@ -98,7 +98,7 @@ export async function loadCalendarEventsForMonth(input: {
       `household = "${input.householdId}" && ` +
       `(source = "" || source = "manual" || source = "upload") && ` +
       `start < "${monthEnd.toISOString()}" && ` +
-      `(end = "" || end >= "${monthStart.toISOString()}")`,
+      `((end = "" || end = null) || end >= "${monthStart.toISOString()}")`,
     sort: "start",
     requestKey: null,
   });
@@ -138,7 +138,7 @@ export async function loadImportedCalendarEventsForMonth(input: {
     filter:
       `subscription = "${input.subscriptionId}" && ` +
       `start < "${monthEnd.toISOString()}" && ` +
-      `(end = "" || end >= "${monthStart.toISOString()}")`,
+      `((end = "" || end = null) || end >= "${monthStart.toISOString()}")`,
     sort: "start",
     requestKey: null,
   });
