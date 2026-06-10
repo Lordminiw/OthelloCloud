@@ -138,6 +138,21 @@ export async function loadPolls(householdId: string): Promise<ParsedPoll[]> {
   return records.map(parsePollRecord);
 }
 
+export async function loadActivePolls(
+  householdId: string,
+  limit = 5
+): Promise<ParsedPoll[]> {
+  const records = await pb.collection("polls").getList<PollRecord>(1, limit, {
+    filter: `household = "${householdId}" && (isClosed = false || isClosed = null)`,
+    sort: "-created",
+    requestKey: null,
+  });
+
+  return records.items
+    .map(parsePollRecord)
+    .filter((poll) => !isPollExpired(poll));
+}
+
 export async function createPoll(input: {
   householdId: string;
   question: string;

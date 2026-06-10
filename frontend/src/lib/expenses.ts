@@ -11,6 +11,7 @@ export type Expense = {
   splitShares?: string;
   notes?: string;
   createdBy?: string;
+  created?: string;
 };
 
 export type SplitMode = "equal" | "amount" | "percent";
@@ -40,6 +41,20 @@ export async function loadExpenses(householdId: string): Promise<Expense[]> {
     filter: `household = "${householdId}"`,
     sort: "-created",
   });
+}
+
+export async function loadRecentExpenses(
+  householdId: string,
+  limit = 5
+): Promise<Expense[]> {
+  return await pb
+    .collection("expenses")
+    .getList<Expense>(1, limit, {
+      filter: `household = "${householdId}"`,
+      sort: "-created",
+      requestKey: null,
+    })
+    .then((result) => result.items);
 }
 
 export async function createExpense(input: {

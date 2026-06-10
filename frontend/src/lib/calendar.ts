@@ -104,6 +104,27 @@ export async function loadCalendarEventsForMonth(input: {
   });
 }
 
+export async function loadUpcomingCalendarEvents(input: {
+  householdId: string;
+  fromIso?: string;
+  limit?: number;
+}): Promise<CalendarEvent[]> {
+  const fromIso = input.fromIso ?? new Date().toISOString();
+  const limit = input.limit ?? 5;
+
+  return await pb
+    .collection("calendar_events")
+    .getList<CalendarEvent>(1, limit, {
+      filter:
+        `household = "${input.householdId}" && ` +
+        `(source = "" || source = "manual" || source = "upload") && ` +
+        `((end = "" && start >= "${fromIso}") || (end != "" && end >= "${fromIso}"))`,
+      sort: "start",
+      requestKey: null,
+    })
+    .then((result) => result.items);
+}
+
 export async function loadImportedCalendarEventsForMonth(input: {
   subscriptionId: string;
   year: number;
