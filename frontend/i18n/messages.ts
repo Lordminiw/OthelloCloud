@@ -144,16 +144,82 @@ export type TranslationTree = {
     title: string;
     browserTitle: string;
     newExpenseTitle: string;
+    recurringTitle: string;
+    recurringListTitle: string;
+    balancesTitle: string;
+    paymentSuggestionsTitle: string;
     lastExpensesTitle: string;
     settlementsTitle: string;
+    descriptionLabel: string;
+    amountLabel: string;
+    amountPlaceholder: string;
+    noteLabel: string;
+    noteSummaryLabel: string;
+    paidByLabel: string;
+    splitBetweenLabel: string;
+    selectPrompt: string;
+    selectMembersButton: string;
+    nobodySelected: string;
+    splitModeEqual: string;
+    splitModeAmount: string;
+    splitModePercent: string;
+    whoPaidTitle: string;
+    whoSharesTitle: string;
+    selectMembersTitle: string;
+    applyButton: string;
+    allButton: string;
+    addExpenseButton: string;
+    addSettlementManuallyButton: string;
+    settlementTitle: string;
+    fromLabel: string;
+    toLabel: string;
+    everythingBalanced: string;
+    paysLabel: string;
+    paidAction: string;
+    recurringStartDateLabel: string;
+    recurringStartDatePlaceholder: string;
+    recurringIntervalCountLabel: string;
+    recurringIntervalUnitLabel: string;
+    recurringIntervalDay: string;
+    recurringIntervalWeek: string;
+    recurringIntervalMonth: string;
+    recurringIntervalYear: string;
+    recurringCreateButton: string;
+    recurringCreateSuccess: string;
+    recurringEveryLabel: string;
+    recurringNextRunLabel: string;
+    recurringLastRunLabel: string;
+    recurringGeneratedExpenseLabel: string;
+    recurringStartLabel: string;
+    recurringStatusActive: string;
+    recurringStatusPaused: string;
+    recurringGeneratedBadge: string;
+    recurringGeneratedFromLabel: string;
+    recurringScheduledForLabel: string;
+    recurringUnknownRule: string;
+    recurringLoadFailed: string;
+    recurringRetryButton: string;
     noOpenPayments: string;
     noExpensesYet: string;
     noSettlementsYet: string;
+    noRecurringYet: string;
     editButton: string;
     deleteButton: string;
     cancelButton: string;
     saveButton: string;
     noneLabel: string;
+    validationDescriptionRequired: string;
+    validationAmountInvalid: string;
+    validationPaidByRequired: string;
+    validationSplitBetweenRequired: string;
+    validationSplitSharesInvalid: string;
+    validationSplitAmountsTotal: string;
+    validationSplitPercentTotal: string;
+    validationSettlementPeopleRequired: string;
+    validationSettlementDistinctUsers: string;
+    validationRecurringStartDate: string;
+    validationRecurringIntervalUnit: string;
+    validationRecurringIntervalCount: string;
   };
   calendar: {
     title: string;
@@ -433,16 +499,82 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       title: "Expenses",
       browserTitle: "Othello-Cloud | Expenses",
       newExpenseTitle: "New expense",
+      recurringTitle: "Recurring expense",
+      recurringListTitle: "Recurring rules",
+      balancesTitle: "Balances",
+      paymentSuggestionsTitle: "Payment suggestions",
       lastExpensesTitle: "Recent expenses",
       settlementsTitle: "Settlements",
+      descriptionLabel: "Description",
+      amountLabel: "Amount",
+      amountPlaceholder: "e.g. 12.50",
+      noteLabel: "Note optional",
+      noteSummaryLabel: "Note",
+      paidByLabel: "Paid by",
+      splitBetweenLabel: "Split between",
+      selectPrompt: "select",
+      selectMembersButton: "Select members",
+      nobodySelected: "nobody selected",
+      splitModeEqual: "Equal",
+      splitModeAmount: "Amount",
+      splitModePercent: "Percent",
+      whoPaidTitle: "Who paid?",
+      whoSharesTitle: "Who shares?",
+      selectMembersTitle: "Select members",
+      applyButton: "Apply",
+      allButton: "All",
+      addExpenseButton: "Add expense",
+      addSettlementManuallyButton: "Add settlement manually",
+      settlementTitle: "Settlement",
+      fromLabel: "From",
+      toLabel: "To",
+      everythingBalanced: "Everything is balanced.",
+      paysLabel: "pays",
+      paidAction: "Paid",
+      recurringStartDateLabel: "Start date",
+      recurringStartDatePlaceholder: "YYYY-MM-DD",
+      recurringIntervalCountLabel: "Every",
+      recurringIntervalUnitLabel: "Interval unit",
+      recurringIntervalDay: "Day",
+      recurringIntervalWeek: "Week",
+      recurringIntervalMonth: "Month",
+      recurringIntervalYear: "Year",
+      recurringCreateButton: "Add recurring expense",
+      recurringCreateSuccess: "Recurring expense saved.",
+      recurringEveryLabel: "Every {{count}} {{unit}}",
+      recurringNextRunLabel: "Next run: {{date}}",
+      recurringLastRunLabel: "Last run: {{date}}",
+      recurringGeneratedExpenseLabel: "Last generated expense: {{description}}",
+      recurringStartLabel: "Starts: {{date}}",
+      recurringStatusActive: "Active",
+      recurringStatusPaused: "Paused",
+      recurringGeneratedBadge: "Generated",
+      recurringGeneratedFromLabel: "From recurring rule: {{name}}",
+      recurringScheduledForLabel: "Scheduled for: {{date}}",
+      recurringUnknownRule: "Unknown recurring rule",
+      recurringLoadFailed: "Recurring expenses could not be loaded right now.",
+      recurringRetryButton: "Retry",
       noOpenPayments: "No open payments.",
       noExpensesYet: "No expenses yet.",
       noSettlementsYet: "No settlements yet.",
+      noRecurringYet: "No recurring expenses yet.",
       editButton: "Edit",
       deleteButton: "Delete",
       cancelButton: "Cancel",
       saveButton: "Save",
       noneLabel: "None",
+      validationDescriptionRequired: "Please enter a description.",
+      validationAmountInvalid: "Please enter a valid amount.",
+      validationPaidByRequired: "Please choose who paid.",
+      validationSplitBetweenRequired: "Please select at least one person who shares the expense.",
+      validationSplitSharesInvalid: "Please enter valid split values.",
+      validationSplitAmountsTotal: "The individual amounts must add up to €{{amount}}.",
+      validationSplitPercentTotal: "The percentages must add up to 100%.",
+      validationSettlementPeopleRequired: "Please select both people.",
+      validationSettlementDistinctUsers: "Sender and recipient cannot be the same.",
+      validationRecurringStartDate: "Please enter a valid start date.",
+      validationRecurringIntervalUnit: "Please choose an interval unit.",
+      validationRecurringIntervalCount: "Please enter a valid interval count.",
     },
     calendar: {
       title: "Calendar",
@@ -709,8 +841,61 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       title: "Ausgaben",
       browserTitle: "Othello-Cloud | Ausgaben",
       newExpenseTitle: "Neue Ausgabe",
+      recurringTitle: "Wiederkehrende Ausgabe",
+      recurringListTitle: "Wiederkehrende Regeln",
+      balancesTitle: "Salden",
+      paymentSuggestionsTitle: "Zahlungsvorschlaege",
       lastExpensesTitle: "Letzte Ausgaben",
       settlementsTitle: "Ausgleichszahlungen",
+      descriptionLabel: "Beschreibung",
+      amountLabel: "Betrag",
+      amountPlaceholder: "z. B. 12.50",
+      noteLabel: "Notiz optional",
+      noteSummaryLabel: "Notiz",
+      paidByLabel: "Bezahlt von",
+      splitBetweenLabel: "Split zwischen",
+      selectPrompt: "auswaehlen",
+      selectMembersButton: "Mitglieder auswaehlen",
+      nobodySelected: "niemand ausgewaehlt",
+      splitModeEqual: "Gleich",
+      splitModeAmount: "Betrag",
+      splitModePercent: "Prozent",
+      whoPaidTitle: "Wer hat bezahlt?",
+      whoSharesTitle: "Wer zahlt mit?",
+      selectMembersTitle: "Mitglieder auswaehlen",
+      applyButton: "Uebernehmen",
+      allButton: "Alle",
+      addExpenseButton: "Ausgabe hinzufuegen",
+      addSettlementManuallyButton: "Ausgleich manuell eintragen",
+      settlementTitle: "Ausgleichszahlung",
+      fromLabel: "Von",
+      toLabel: "An",
+      everythingBalanced: "Alles ausgeglichen.",
+      paysLabel: "zahlt",
+      paidAction: "Bezahlt",
+      recurringStartDateLabel: "Startdatum",
+      recurringStartDatePlaceholder: "JJJJ-MM-TT",
+      recurringIntervalCountLabel: "Alle",
+      recurringIntervalUnitLabel: "Intervall",
+      recurringIntervalDay: "Tag",
+      recurringIntervalWeek: "Woche",
+      recurringIntervalMonth: "Monat",
+      recurringIntervalYear: "Jahr",
+      recurringCreateButton: "Wiederkehrende Ausgabe hinzufuegen",
+      recurringCreateSuccess: "Wiederkehrende Ausgabe gespeichert.",
+      recurringEveryLabel: "Alle {{count}} {{unit}}",
+      recurringNextRunLabel: "Naechste Ausfuehrung: {{date}}",
+      recurringLastRunLabel: "Letzte Ausfuehrung: {{date}}",
+      recurringGeneratedExpenseLabel: "Zuletzt erzeugte Ausgabe: {{description}}",
+      recurringStartLabel: "Startet: {{date}}",
+      recurringStatusActive: "Aktiv",
+      recurringStatusPaused: "Pausiert",
+      recurringGeneratedBadge: "Generiert",
+      recurringGeneratedFromLabel: "Aus wiederkehrender Regel: {{name}}",
+      recurringScheduledForLabel: "Geplant fuer: {{date}}",
+      recurringUnknownRule: "Unbekannte wiederkehrende Regel",
+      recurringLoadFailed: "Wiederkehrende Ausgaben konnten gerade nicht geladen werden.",
+      recurringRetryButton: "Erneut laden",
       noOpenPayments: "Keine offenen Zahlungen.",
       noExpensesYet: "Noch keine Ausgaben.",
       noSettlementsYet: "Noch keine Ausgleichszahlungen.",
@@ -719,6 +904,19 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       cancelButton: "Abbrechen",
       saveButton: "Speichern",
       noneLabel: "Keine",
+      noRecurringYet: "Noch keine wiederkehrenden Ausgaben.",
+      validationDescriptionRequired: "Bitte Beschreibung eingeben.",
+      validationAmountInvalid: "Bitte gueltigen Betrag eingeben.",
+      validationPaidByRequired: "Bitte auswaehlen, wer bezahlt hat.",
+      validationSplitBetweenRequired: "Bitte mindestens eine Person auswaehlen, die mitzahlt.",
+      validationSplitSharesInvalid: "Bitte gueltige Split-Werte eingeben.",
+      validationSplitAmountsTotal: "Die Einzelbetraege muessen zusammen {{amount}} € ergeben.",
+      validationSplitPercentTotal: "Die Prozentwerte muessen zusammen 100 % ergeben.",
+      validationSettlementPeopleRequired: "Bitte beide Personen auswaehlen.",
+      validationSettlementDistinctUsers: "Sender und Empfaenger duerfen nicht gleich sein.",
+      validationRecurringStartDate: "Bitte ein gueltiges Startdatum eingeben.",
+      validationRecurringIntervalUnit: "Bitte ein Intervall auswaehlen.",
+      validationRecurringIntervalCount: "Bitte eine gueltige Intervall-Anzahl eingeben.",
     },
     calendar: {
       title: "Kalender",
