@@ -1,4 +1,10 @@
 import { pb } from "./pocketbase";
+export {
+  createRecurringExpense,
+  deleteRecurringExpense,
+  loadRecurringExpenses,
+  updateRecurringExpense,
+} from "./recurring-expenses";
 
 export type Expense = {
   id: string;
@@ -10,6 +16,8 @@ export type Expense = {
   splitMode?: SplitMode;
   splitShares?: string;
   notes?: string;
+  recurringExpense?: string;
+  scheduledFor?: string;
   createdBy?: string;
   created?: string;
 };
