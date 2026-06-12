@@ -1,15 +1,8 @@
-/// <reference types="node" />
-
-import assert from "node:assert/strict";
-import test from "node:test";
-
-import type { RecurringExpenseFormInput } from "./recurring-expenses";
-
-process.env.EXPO_PUBLIC_POCKETBASE_URL ??= "http://127.0.0.1:8090";
-
-async function loadRecurringExpenseHelpers() {
-  return await import("./recurring-expenses");
-}
+import {
+  buildRecurringExpensePayload,
+  type RecurringExpenseFormInput,
+  validateRecurringExpenseInput,
+} from "./recurring-expenses";
 
 function createValidInput(
   overrides: Partial<RecurringExpenseFormInput> = {}
@@ -30,163 +23,154 @@ function createValidInput(
   };
 }
 
-test("validateRecurringExpenseInput rejects missing schedule fields", async () => {
-  const { validateRecurringExpenseInput } = await loadRecurringExpenseHelpers();
+describe("validateRecurringExpenseInput", () => {
+  it("rejects missing schedule fields", () => {
+    const result = validateRecurringExpenseInput(
+      createValidInput({
+        description: "",
+        startDate: "",
+        intervalUnit: "",
+        intervalCountText: "",
+      })
+    );
 
-  const result = validateRecurringExpenseInput(
-    createValidInput({
-      description: "",
-      startDate: "",
-      intervalUnit: "",
-      intervalCountText: "",
-    })
-  );
+    expect(result.errors).toEqual([
+      "description",
+      "startDate",
+      "intervalUnit",
+      "intervalCount",
+    ]);
+  });
 
-  assert.deepEqual(result.errors, [
-    "description",
-    "startDate",
-    "intervalUnit",
-    "intervalCount",
-  ]);
-});
+  it("rejects unsupported non-empty interval units", () => {
+    const result = validateRecurringExpenseInput(
+      createValidInput({
+        intervalUnit: "quarter",
+      })
+    );
 
-test("validateRecurringExpenseInput rejects unsupported non-empty interval units", async () => {
-  const { validateRecurringExpenseInput } = await loadRecurringExpenseHelpers();
+    expect(result.errors).toEqual(["intervalUnit"]);
+  });
 
-  const result = validateRecurringExpenseInput(
-    createValidInput({
-      intervalUnit: "quarter",
-    })
-  );
+  it("rejects invalid non-empty start dates", () => {
+    const result = validateRecurringExpenseInput(
+      createValidInput({
+        startDate: "not-a-date",
+      })
+    );
 
-  assert.deepEqual(result.errors, ["intervalUnit"]);
-});
+    expect(result.errors).toEqual(["startDate"]);
+  });
 
-test("validateRecurringExpenseInput rejects invalid non-empty start dates", async () => {
-  const { validateRecurringExpenseInput } = await loadRecurringExpenseHelpers();
+  it("rejects impossible ISO calendar dates", () => {
+    const result = validateRecurringExpenseInput(
+      createValidInput({
+        startDate: "2026-02-30",
+      })
+    );
 
-  const result = validateRecurringExpenseInput(
-    createValidInput({
-      startDate: "not-a-date",
-    })
-  );
+    expect(result.errors).toEqual(["startDate"]);
+  });
 
-  assert.deepEqual(result.errors, ["startDate"]);
-});
+  it("rejects invalid expense template fields", () => {
+    const result = validateRecurringExpenseInput(
+      createValidInput({
+        amountText: "0",
+        paidBy: "   ",
+        splitBetween: [],
+        splitMode: "weird" as RecurringExpenseFormInput["splitMode"],
+      })
+    );
 
-test("validateRecurringExpenseInput rejects invalid expense template fields", async () => {
-  const { validateRecurringExpenseInput } = await loadRecurringExpenseHelpers();
+    expect(result.errors).toEqual([
+      "amount",
+      "paidBy",
+      "splitBetween",
+      "splitMode",
+    ]);
+  });
 
-  const result = validateRecurringExpenseInput(
-    createValidInput({
-      amountText: "0",
-      paidBy: "   ",
-      splitBetween: [],
-      splitMode: "weird" as RecurringExpenseFormInput["splitMode"],
-    })
-  );
+  it("rejects inconsistent percentage split shares", () => {
+    const result = validateRecurringExpenseInput(
+      createValidInput({
+        splitMode: "percent",
+        splitShares: { "user-1": 60 },
+      })
+    );
 
-  assert.deepEqual(result.errors, [
-    "amount",
-    "paidBy",
-    "splitBetween",
-    "splitMode",
-  ]);
-});
+    expect(result.errors).toEqual(["splitShares"]);
+  });
 
-test("validateRecurringExpenseInput rejects inconsistent percentage split shares", async () => {
-  const { validateRecurringExpenseInput } = await loadRecurringExpenseHelpers();
+  it("rejects invalid amount split totals", () => {
+    const result = validateRecurringExpenseInput(
+      createValidInput({
+        splitMode: "amount",
+        splitShares: {
+          "user-1": 300,
+          "user-2": 200,
+        },
+      })
+    );
 
-  const result = validateRecurringExpenseInput(
-    createValidInput({
-      splitMode: "percent",
-      splitShares: { "user-1": 60 },
-    })
-  );
-
-  assert.deepEqual(result.errors, ["splitShares"]);
-});
-
-test("validateRecurringExpenseInput rejects invalid amount split totals", async () => {
-  const { validateRecurringExpenseInput } = await loadRecurringExpenseHelpers();
-
-  const result = validateRecurringExpenseInput(
-    createValidInput({
-      splitMode: "amount",
-      splitShares: {
-        "user-1": 300,
-        "user-2": 200,
-      },
-    })
-  );
-
-  assert.deepEqual(result.errors, ["splitShares"]);
-});
-
-test("buildRecurringExpensePayload normalizes numeric fields and split shares", async () => {
-  const { buildRecurringExpensePayload } = await loadRecurringExpenseHelpers();
-
-  const payload = buildRecurringExpensePayload(
-    createValidInput({
-      description: "  Internet  ",
-      amountText: "29,99",
-      splitMode: "percent",
-      splitShares: { "user-1": 60, "user-2": 40 },
-      notes: "  Paid automatically  ",
-      intervalCountText: "2",
-    })
-  );
-
-  assert.deepEqual(payload, {
-    household: "house-1",
-    description: "Internet",
-    amount: 29.99,
-    paidBy: "user-1",
-    splitBetween: ["user-1", "user-2"],
-    splitMode: "percent",
-    splitShares: JSON.stringify({ "user-1": 60, "user-2": 40 }),
-    notes: "Paid automatically",
-    startDate: "2026-06-12",
-    intervalUnit: "month",
-    intervalCount: 2,
-    active: true,
+    expect(result.errors).toEqual(["splitShares"]);
   });
 });
 
-test("buildRecurringExpensePayload leaves splitShares empty when not provided", async () => {
-  const { buildRecurringExpensePayload } = await loadRecurringExpenseHelpers();
+describe("buildRecurringExpensePayload", () => {
+  it("normalizes numeric fields and split shares", () => {
+    const payload = buildRecurringExpensePayload(
+      createValidInput({
+        description: "  Internet  ",
+        amountText: "29,99",
+        splitMode: "percent",
+        splitShares: { "user-1": 60, "user-2": 40 },
+        notes: "  Paid automatically  ",
+        intervalCountText: "2",
+      })
+    );
 
-  const payload = buildRecurringExpensePayload(
-    createValidInput({
-      description: "Water",
-      amountText: "18.50",
-      splitBetween: ["user-1"],
-      intervalUnit: "week",
-      active: false,
-    })
-  );
+    expect(payload).toEqual({
+      household: "house-1",
+      description: "Internet",
+      amount: 29.99,
+      paidBy: "user-1",
+      splitBetween: ["user-1", "user-2"],
+      splitMode: "percent",
+      splitShares: JSON.stringify({ "user-1": 60, "user-2": 40 }),
+      notes: "Paid automatically",
+      startDate: "2026-06-12",
+      intervalUnit: "month",
+      intervalCount: 2,
+      active: true,
+    });
+  });
 
-  assert.equal(payload.amount, 18.5);
-  assert.equal(payload.intervalCount, 1);
-  assert.equal(payload.splitShares, "");
-  assert.equal(payload.active, false);
-});
+  it("leaves splitShares empty when not provided", () => {
+    const payload = buildRecurringExpensePayload(
+      createValidInput({
+        description: "Water",
+        amountText: "18.50",
+        splitBetween: ["user-1"],
+        intervalUnit: "week",
+        active: false,
+      })
+    );
 
-test("buildRecurringExpensePayload fails fast on invalid input", async () => {
-  const { buildRecurringExpensePayload } = await loadRecurringExpenseHelpers();
+    expect(payload.amount).toBe(18.5);
+    expect(payload.intervalCount).toBe(1);
+    expect(payload.splitShares).toBe("");
+    expect(payload.active).toBe(false);
+  });
 
-  assert.throws(
-    () =>
+  it("fails fast on invalid input", () => {
+    expect(() =>
       buildRecurringExpensePayload(
         createValidInput({
           paidBy: "",
           splitMode: "percent",
           splitShares: { "user-1": 40, "user-2": 40 },
         })
-      ),
-    (error: unknown) => {
-      assert.match(String(error), /paidBy|splitShares/);
-      return true;
-    }
-  );
+      )
+    ).toThrow(/paidBy|splitShares/);
+  });
 });

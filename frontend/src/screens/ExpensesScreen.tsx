@@ -875,6 +875,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
             <Card.Content style={layout.formContent}>
               <TextInput
                 label={t("expenses.descriptionLabel")}
+                testID="recurring-description-input"
                 value={recurringDescription}
                 onChangeText={setRecurringDescription}
                 mode="outlined"
@@ -882,6 +883,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
 
               <TextInput
                 label={t("expenses.amountLabel")}
+                testID="recurring-amount-input"
                 value={recurringAmountText}
                 onChangeText={setRecurringAmountText}
                 keyboardType="decimal-pad"
@@ -891,6 +893,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
 
               <TextInput
                 label={t("expenses.noteLabel")}
+                testID="recurring-notes-input"
                 value={recurringNotes}
                 onChangeText={setRecurringNotes}
                 mode="outlined"
@@ -948,6 +951,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
 
               <TextInput
                 label={t("expenses.recurringStartDateLabel")}
+                testID="recurring-start-date-input"
                 value={recurringStartDate}
                 onChangeText={setRecurringStartDate}
                 mode="outlined"
@@ -957,6 +961,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
               <View style={styles.intervalRow}>
                 <TextInput
                   label={t("expenses.recurringIntervalCountLabel")}
+                  testID="recurring-interval-count-input"
                   value={recurringIntervalCountText}
                   onChangeText={setRecurringIntervalCountText}
                   keyboardType="number-pad"
@@ -983,6 +988,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                 mode="contained"
                 loading={isCreatingRecurring}
                 onPress={() => void addRecurringExpenseRule()}
+                testID="recurring-create-button"
               >
                 {t("expenses.recurringCreateButton")}
               </Button>
