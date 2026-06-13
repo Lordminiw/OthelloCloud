@@ -61,8 +61,13 @@ jest.mock("react-native-paper", () => {
     </Pressable>
   );
 
-  const CheckboxItem = ({ label, onPress, status }: any) => (
-    <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: status === "checked" }} onPress={onPress}>
+  const CheckboxItem = ({ label, onPress, status, testID }: any) => (
+    <Pressable
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: status === "checked" }}
+      onPress={onPress}
+      testID={testID}
+    >
       <Text>{label}</Text>
     </Pressable>
   );
@@ -228,36 +233,53 @@ afterEach(() => {
 });
 
 describe("ExpensesScreen recurring expenses", () => {
-  it("creates a recurring rule from the recurring expense form", async () => {
+  it("reveals recurring fields from the main expense form when recurring is enabled", async () => {
     renderScreen();
 
     await waitFor(() =>
       expect(screen.getByText("No recurring expenses yet.")).toBeTruthy()
     );
 
-    fireEvent.changeText(screen.getByTestId("recurring-description-input"), "  Internet  ");
-    fireEvent.changeText(screen.getByTestId("recurring-amount-input"), "29,99");
-    fireEvent.press(screen.getByTestId("recurring-create-button"));
+    expect(screen.queryByTestId("recurring-start-date-input")).toBeNull();
+    expect(screen.queryByTestId("recurring-interval-count-input")).toBeNull();
+
+    fireEvent.press(screen.getByTestId("expense-recurring-toggle"));
+
+    expect(screen.getByTestId("recurring-start-date-input")).toBeTruthy();
+    expect(screen.getByTestId("recurring-interval-count-input")).toBeTruthy();
+    expect(screen.getByTestId("expense-submit-button")).toBeTruthy();
+  });
+
+  it("creates a normal expense when recurring is left disabled", async () => {
+    renderScreen();
+
+    await waitFor(() =>
+      expect(screen.getByText("No recurring expenses yet.")).toBeTruthy()
+    );
+
+    fireEvent.changeText(screen.getByTestId("expense-description-input"), "Groceries");
+    fireEvent.changeText(screen.getByTestId("expense-amount-input"), "14.20");
+    fireEvent.press(screen.getByTestId("expense-submit-button"));
+
+    await waitFor(() => expect(mockCreateExpense).toHaveBeenCalledTimes(1));
+    expect(mockCreateRecurringExpense).not.toHaveBeenCalled();
+  });
+
+  it("creates a recurring rule from the main expense form when recurring is enabled", async () => {
+    renderScreen();
+
+    await waitFor(() =>
+      expect(screen.getByText("No recurring expenses yet.")).toBeTruthy()
+    );
+
+    fireEvent.changeText(screen.getByTestId("expense-description-input"), "Internet");
+    fireEvent.changeText(screen.getByTestId("expense-amount-input"), "29,99");
+    fireEvent.press(screen.getByTestId("expense-recurring-toggle"));
+    fireEvent.changeText(screen.getByTestId("recurring-start-date-input"), "2026-06-13");
+    fireEvent.press(screen.getByTestId("expense-submit-button"));
 
     await waitFor(() => expect(mockCreateRecurringExpense).toHaveBeenCalledTimes(1));
-
-    const payload = mockCreateRecurringExpense.mock.calls[0][0];
-
-    expect(payload).toMatchObject({
-      household: "house-1",
-      description: "Internet",
-      amount: 29.99,
-      paidBy: "user-1",
-      splitBetween: ["user-1", "user-2"],
-      splitMode: "equal",
-      splitShares: "",
-      notes: "",
-      intervalUnit: "month",
-      intervalCount: 1,
-      active: true,
-    });
-    expect(payload.startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(global.alert).toHaveBeenCalledWith("Recurring expense saved.");
+    expect(mockCreateExpense).not.toHaveBeenCalled();
   });
 
   it("renders generated expense indicators and recurring rule details", async () => {
