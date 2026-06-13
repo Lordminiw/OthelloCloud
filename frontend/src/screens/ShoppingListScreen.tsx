@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { Button, Card, Divider, List, Text, TextInput } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
+import { PageSection, SplitLayout } from "@/components/layout";
 import { useLanguage } from "@/context/language-context";
 import { pb } from "../lib/pocketbase";
 
@@ -120,9 +121,7 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
 
   function applySuggestion(suggestion: ShoppingSuggestion) {
     setName(suggestion.name);
-    if (suggestion.quantity) {
-      setQuantity(suggestion.quantity);
-    }
+    setQuantity(suggestion.quantity ?? "");
   }
 
   async function toggleItem(item: ShoppingItem) {
@@ -168,11 +167,9 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
   }
 
   return (
-    <AppScreen
-      title={t("shopping.title")}
-      browserTitle={t("shopping.browserTitle")}
-    >
-      <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
+    <AppScreen title={t("shopping.title")} browserTitle={t("shopping.browserTitle")}>
+      <PageSection>
+        <SplitLayout style={!isWide && styles.splitLayoutNarrow}>
           <Card style={[layout.card, isWide && layout.wideForm]}>
           <Card.Title title={t("shopping.newItemTitle")} />
           <Card.Content style={layout.formContent}>
@@ -226,7 +223,7 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
           </Card.Content>
         </Card>
 
-        <View style={[layout.stack, isWide && layout.widePanel]}>
+          <PageSection style={[layout.stack, isWide && layout.widePanel]}>
           <Card style={layout.card}>
             <Card.Title
               title={isGerman ? `Offen (${openItems.length})` : `Open (${openItems.length})`}
@@ -289,13 +286,18 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
               )}
             </Card.Content>
           </Card>
-        </View>
-      </View>
+          </PageSection>
+        </SplitLayout>
+      </PageSection>
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  splitLayoutNarrow: {
+    flexDirection: "column",
+    flexWrap: "nowrap",
+  },
   mobileCardList: {
     maxHeight: 360,
   },

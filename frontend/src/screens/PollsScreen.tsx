@@ -13,6 +13,7 @@ import {
   TextInput,
 } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
+import { PageSection, SplitLayout } from "@/components/layout";
 import { useLanguage } from "@/context/language-context";
 import { pb } from "../lib/pocketbase";
 import { HouseholdMember, loadHouseholdMembers } from "../lib/members";
@@ -284,6 +285,10 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
   }
 
   async function handleVote(poll: ParsedPoll, optionId: string) {
+    if (busy) {
+      return;
+    }
+
     if (poll.isClosed || isPollExpired(poll)) {
       alert(isGerman ? "Diese Umfrage ist bereits geschlossen." : "This poll is already closed.");
       return;
@@ -309,6 +314,10 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
   }
 
   async function handleClosePoll(poll: ParsedPoll) {
+    if (busy) {
+      return;
+    }
+
     setBusy(true);
     try {
       await closePoll(poll.id);
@@ -322,6 +331,10 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
   }
 
   async function handleSharePoll(poll: ParsedPoll) {
+    if (busy) {
+      return;
+    }
+
     const link = buildPollShareLink(poll.id);
 
     try {
@@ -347,8 +360,8 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
     }
   }
 
-  const activePolls = polls.filter((poll) => !isPollExpired(poll));
-  const pastPolls = polls.filter((poll) => isPollExpired(poll));
+  const activePolls = polls.filter((poll) => !poll.isClosed && !isPollExpired(poll));
+  const pastPolls = polls.filter((poll) => poll.isClosed || isPollExpired(poll));
 
   const activePollCards = activePolls.map((poll) => {
     const { totalVotes, counts } = getPollStats(poll);
@@ -381,11 +394,17 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
                   mode="text"
                   compact
                   icon="share-variant"
+                  disabled={busy}
                   onPress={() => void handleSharePoll(poll)}
                 >
                   {t("polls.shareButton")}
                 </Button>
-                <Button mode="text" compact onPress={() => void handleClosePoll(poll)}>
+                <Button
+                  mode="text"
+                  compact
+                  disabled={busy}
+                  onPress={() => void handleClosePoll(poll)}
+                >
                   {isGerman ? "Schließen" : "Close"}
                 </Button>
               </View>
@@ -418,7 +437,7 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
                       />
                     )
                   }
-                  onPress={() => void handleVote(poll, option.id)}
+                  onPress={busy ? undefined : () => void handleVote(poll, option.id)}
                 />
                 <ProgressBar
                   progress={percentage}
@@ -493,11 +512,9 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
   });
 
   return (
-    <AppScreen
-      title={t("polls.title")}
-      browserTitle={t("polls.browserTitle")}
-    >
-      <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
+    <AppScreen title={t("polls.title")} browserTitle={t("polls.browserTitle")}>
+      <PageSection>
+        <SplitLayout style={!isWide && styles.splitLayoutNarrow}>
         <Card style={[layout.card, isWide && layout.wideForm]}>
           <Card.Title title={t("polls.newPollTitle")} />
           <Card.Content style={layout.formContent}>
@@ -581,7 +598,7 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
           </Card.Content>
         </Card>
 
-        <View style={[layout.stack, isWide && layout.widePanel]}>
+          <PageSection style={[layout.stack, isWide && layout.widePanel]}>
           <Card style={layout.card}>
             <Card.Title
               title={t("polls.activePollsTitle")}
@@ -629,13 +646,18 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
               )}
             </Card.Content>
           </Card>
-        </View>
-      </View>
+          </PageSection>
+        </SplitLayout>
+      </PageSection>
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  splitLayoutNarrow: {
+    flexDirection: "column",
+    flexWrap: "nowrap",
+  },
   mobileList: {
     maxHeight: 520,
   },

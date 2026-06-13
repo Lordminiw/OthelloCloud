@@ -10,6 +10,7 @@ import {
   useTheme,
 } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
+import { PageSection, SplitLayout } from "@/components/layout";
 import { useHousehold } from "@/context/household-context";
 import { useLanguage } from "@/context/language-context";
 import {
@@ -107,11 +108,8 @@ export function HomeScreen({ householdId }: HomeScreenProps) {
         sectionErrors.openPolls));
 
   return (
-    <AppScreen
-      title={t("home.title")}
-      browserTitle={t("home.browserTitle")}
-    >
-      <View style={layout.stack}>
+    <AppScreen title={t("home.title")} browserTitle={t("home.browserTitle")}>
+      <PageSection>
         <Card
           style={[
             layout.card,
@@ -183,7 +181,7 @@ export function HomeScreen({ householdId }: HomeScreenProps) {
           </Card.Content>
         </Card>
 
-        <View style={[styles.dashboardBody, isWide && styles.dashboardBodyWide]}>
+        <SplitLayout style={isWide ? styles.dashboardBodyWide : styles.dashboardBodyNarrow}>
           <Card style={[layout.card, styles.feedCard]}>
             <Card.Title
               title={t("home.activityTitle")}
@@ -201,7 +199,7 @@ export function HomeScreen({ householdId }: HomeScreenProps) {
             </Card.Content>
           </Card>
 
-          <View style={styles.supportColumn}>
+          <PageSection style={styles.supportColumn}>
             <Card style={layout.card}>
               <Card.Title title={t("home.upcomingEventsTitle")} />
               <Card.Content style={layout.listCardContent}>
@@ -242,9 +240,9 @@ export function HomeScreen({ householdId }: HomeScreenProps) {
                 })}
               </Card.Content>
             </Card>
-          </View>
-        </View>
-      </View>
+          </PageSection>
+        </SplitLayout>
+      </PageSection>
     </AppScreen>
   );
 }
@@ -519,12 +517,12 @@ const styles = StyleSheet.create({
   heroActions: {
     gap: 10,
   },
-  dashboardBody: {
-    gap: 12,
-  },
   dashboardBodyWide: {
-    flexDirection: "row",
-    alignItems: "flex-start",
+    flexWrap: "nowrap",
+  },
+  dashboardBodyNarrow: {
+    flexDirection: "column",
+    flexWrap: "nowrap",
   },
   feedCard: {
     flex: 1.7,

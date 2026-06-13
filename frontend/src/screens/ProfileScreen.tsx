@@ -14,6 +14,7 @@ import {
   TextInput,
 } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
+import { PageSection, SplitLayout } from "@/components/layout";
 import { useLanguage } from "@/context/language-context";
 import { Household } from "../lib/household";
 import { pb } from "../lib/pocketbase";
@@ -159,6 +160,18 @@ export function ProfileScreen({
     adminHouseholds.find((item) => item.id === calendarExportHouseholdId) ??
     adminHouseholds[0] ??
     null;
+
+  function mergeCalendarSubscriptions(
+    ownedSubscriptions: CalendarSubscription[],
+    existingSubscriptions: CalendarSubscription[]
+  ) {
+    const ownedIds = new Set(ownedSubscriptions.map((subscription) => subscription.id));
+    const sharedSubscriptions = existingSubscriptions.filter(
+      (subscription) => !ownedIds.has(subscription.id) && subscription.owner !== user?.id
+    );
+
+    return [...ownedSubscriptions, ...sharedSubscriptions];
+  }
 
   const loadSubscriptions = useCallback(async () => {
     setCalendarLoading(true);
@@ -389,7 +402,10 @@ export function ProfileScreen({
       });
       setCalendarSubscription(saved);
       setCalendarUrl(saved.url || calendarUrl);
-      setCalendarSubscriptions(await loadOwnedCalendarSubscriptions());
+      const ownedSubscriptions = await loadOwnedCalendarSubscriptions();
+      setCalendarSubscriptions((current) =>
+        mergeCalendarSubscriptions(ownedSubscriptions, current)
+      );
       selectCalendarSubscription(saved);
     } catch (error: any) {
       alert(`${t("profile.externalCalendarSaveFailed")}: ${error?.response?.message ?? error?.message ?? "Unknown"}`);
@@ -403,9 +419,11 @@ export function ProfileScreen({
     try {
       if (!calendarSubscription) return;
       const result = await syncCalendarSubscription(calendarSubscription.id);
-      const subscriptions = await loadOwnedCalendarSubscriptions();
-      setCalendarSubscriptions(subscriptions);
-      const refreshed = subscriptions.find(
+      const ownedSubscriptions = await loadOwnedCalendarSubscriptions();
+      setCalendarSubscriptions((current) =>
+        mergeCalendarSubscriptions(ownedSubscriptions, current)
+      );
+      const refreshed = ownedSubscriptions.find(
         (item) => item.id === calendarSubscription.id
       );
       if (refreshed) selectCalendarSubscription(refreshed);
@@ -726,7 +744,8 @@ export function ProfileScreen({
       title={isGerman ? "Einstellungen" : "Settings"}
       browserTitle={isGerman ? "Othello-Cloud | Einstellungen" : "Othello-Cloud | Settings"}
     >
-      <View style={layout.stack}>
+      <PageSection>
+        <SplitLayout style={{ flexDirection: "column", flexWrap: "nowrap" }}>
         <Card style={layout.card}>
           <Card.Title title={displayName || (isGerman ? "Benutzer" : "User")} subtitle={user?.email} />
           <Card.Content style={layout.formContent}>
@@ -1212,8 +1231,8 @@ export function ProfileScreen({
             </Button>
           </Card.Content>
         </Card>
-
-      </View>
+        </SplitLayout>
+      </PageSection>
 
       <Portal>
         <Dialog
