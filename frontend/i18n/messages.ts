@@ -145,6 +145,7 @@ export type TranslationTree = {
     browserTitle: string;
     newExpenseTitle: string;
     recurringTitle: string;
+    recurringToggleLabel: string;
     recurringListTitle: string;
     balancesTitle: string;
     paymentSuggestionsTitle: string;
@@ -500,6 +501,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       browserTitle: "Othello-Cloud | Expenses",
       newExpenseTitle: "New expense",
       recurringTitle: "Recurring expense",
+      recurringToggleLabel: "Recurring expense",
       recurringListTitle: "Recurring rules",
       balancesTitle: "Balances",
       paymentSuggestionsTitle: "Payment suggestions",
@@ -842,6 +844,7 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       browserTitle: "Othello-Cloud | Ausgaben",
       newExpenseTitle: "Neue Ausgabe",
       recurringTitle: "Wiederkehrende Ausgabe",
+      recurringToggleLabel: "Wiederkehrende Ausgabe",
       recurringListTitle: "Wiederkehrende Regeln",
       balancesTitle: "Salden",
       paymentSuggestionsTitle: "Zahlungsvorschlaege",

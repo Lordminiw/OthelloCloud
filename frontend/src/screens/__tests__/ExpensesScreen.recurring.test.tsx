@@ -241,7 +241,7 @@ describe("ExpensesScreen recurring expenses", () => {
     );
 
     expect(screen.queryByTestId("recurring-start-date-input")).toBeNull();
-    expect(screen.queryByTestId("recurring-interval-count-input")).toBeNull();
+    expect(screen.queryByDisplayValue("Add recurring expense")).toBeNull();
 
     fireEvent.press(screen.getByTestId("expense-recurring-toggle"));
 

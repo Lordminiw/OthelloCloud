@@ -101,16 +101,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
   const [splitBetween, setSplitBetween] = useState<string[]>([]);
   const [splitMode, setSplitMode] = useState<SplitMode>("equal");
   const [splitSharesText, setSplitSharesText] = useState<Record<string, string>>({});
-
-  const [recurringDescription, setRecurringDescription] = useState("");
-  const [recurringAmountText, setRecurringAmountText] = useState("");
-  const [recurringNotes, setRecurringNotes] = useState("");
-  const [recurringPaidBy, setRecurringPaidBy] = useState<string | null>(null);
-  const [recurringSplitBetween, setRecurringSplitBetween] = useState<string[]>([]);
-  const [recurringSplitMode, setRecurringSplitMode] = useState<SplitMode>("equal");
-  const [recurringSplitSharesText, setRecurringSplitSharesText] = useState<
-    Record<string, string>
-  >({});
+  const [isRecurringExpense, setIsRecurringExpense] = useState(false);
   const [recurringStartDate, setRecurringStartDate] = useState(getTodayDateInput());
   const [recurringIntervalCountText, setRecurringIntervalCountText] = useState("1");
   const [recurringIntervalUnit, setRecurringIntervalUnit] =
@@ -118,8 +109,6 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
 
   const [payerDialogVisible, setPayerDialogVisible] = useState(false);
   const [splitDialogVisible, setSplitDialogVisible] = useState(false);
-  const [recurringPayerDialogVisible, setRecurringPayerDialogVisible] = useState(false);
-  const [recurringSplitDialogVisible, setRecurringSplitDialogVisible] = useState(false);
   const [settlementDialogVisible, setSettlementDialogVisible] = useState(false);
 
   const [settlementFromUser, setSettlementFromUser] = useState<string | null>(null);
@@ -173,15 +162,6 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
           : allMemberIds;
       });
       setPaidBy((current) =>
-        current && memberIdSet.has(current) ? current : defaultPayer
-      );
-      setRecurringSplitBetween((current) => {
-        const validMembers = current.filter((memberId) => memberIdSet.has(memberId));
-        return validMembers.length > 0 || allMemberIds.length === 0
-          ? validMembers
-          : allMemberIds;
-      });
-      setRecurringPaidBy((current) =>
         current && memberIdSet.has(current) ? current : defaultPayer
       );
       setSettlementFromUser((current) =>
@@ -295,14 +275,6 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
     );
   }
 
-  function toggleRecurringSplitMember(userId: string) {
-    setRecurringSplitBetween((current) =>
-      current.includes(userId)
-        ? current.filter((id) => id !== userId)
-        : [...current, userId]
-    );
-  }
-
   function toggleEditSplitMember(userId: string) {
     setEditSplitBetween((current) =>
       current.includes(userId)
@@ -319,14 +291,6 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
     setSplitBetween([]);
   }
 
-  function selectAllRecurringMembers() {
-    setRecurringSplitBetween(members.map((member) => member.userId));
-  }
-
-  function clearSelectedRecurringMembers() {
-    setRecurringSplitBetween([]);
-  }
-
   function selectAllEditMembers() {
     setEditSplitBetween(members.map((member) => member.userId));
   }
@@ -337,13 +301,6 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
 
   function updateSplitShare(userId: string, value: string) {
     setSplitSharesText((current) => ({
-      ...current,
-      [userId]: value,
-    }));
-  }
-
-  function updateRecurringSplitShare(userId: string, value: string) {
-    setRecurringSplitSharesText((current) => ({
       ...current,
       [userId]: value,
     }));
@@ -534,6 +491,20 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
     setEditSplitSharesText(parseSharesText(expense));
   }
 
+  function resetExpenseForm(defaultPayer: string | null) {
+    setDescription("");
+    setAmountText("");
+    setNotes("");
+    setSplitMode("equal");
+    setSplitSharesText({});
+    setPaidBy(defaultPayer);
+    setSplitBetween(members.map((member) => member.userId));
+    setIsRecurringExpense(false);
+    setRecurringStartDate(getTodayDateInput());
+    setRecurringIntervalCountText("1");
+    setRecurringIntervalUnit("month");
+  }
+
   async function addExpense() {
     const amount = Number(amountText.replace(",", "."));
 
@@ -569,103 +540,67 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
     }
 
     try {
-      await createExpense({
-        householdId,
-        description: description.trim(),
-        amount,
-        paidBy,
-        splitBetween,
-        splitMode,
-        splitShares,
-        notes: notes.trim(),
-      });
+      if (isRecurringExpense) {
+        const validation = validateRecurringExpenseInput({
+          householdId,
+          description,
+          amountText,
+          paidBy,
+          splitBetween,
+          splitMode,
+          splitShares,
+          notes,
+          startDate: recurringStartDate,
+          intervalUnit: recurringIntervalUnit,
+          intervalCountText: recurringIntervalCountText,
+          active: true,
+        });
 
-      setDescription("");
-      setAmountText("");
-      setNotes("");
-      setSplitMode("equal");
-      setSplitSharesText({});
-      selectAllMembers();
-      setPaidBy(currentUserId ?? paidBy);
+        if (validation.errors.length > 0) {
+          alert(getRecurringValidationMessage(validation.errors[0]));
+          return;
+        }
+
+        setIsCreatingRecurring(true);
+        await createRecurringExpense(
+          buildRecurringExpensePayload({
+            householdId,
+            description,
+            amountText,
+            paidBy,
+            splitBetween,
+            splitMode,
+            splitShares,
+            notes,
+            startDate: recurringStartDate,
+            intervalUnit: recurringIntervalUnit,
+            intervalCountText: recurringIntervalCountText,
+            active: true,
+          })
+        );
+      } else {
+        await createExpense({
+          householdId,
+          description: description.trim(),
+          amount,
+          paidBy,
+          splitBetween,
+          splitMode,
+          splitShares,
+          notes: notes.trim(),
+        });
+      }
+
+      resetExpenseForm(currentUserId ?? paidBy);
 
       await reload();
+      if (isRecurringExpense) {
+        alert(t("expenses.recurringCreateSuccess"));
+      }
     } catch (error: any) {
       console.log("ADD EXPENSE ERROR:", error);
       console.log("RESPONSE:", error?.response);
       alert(JSON.stringify(error?.response, null, 2));
-    }
-  }
-
-  async function addRecurringExpenseRule() {
-    const amount = Number(recurringAmountText.replace(",", "."));
-    const splitShares = buildSplitShares({
-      amount,
-      mode: recurringSplitMode,
-      participants: recurringSplitBetween,
-      sharesText: recurringSplitSharesText,
-    });
-
-    if (splitShares === null) {
-      return;
-    }
-
-    const validation = validateRecurringExpenseInput({
-      householdId,
-      description: recurringDescription,
-      amountText: recurringAmountText,
-      paidBy: recurringPaidBy ?? "",
-      splitBetween: recurringSplitBetween,
-      splitMode: recurringSplitMode,
-      splitShares,
-      notes: recurringNotes,
-      startDate: recurringStartDate,
-      intervalUnit: recurringIntervalUnit,
-      intervalCountText: recurringIntervalCountText,
-      active: true,
-    });
-
-    if (validation.errors.length > 0) {
-      alert(getRecurringValidationMessage(validation.errors[0]));
-      return;
-    }
-
-    setIsCreatingRecurring(true);
-
-    try {
-      const payload = buildRecurringExpensePayload({
-        householdId,
-        description: recurringDescription,
-        amountText: recurringAmountText,
-        paidBy: recurringPaidBy ?? "",
-        splitBetween: recurringSplitBetween,
-        splitMode: recurringSplitMode,
-        splitShares,
-        notes: recurringNotes,
-        startDate: recurringStartDate,
-        intervalUnit: recurringIntervalUnit,
-        intervalCountText: recurringIntervalCountText,
-        active: true,
-      });
-
-      await createRecurringExpense(payload);
-
-      setRecurringDescription("");
-      setRecurringAmountText("");
-      setRecurringNotes("");
-      setRecurringSplitMode("equal");
-      setRecurringSplitSharesText({});
-      setRecurringStartDate(getTodayDateInput());
-      setRecurringIntervalCountText("1");
-      setRecurringIntervalUnit("month");
-      selectAllRecurringMembers();
-      setRecurringPaidBy(currentUserId ?? recurringPaidBy);
-
-      await reload();
-      alert(t("expenses.recurringCreateSuccess"));
-    } catch (error: any) {
-      console.log("ADD RECURRING EXPENSE ERROR:", error);
-      console.log("RESPONSE:", error?.response);
-      alert(JSON.stringify(error?.response ?? error?.message ?? error, null, 2));
     } finally {
       setIsCreatingRecurring(false);
     }
@@ -796,6 +731,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
             <Card.Content style={layout.formContent}>
               <TextInput
                 label={t("expenses.descriptionLabel")}
+                testID="expense-description-input"
                 value={description}
                 onChangeText={setDescription}
                 mode="outlined"
@@ -803,6 +739,7 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
 
               <TextInput
                 label={t("expenses.amountLabel")}
+                testID="expense-amount-input"
                 value={amountText}
                 onChangeText={setAmountText}
                 keyboardType="decimal-pad"
@@ -816,6 +753,13 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                 onChangeText={setNotes}
                 mode="outlined"
                 multiline
+              />
+
+              <Checkbox.Item
+                label={t("expenses.recurringToggleLabel")}
+                status={isRecurringExpense ? "checked" : "unchecked"}
+                onPress={() => setIsRecurringExpense((current) => !current)}
+                testID="expense-recurring-toggle"
               />
 
               <Button mode="outlined" onPress={() => setPayerDialogVisible(true)}>
@@ -861,136 +805,54 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
                 </View>
               )}
 
-              <Button mode="contained" onPress={() => void addExpense()}>
-                {t("expenses.addExpenseButton")}
-              </Button>
-            </Card.Content>
-          </Card>
-
-          <Card style={layout.card}>
-            <Card.Title
-              title={t("expenses.recurringTitle")}
-              subtitle={isLoadingRecurring ? t("common.loading") : undefined}
-            />
-            <Card.Content style={layout.formContent}>
-              <TextInput
-                label={t("expenses.descriptionLabel")}
-                testID="recurring-description-input"
-                value={recurringDescription}
-                onChangeText={setRecurringDescription}
-                mode="outlined"
-              />
-
-              <TextInput
-                label={t("expenses.amountLabel")}
-                testID="recurring-amount-input"
-                value={recurringAmountText}
-                onChangeText={setRecurringAmountText}
-                keyboardType="decimal-pad"
-                mode="outlined"
-                placeholder={t("expenses.amountPlaceholder")}
-              />
-
-              <TextInput
-                label={t("expenses.noteLabel")}
-                testID="recurring-notes-input"
-                value={recurringNotes}
-                onChangeText={setRecurringNotes}
-                mode="outlined"
-                multiline
-              />
-
-              <Button mode="outlined" onPress={() => setRecurringPayerDialogVisible(true)}>
-                {t("expenses.paidByLabel")}:{" "}
-                {recurringPaidBy
-                  ? getMemberLabel(recurringPaidBy)
-                  : t("expenses.selectPrompt")}
-              </Button>
-
-              <Button
-                mode="outlined"
-                onPress={() => setRecurringSplitDialogVisible(true)}
-              >
-                {t("expenses.selectMembersButton")} ({recurringSplitBetween.length}/
-                {members.length})
-              </Button>
-
-              <Text variant="bodyMedium">
-                {t("expenses.splitBetweenLabel")}:{" "}
-                {recurringSplitBetween.length > 0
-                  ? recurringSplitBetween.map(getMemberLabel).join(", ")
-                  : t("expenses.nobodySelected")}
-              </Text>
-
-              <SegmentedButtons
-                value={recurringSplitMode}
-                onValueChange={(value) => setRecurringSplitMode(value as SplitMode)}
-                buttons={[
-                  { value: "equal", label: t("expenses.splitModeEqual") },
-                  { value: "amount", label: t("expenses.splitModeAmount") },
-                  { value: "percent", label: "%" },
-                ]}
-              />
-
-              {recurringSplitMode !== "equal" && (
+              {isRecurringExpense && (
                 <View style={layout.formContent}>
-                  {recurringSplitBetween.map((userId) => (
+                  <TextInput
+                    label={t("expenses.recurringStartDateLabel")}
+                    testID="recurring-start-date-input"
+                    value={recurringStartDate}
+                    onChangeText={setRecurringStartDate}
+                    mode="outlined"
+                    placeholder={t("expenses.recurringStartDatePlaceholder")}
+                  />
+
+                  <View style={styles.intervalRow}>
                     <TextInput
-                      key={`recurring-share-${userId}`}
-                      label={`${getMemberLabel(userId)} ${
-                        recurringSplitMode === "percent" ? "%" : "€"
-                      }`}
-                      value={recurringSplitSharesText[userId] ?? ""}
-                      onChangeText={(value) => updateRecurringSplitShare(userId, value)}
-                      keyboardType="decimal-pad"
+                      label={t("expenses.recurringIntervalCountLabel")}
+                      testID="recurring-interval-count-input"
+                      value={recurringIntervalCountText}
+                      onChangeText={setRecurringIntervalCountText}
+                      keyboardType="number-pad"
                       mode="outlined"
+                      style={styles.intervalCountField}
                     />
-                  ))}
+                    <Text variant="labelMedium">{t("expenses.recurringIntervalUnitLabel")}</Text>
+                    <SegmentedButtons
+                      value={recurringIntervalUnit}
+                      onValueChange={(value) =>
+                        setRecurringIntervalUnit(value as RecurringIntervalUnit)
+                      }
+                      buttons={[
+                        { value: "day", label: t("expenses.recurringIntervalDay") },
+                        { value: "week", label: t("expenses.recurringIntervalWeek") },
+                        { value: "month", label: t("expenses.recurringIntervalMonth") },
+                        { value: "year", label: t("expenses.recurringIntervalYear") },
+                      ]}
+                      style={styles.intervalUnitButtons}
+                    />
+                  </View>
                 </View>
               )}
 
-              <TextInput
-                label={t("expenses.recurringStartDateLabel")}
-                testID="recurring-start-date-input"
-                value={recurringStartDate}
-                onChangeText={setRecurringStartDate}
-                mode="outlined"
-                placeholder={t("expenses.recurringStartDatePlaceholder")}
-              />
-
-              <View style={styles.intervalRow}>
-                <TextInput
-                  label={t("expenses.recurringIntervalCountLabel")}
-                  testID="recurring-interval-count-input"
-                  value={recurringIntervalCountText}
-                  onChangeText={setRecurringIntervalCountText}
-                  keyboardType="number-pad"
-                  mode="outlined"
-                  style={styles.intervalCountField}
-                />
-                <Text variant="labelMedium">{t("expenses.recurringIntervalUnitLabel")}</Text>
-                <SegmentedButtons
-                  value={recurringIntervalUnit}
-                  onValueChange={(value) =>
-                    setRecurringIntervalUnit(value as RecurringIntervalUnit)
-                  }
-                  buttons={[
-                    { value: "day", label: t("expenses.recurringIntervalDay") },
-                    { value: "week", label: t("expenses.recurringIntervalWeek") },
-                    { value: "month", label: t("expenses.recurringIntervalMonth") },
-                    { value: "year", label: t("expenses.recurringIntervalYear") },
-                  ]}
-                  style={styles.intervalUnitButtons}
-                />
-              </View>
-
               <Button
                 mode="contained"
-                loading={isCreatingRecurring}
-                onPress={() => void addRecurringExpenseRule()}
-                testID="recurring-create-button"
+                loading={isRecurringExpense && isCreatingRecurring}
+                onPress={() => void addExpense()}
+                testID="expense-submit-button"
               >
-                {t("expenses.recurringCreateButton")}
+                {isRecurringExpense
+                  ? t("expenses.recurringCreateButton")
+                  : t("expenses.addExpenseButton")}
               </Button>
             </Card.Content>
           </Card>
@@ -1249,34 +1111,6 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
           </Dialog.Actions>
         </Dialog>
 
-        <Dialog
-          visible={recurringPayerDialogVisible}
-          onDismiss={() => setRecurringPayerDialogVisible(false)}
-        >
-          <Dialog.Title>{t("expenses.whoPaidTitle")}</Dialog.Title>
-          <Dialog.ScrollArea>
-            <ScrollView>
-              <RadioButton.Group
-                onValueChange={(value) => setRecurringPaidBy(value)}
-                value={recurringPaidBy ?? ""}
-              >
-                {members.map((member) => (
-                  <RadioButton.Item
-                    key={`recurring-paid-${member.userId}`}
-                    label={member.name || member.email}
-                    value={member.userId}
-                  />
-                ))}
-              </RadioButton.Group>
-            </ScrollView>
-          </Dialog.ScrollArea>
-          <Dialog.Actions>
-            <Button onPress={() => setRecurringPayerDialogVisible(false)}>
-              {t("expenses.applyButton")}
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-
         <Dialog visible={splitDialogVisible} onDismiss={() => setSplitDialogVisible(false)}>
           <Dialog.Title>{t("expenses.whoSharesTitle")}</Dialog.Title>
           <Dialog.Content>
@@ -1303,44 +1137,6 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
           </Dialog.ScrollArea>
           <Dialog.Actions>
             <Button onPress={() => setSplitDialogVisible(false)}>
-              {t("expenses.applyButton")}
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-
-        <Dialog
-          visible={recurringSplitDialogVisible}
-          onDismiss={() => setRecurringSplitDialogVisible(false)}
-        >
-          <Dialog.Title>{t("expenses.whoSharesTitle")}</Dialog.Title>
-          <Dialog.Content>
-            <View style={styles.inlineActionRow}>
-              <Button mode="outlined" onPress={selectAllRecurringMembers}>
-                {t("expenses.allButton")}
-              </Button>
-              <Button mode="outlined" onPress={clearSelectedRecurringMembers}>
-                {t("common.none")}
-              </Button>
-            </View>
-          </Dialog.Content>
-          <Dialog.ScrollArea>
-            <ScrollView>
-              {members.map((member) => (
-                <Checkbox.Item
-                  key={`recurring-split-${member.userId}`}
-                  label={member.name || member.email}
-                  status={
-                    recurringSplitBetween.includes(member.userId)
-                      ? "checked"
-                      : "unchecked"
-                  }
-                  onPress={() => toggleRecurringSplitMember(member.userId)}
-                />
-              ))}
-            </ScrollView>
-          </Dialog.ScrollArea>
-          <Dialog.Actions>
-            <Button onPress={() => setRecurringSplitDialogVisible(false)}>
               {t("expenses.applyButton")}
             </Button>
           </Dialog.Actions>
