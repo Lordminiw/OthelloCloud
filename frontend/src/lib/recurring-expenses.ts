@@ -154,6 +154,16 @@ export function buildRecurringExpensePayload(
 
   const splitMode = normalizeSplitMode(input.splitMode) ?? "equal";
   const splitBetween = normalizeSplitBetween(input.splitBetween);
+  const splitShares = buildNormalizedSplitShares({
+    amount: Number(normalizeNumericText(input.amountText)),
+    splitBetween,
+    splitMode,
+    splitShares: input.splitShares,
+  });
+
+  if (splitShares === null) {
+    throw new Error("Invalid recurring expense input: splitShares");
+  }
 
   return {
     household: input.householdId,
@@ -162,12 +172,7 @@ export function buildRecurringExpensePayload(
     paidBy: String(input.paidBy).trim(),
     splitBetween,
     splitMode,
-    splitShares: buildNormalizedSplitShares({
-      amount: Number(normalizeNumericText(input.amountText)),
-      splitBetween,
-      splitMode,
-      splitShares: input.splitShares,
-    }),
+    splitShares,
     notes: String(input.notes ?? "").trim(),
     startDate: String(input.startDate).trim(),
     intervalUnit: normalizeIntervalUnit(input.intervalUnit),
