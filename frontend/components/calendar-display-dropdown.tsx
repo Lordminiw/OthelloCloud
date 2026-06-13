@@ -24,6 +24,7 @@ export function CalendarDisplayDropdown({
   const [visible, setVisible] = useState(false);
   const selectedCount =
     selectedHouseholdIds.length + selectedSubscriptionIds.length;
+  const toggleMenu = () => setVisible((current) => !current);
 
   return (
     <View style={styles.container}>
@@ -33,7 +34,7 @@ export function CalendarDisplayDropdown({
         anchor={
           <Button
             mode="outlined"
-            onPress={() => setVisible(true)}
+            onPress={toggleMenu}
             icon="calendar-multiple"
             style={[headerControlStyles.button, styles.button]}
             contentStyle={headerControlStyles.content}

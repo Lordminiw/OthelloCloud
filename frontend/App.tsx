@@ -14,6 +14,7 @@ import { PaperProvider, MD3LightTheme, MD3DarkTheme, Text } from "react-native-p
 import { ThemeProvider, useThemeContext } from "@/context/theme-context";
 import { HouseholdProvider, useHousehold } from "@/context/household-context";
 import { LanguageProvider, useLanguage } from "@/context/language-context";
+import { SessionActionsProvider } from "@/context/session-context";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { HouseholdSetupScreen } from "./src/screens/HouseholdSetupScreen";
 import { MainTabs } from "./src/screens/MainTabs";
@@ -90,7 +91,7 @@ function parseInitialTab(url: string | null) {
     }
 
     if (parsed.searchParams.has("invite")) {
-      return "profile" as const;
+      return "settings" as const;
     }
   } catch {
     return undefined;
@@ -194,6 +195,11 @@ function AppShell() {
     );
   }
 
+  const handleLogout = () => {
+    pb.authStore.clear();
+    setLoggedIn(false);
+  };
+
   return (
     <NavigationContainer
       ref={navigationRef}
@@ -226,14 +232,12 @@ function AppShell() {
         }
       }}
     >
-      <MainTabs
-        initialTabName={initialTabName}
-        initialInviteCode={initialInviteCode}
-        onLogout={() => {
-          pb.authStore.clear();
-          setLoggedIn(false);
-        }}
-      />
+      <SessionActionsProvider onLogout={handleLogout}>
+        <MainTabs
+          initialTabName={initialTabName}
+          initialInviteCode={initialInviteCode}
+        />
+      </SessionActionsProvider>
     </NavigationContainer>
   );
 }

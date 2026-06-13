@@ -10,7 +10,6 @@ import {
   useTheme,
 } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
-import { HouseholdDropdown } from "@/components/household-dropdown";
 import { useHousehold } from "@/context/household-context";
 import { useLanguage } from "@/context/language-context";
 import {
@@ -110,7 +109,6 @@ export function HomeScreen({ householdId }: HomeScreenProps) {
   return (
     <AppScreen
       title={t("home.title")}
-      right={<HouseholdDropdown />}
       browserTitle={t("home.browserTitle")}
     >
       <View style={layout.stack}>

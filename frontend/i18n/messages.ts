@@ -18,6 +18,12 @@ export type TranslationTree = {
     light: string;
     dark: string;
   };
+  account: {
+    settings: string;
+    logout: string;
+    currentHousehold: string;
+    unknownUser: string;
+  };
   common: {
     loading: string;
     cancel: string;
@@ -374,6 +380,12 @@ export const translations: Record<LanguageCode, TranslationTree> = {
       light: "Light",
       dark: "Dark",
     },
+    account: {
+      settings: "Settings",
+      logout: "Log out",
+      currentHousehold: "Current household",
+      unknownUser: "User",
+    },
     common: {
       loading: "Loading...",
       cancel: "Cancel",
@@ -716,6 +728,12 @@ export const translations: Record<LanguageCode, TranslationTree> = {
     theme: {
       light: "Hell",
       dark: "Dunkel",
+    },
+    account: {
+      settings: "Einstellungen",
+      logout: "Abmelden",
+      currentHousehold: "Aktuelle WG",
+      unknownUser: "Benutzer",
     },
     common: {
       loading: "Lade...",

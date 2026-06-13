@@ -18,7 +18,6 @@ import { useLanguage } from "@/context/language-context";
 import { Household } from "../lib/household";
 import { pb } from "../lib/pocketbase";
 import { useHousehold } from "@/context/household-context";
-import { HouseholdDropdown } from "@/components/household-dropdown";
 import {
   HouseholdMember,
   loadHouseholdMembers,
@@ -83,11 +82,9 @@ function pickCalendarUploadFile(): Promise<CalendarUploadFile | null | undefined
 export function ProfileScreen({
   household,
   initialInviteCode,
-  onLogout,
 }: {
   household: Household;
   initialInviteCode?: string;
-  onLogout: () => void;
 }) {
   const { language, t } = useLanguage();
   const isGerman = language === "de";
@@ -298,11 +295,6 @@ export function ProfileScreen({
   useEffect(() => {
     void loadCalendarExport();
   }, [loadCalendarExport]);
-
-  function logout() {
-    pb.authStore.clear();
-    onLogout();
-  }
 
   async function handleCreate() {
     if (!newWgName.trim()) {
@@ -731,9 +723,8 @@ export function ProfileScreen({
 
   return (
     <AppScreen
-      title={isGerman ? "Profil" : "Profile"}
-      right={<HouseholdDropdown />}
-      browserTitle={isGerman ? "Othello-Cloud | Profil" : "Othello-Cloud | Profile"}
+      title={isGerman ? "Einstellungen" : "Settings"}
+      browserTitle={isGerman ? "Othello-Cloud | Einstellungen" : "Othello-Cloud | Settings"}
     >
       <View style={layout.stack}>
         <Card style={layout.card}>
@@ -1222,9 +1213,6 @@ export function ProfileScreen({
           </Card.Content>
         </Card>
 
-        <Button mode="contained-tonal" onPress={logout}>
-          {isGerman ? "Ausloggen" : "Log out"}
-        </Button>
       </View>
 
       <Portal>

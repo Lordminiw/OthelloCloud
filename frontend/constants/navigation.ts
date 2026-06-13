@@ -4,7 +4,7 @@ export const TAB_KEYS = [
   "expenses",
   "calendar",
   "polls",
-  "profile",
+  "settings",
 ] as const;
 
 export type TabKey = (typeof TAB_KEYS)[number];
@@ -15,7 +15,7 @@ const TAB_ALIASES: Record<TabKey, string[]> = {
   expenses: ["expenses", "ausgaben"],
   calendar: ["calendar", "kalender"],
   polls: ["polls", "umfragen"],
-  profile: ["profile", "profil"],
+  settings: ["settings", "einstellungen", "profile", "profil"],
 };
 
 export function resolveTabKey(value: string | null | undefined): TabKey | undefined {

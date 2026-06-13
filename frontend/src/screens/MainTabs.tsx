@@ -15,11 +15,9 @@ const Tab = createBottomTabNavigator();
 export function MainTabs({
   initialTabName,
   initialInviteCode,
-  onLogout,
 }: {
   initialTabName?: string;
   initialInviteCode?: string;
-  onLogout: () => void;
 }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -120,19 +118,15 @@ export function MainTabs({
       </Tab.Screen>
 
       <Tab.Screen
-        name="profile"
+        name="settings"
         options={{
-          tabBarLabel: t("tabs.profile"),
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon color={color} size={size} icon="account-circle-outline" />
-          ),
+          tabBarButton: () => null,
         }}
       >
         {() => (
           <ProfileScreen
             household={activeHousehold}
             initialInviteCode={initialInviteCode}
-            onLogout={onLogout}
           />
         )}
       </Tab.Screen>

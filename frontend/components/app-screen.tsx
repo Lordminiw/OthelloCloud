@@ -2,7 +2,7 @@ import { ReactNode, useContext, useEffect } from "react";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { NavigationContext } from "@react-navigation/native";
 import { Text, useTheme } from "react-native-paper";
-import { LanguageSelector } from "@/components/language-selector";
+import { AccountMenu } from "@/components/account-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 type AppScreenProps = {
@@ -64,8 +64,7 @@ export function AppScreen({
           centered && styles.centeredScroll,
         ]}
       >
-        <View style={[styles.content, { maxWidth: contentMaxWidth }]}>
-          <View style={styles.header}>
+        <View style={[styles.header, { maxWidth: contentMaxWidth }]}>
             <View style={styles.brandBlock}>
               {showBrand ? (
                 <Text variant="labelSmall" style={[styles.brand, { color: theme.colors.primary }]}>
@@ -78,11 +77,12 @@ export function AppScreen({
             </View>
             <View style={styles.headerRight}>
               {right ? <View style={styles.headerAction}>{right}</View> : null}
-              <LanguageSelector />
               <ThemeToggle />
+              <AccountMenu />
             </View>
-          </View>
+        </View>
 
+        <View style={[styles.content, { maxWidth: contentMaxWidth }]}>
           {children}
         </View>
       </ScrollView>
@@ -147,6 +147,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   header: {
+    width: "100%",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",

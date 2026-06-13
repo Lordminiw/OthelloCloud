@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { Button, Card, Divider, List, Text, TextInput } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
-import { HouseholdDropdown } from "@/components/household-dropdown";
 import { useLanguage } from "@/context/language-context";
 import { pb } from "../lib/pocketbase";
 
@@ -171,7 +170,6 @@ export function ShoppingListScreen({ householdId }: ShoppingListScreenProps) {
   return (
     <AppScreen
       title={t("shopping.title")}
-      right={<HouseholdDropdown />}
       browserTitle={t("shopping.browserTitle")}
     >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>

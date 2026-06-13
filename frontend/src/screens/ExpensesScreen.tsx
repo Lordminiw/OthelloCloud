@@ -14,7 +14,6 @@ import {
   TextInput,
 } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
-import { HouseholdDropdown } from "@/components/household-dropdown";
 import { useLanguage } from "@/context/language-context";
 import {
   calculateBalances,
@@ -721,7 +720,6 @@ export function ExpensesScreen({ householdId }: { householdId: string }) {
   return (
     <AppScreen
       title={t("expenses.title")}
-      right={<HouseholdDropdown />}
       browserTitle={t("expenses.browserTitle")}
     >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>

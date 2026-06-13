@@ -13,7 +13,6 @@ import {
   TextInput,
 } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
-import { HouseholdDropdown } from "@/components/household-dropdown";
 import { useLanguage } from "@/context/language-context";
 import { pb } from "../lib/pocketbase";
 import { HouseholdMember, loadHouseholdMembers } from "../lib/members";
@@ -496,7 +495,6 @@ export function PollsScreen({ householdId }: PollsScreenProps) {
   return (
     <AppScreen
       title={t("polls.title")}
-      right={<HouseholdDropdown />}
       browserTitle={t("polls.browserTitle")}
     >
       <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
