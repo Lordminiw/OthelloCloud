@@ -33,23 +33,29 @@ export function MainTabs({
       initialRouteName={initialTabName}
       screenOptions={{
         headerShown: false,
+        tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
+        tabBarActiveBackgroundColor: theme.colors.secondaryContainer,
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.outlineVariant,
-          height: 70 + insets.bottom,
-          paddingTop: 8,
-          paddingBottom: 10 + insets.bottom,
+          borderTopWidth: 0,
+          height: 64 + insets.bottom,
+          paddingTop: 6,
+          paddingBottom: 8 + insets.bottom,
+          paddingHorizontal: 10,
         },
         tabBarItemStyle: {
-          paddingVertical: 0,
+          marginHorizontal: 4,
+          marginVertical: 4,
+          borderRadius: 16,
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: "600",
+          fontWeight: "700",
           lineHeight: 12,
-          marginTop: 1,
+          marginTop: 2,
           marginBottom: 0,
         },
         tabBarIconStyle: {

@@ -13,8 +13,9 @@ export function ThemeToggle() {
       mode="outlined"
       icon={isDark ? "weather-sunny" : "weather-night"}
       compact
+      accessibilityLabel={`${isDark ? t("theme.light") : t("theme.dark")} theme`}
       onPress={toggleColorScheme}
-      style={headerControlStyles.button}
+      style={[headerControlStyles.button, headerControlStyles.compactButton]}
       contentStyle={headerControlStyles.content}
       labelStyle={headerControlStyles.label}
     >

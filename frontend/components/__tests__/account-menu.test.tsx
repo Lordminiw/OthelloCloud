@@ -2,12 +2,16 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react-native";
 import { NavigationContext } from "@react-navigation/native";
 import { AccountMenu } from "../account-menu";
+import { HouseholdDropdown } from "../household-dropdown";
+import { ThemeToggle } from "../theme-toggle";
+import { headerControlStyles } from "../header-control-styles";
 import { SessionActionsProvider } from "@/context/session-context";
 
 const mockNavigate = jest.fn();
 const mockOnLogout = jest.fn();
 const mockSetActiveHousehold = jest.fn();
 const mockSetLanguage = jest.fn();
+const mockToggleColorScheme = jest.fn();
 
 jest.mock("@react-navigation/native", () => ({
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -29,6 +33,8 @@ jest.mock("@/context/language-context", () => ({
         "language.label": "Language",
         "language.english": "English",
         "language.german": "German",
+        "theme.light": "Light",
+        "theme.dark": "Dark",
       })[key] ?? key,
   }),
 }));
@@ -52,12 +58,24 @@ jest.mock("@/src/lib/pocketbase", () => ({
   },
 }));
 
+jest.mock("@/context/theme-context", () => ({
+  useThemeContext: () => ({
+    colorScheme: "light",
+    toggleColorScheme: mockToggleColorScheme,
+  }),
+}));
+
 jest.mock("react-native-paper", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { Pressable, Text, View } = require("react-native");
 
-  const Button = ({ children, onPress, testID }: any) => (
-    <Pressable accessibilityRole="button" onPress={onPress} testID={testID}>
+  const Button = ({ children, onPress, testID, accessibilityLabel }: any) => (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      testID={testID}
+    >
       <Text>{children}</Text>
     </Pressable>
   );
@@ -105,6 +123,20 @@ function renderMenu() {
   );
 }
 
+function renderSharedHeaderControls() {
+  return render(
+    <NavigationContext.Provider value={{ navigate: mockNavigate } as any}>
+      <SessionActionsProvider onLogout={mockOnLogout}>
+        <>
+          <AccountMenu />
+          <ThemeToggle />
+          <HouseholdDropdown />
+        </>
+      </SessionActionsProvider>
+    </NavigationContext.Provider>
+  );
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
 });
@@ -119,6 +151,26 @@ it("opens account options with profile details", () => {
   expect(screen.getByText("Current household: Othello House")).toBeTruthy();
   expect(screen.getByText("Choose household")).toBeTruthy();
   expect(screen.getByText("Language")).toBeTruthy();
+});
+
+it("renders the account trigger inside the shared header", () => {
+  renderMenu();
+
+  expect(screen.getByLabelText(/account/i)).toBeTruthy();
+});
+
+it("uses 48dp minimum shared header touch targets", () => {
+  expect(headerControlStyles.button.minHeight).toBeGreaterThanOrEqual(48);
+  expect(headerControlStyles.compactButton.minHeight).toBeGreaterThanOrEqual(48);
+  expect(headerControlStyles.content.minHeight).toBeGreaterThanOrEqual(48);
+});
+
+it("renders labeled shared header controls for account, theme, and household actions", () => {
+  renderSharedHeaderControls();
+
+  expect(screen.getByLabelText(/account menu/i)).toBeTruthy();
+  expect(screen.getByLabelText(/dark theme/i)).toBeTruthy();
+  expect(screen.getByLabelText(/choose household/i)).toBeTruthy();
 });
 
 it("toggles account options when pressing the username repeatedly", () => {

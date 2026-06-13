@@ -56,7 +56,8 @@ export function AccountMenu() {
           icon="account-circle-outline"
           compact
           testID="account-menu-button"
-          style={headerControlStyles.button}
+          accessibilityLabel={`${displayName} account menu`}
+          style={[headerControlStyles.button, headerControlStyles.compactButton]}
           contentStyle={headerControlStyles.content}
           labelStyle={headerControlStyles.label}
           onPress={toggleMenu}

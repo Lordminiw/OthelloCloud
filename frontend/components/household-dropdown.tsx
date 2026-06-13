@@ -25,7 +25,16 @@ export function HouseholdDropdown() {
             mode="outlined"
             onPress={openMenu}
             icon="home-group"
-            style={[headerControlStyles.button, styles.button]}
+            accessibilityLabel={
+              activeHousehold?.name
+                ? `${t("common.chooseHousehold")}: ${activeHousehold.name}`
+                : t("common.chooseHousehold")
+            }
+            style={[
+              headerControlStyles.button,
+              headerControlStyles.compactButton,
+              styles.button,
+            ]}
             contentStyle={headerControlStyles.content}
             labelStyle={headerControlStyles.label}
             compact
