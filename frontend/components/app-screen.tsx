@@ -1,12 +1,13 @@
 import { ReactNode, useContext, useEffect } from "react";
-import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { StyleSheet } from "react-native";
 import { NavigationContext } from "@react-navigation/native";
-import { Text, useTheme } from "react-native-paper";
-import { AccountMenu } from "@/components/account-menu";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { AppShell } from "@/components/app-shell/app-shell";
+import { APP_BRAND } from "@/components/app-shell/app-header";
 
 type AppScreenProps = {
   title: string;
+  subtitle?: string;
+  actions?: ReactNode;
   right?: ReactNode;
   children: ReactNode;
   centered?: boolean;
@@ -15,10 +16,10 @@ type AppScreenProps = {
   browserTitle?: string;
 };
 
-const BROWSER_TITLE_BRAND = "Othello-Cloud";
-
 export function AppScreen({
   title,
+  subtitle,
+  actions,
   right,
   children,
   centered = false,
@@ -26,10 +27,7 @@ export function AppScreen({
   showBrand = true,
   browserTitle,
 }: AppScreenProps) {
-  const theme = useTheme();
-  const { width } = useWindowDimensions();
   const navigation = useContext(NavigationContext);
-  const contentMaxWidth = maxWidth ?? (width >= 900 ? 1040 : 640);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -37,7 +35,7 @@ export function AppScreen({
     }
 
     const nextTitle =
-      browserTitle ?? (title === BROWSER_TITLE_BRAND ? BROWSER_TITLE_BRAND : `${BROWSER_TITLE_BRAND} | ${title}`);
+      browserTitle ?? (title === APP_BRAND ? APP_BRAND : `${APP_BRAND} | ${title}`);
 
     const applyTitle = () => {
       document.title = nextTitle;
@@ -56,37 +54,16 @@ export function AppScreen({
   }, [browserTitle, navigation, title]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[
-          styles.scroll,
-          centered && styles.centeredScroll,
-        ]}
-      >
-        <View style={[styles.header, { maxWidth: contentMaxWidth }]}>
-            <View style={styles.brandBlock}>
-              {showBrand ? (
-                <Text variant="labelSmall" style={[styles.brand, { color: theme.colors.primary }]}>
-                  OthelloCloud
-                </Text>
-              ) : null}
-              <Text variant="headlineMedium" style={styles.title}>
-                {title}
-              </Text>
-            </View>
-            <View style={styles.headerRight}>
-              {right ? <View style={styles.headerAction}>{right}</View> : null}
-              <ThemeToggle />
-              <AccountMenu />
-            </View>
-        </View>
-
-        <View style={[styles.content, { maxWidth: contentMaxWidth }]}>
-          {children}
-        </View>
-      </ScrollView>
-    </View>
+    <AppShell
+      title={title}
+      subtitle={subtitle}
+      actions={actions ?? right}
+      centered={centered}
+      maxWidth={maxWidth}
+      showBrand={showBrand}
+    >
+      {children}
+    </AppShell>
   );
 }
 
@@ -125,61 +102,5 @@ export const layout = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-  },
-});
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingTop: 18,
-    paddingBottom: 96,
-    alignItems: "center",
-  },
-  centeredScroll: {
-    justifyContent: "center",
-  },
-  content: {
-    width: "100%",
-    gap: 12,
-  },
-  header: {
-    width: "100%",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 16,
-    flexWrap: "wrap",
-    marginBottom: 2,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    backgroundColor: "rgba(127, 127, 127, 0.08)",
-  },
-  brandBlock: {
-    gap: 2,
-    flexShrink: 1,
-  },
-  brand: {
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-    fontWeight: "700",
-  },
-  title: {
-    flexShrink: 1,
-  },
-  headerRight: {
-    flexShrink: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    flexWrap: "wrap",
-    justifyContent: "flex-end",
-  },
-  headerAction: {
-    flexShrink: 0,
   },
 });
