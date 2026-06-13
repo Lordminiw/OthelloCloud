@@ -124,6 +124,7 @@ type CalendarScreenProps = {
 type CalendarTheme = NonNullable<CalendarProps["theme"]>;
 
 type RequestResponse = "pending" | "yes" | "no";
+type TimePickerTarget = "start" | "end";
 
 const DEFAULT_COLOR_PALETTE = [
   "#2563eb",
@@ -156,6 +157,10 @@ function makeLocalIso(dateKey: string, time: string) {
   const [hour, minute] = time.split(":").map(Number);
 
   return new Date(year, month - 1, day, hour, minute).toISOString();
+}
+
+function makeAllDayIso(dateKey: string) {
+  return `${dateKey}T00:00:00.000Z`;
 }
 
 function getEventDateKey(event: CalendarEvent) {
@@ -197,6 +202,16 @@ function getEventEndTimeLabel(event: CalendarEvent, locale: string) {
 function formatTimeInput(dateIso: string) {
   const date = new Date(dateIso);
   return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+}
+
+function shiftTimeInput(time: string, minutes: number) {
+  const [hour, minute] = time.split(":").map(Number);
+  const currentMinutes = hour * 60 + minute;
+  const dayMinutes = 24 * 60;
+  const nextMinutes =
+    ((currentMinutes + minutes) % dayMinutes + dayMinutes) % dayMinutes;
+
+  return `${pad2(Math.floor(nextMinutes / 60))}:${pad2(nextMinutes % 60)}`;
 }
 
 function addDays(dateKey: string, days: number) {
@@ -249,7 +264,11 @@ function formatDateKey(dateKey: string, locale: string) {
   });
 }
 
-function getEventDateRangeLabel(event: CalendarEvent, locale: string) {
+function getEventDateRangeLabel(
+  event: CalendarEvent,
+  locale: string,
+  options?: { includeSingleDayDate?: boolean }
+) {
   const startKey = getEventDateKey(event);
   const endKey = getEventEndDateKey(event);
   if (event.allDay) {
@@ -261,6 +280,12 @@ function getEventDateRangeLabel(event: CalendarEvent, locale: string) {
   const endTime = getEventEndTimeLabel(event, locale);
 
   if (startKey === endKey) {
+    if (options?.includeSingleDayDate) {
+      return endTime
+        ? `${formatDateKey(startKey, locale)} ${startTime} – ${endTime}`
+        : `${formatDateKey(startKey, locale)} ${startTime}`;
+    }
+
     return endTime ? `${startTime} – ${endTime}` : startTime;
   }
 
@@ -301,8 +326,11 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   );
 
   const [createDialogVisible, setCreateDialogVisible] = useState(false);
+  const [startDatePickerVisible, setStartDatePickerVisible] = useState(false);
   const [endDatePickerVisible, setEndDatePickerVisible] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [editStartDatePickerVisible, setEditStartDatePickerVisible] =
+    useState(false);
   const [editEndDatePickerVisible, setEditEndDatePickerVisible] =
     useState(false);
   const [colorConfigVisible, setColorConfigVisible] = useState(false);
@@ -311,9 +339,14 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
   );
 
   const [newTitle, setNewTitle] = useState("");
+  const [newStartDate, setNewStartDate] = useState(() => toDateKey(new Date()));
+  const [newAllDay, setNewAllDay] = useState(false);
   const [newTime, setNewTime] = useState("19:00");
   const [newEndDate, setNewEndDate] = useState("");
   const [newEndTime, setNewEndTime] = useState("20:00");
+  const [timePickerTarget, setTimePickerTarget] =
+    useState<TimePickerTarget | null>(null);
+  const [draftTime, setDraftTime] = useState("19:00");
   const [newLocation, setNewLocation] = useState("");
   const [newNotes, setNewNotes] = useState("");
   const [newRequestParticipation, setNewRequestParticipation] =
@@ -439,6 +472,10 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
       .filter((event) => eventTouchesDate(event, selectedDateKey))
       .sort((a, b) => a.start.localeCompare(b.start));
   }, [events, selectedDateKey]);
+  const selectedDateIsToday = selectedDateKey === toDateKey(new Date());
+  const selectedEventBadgeLabel = selectedDateIsToday
+    ? (isGerman ? "Heute" : "Today")
+    : formatDateKey(selectedDateKey, locale);
 
   const upcomingEvents = useMemo(() => {
     return events
@@ -608,6 +645,8 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
 
   function openCreateDialog() {
     setNewTitle("");
+    setNewStartDate(selectedDateKey);
+    setNewAllDay(false);
     setNewTime("19:00");
     setNewEndDate("");
     setNewEndTime("20:00");
@@ -627,6 +666,8 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
     setEditingEvent(event);
     setSelectedDateKey(startDateKey);
     setNewTitle(event.title);
+    setNewStartDate(startDateKey);
+    setNewAllDay(Boolean(event.allDay));
     setNewTime(formatTimeInput(event.start));
     setNewEndDate(endDateKey === startDateKey ? "" : endDateKey);
     setNewEndTime(endTime);
@@ -638,7 +679,31 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
 
   function closeEditDialog() {
     setEditingEvent(null);
+    setTimePickerTarget(null);
+    setEditStartDatePickerVisible(false);
     setEditEndDatePickerVisible(false);
+  }
+
+  function changeNewStartDate(dateKey: string) {
+    setNewStartDate(dateKey);
+    setNewEndDate((current) => (current && current < dateKey ? "" : current));
+  }
+
+  function openTimePicker(target: TimePickerTarget) {
+    setDraftTime(target === "start" ? newTime : newEndTime);
+    setTimePickerTarget(target);
+  }
+
+  function confirmTimePicker() {
+    if (timePickerTarget === "start") {
+      setNewTime(draftTime);
+    }
+
+    if (timePickerTarget === "end") {
+      setNewEndTime(draftTime);
+    }
+
+    setTimePickerTarget(null);
   }
 
   function toggleRequestedMember(userId: string) {
@@ -668,21 +733,27 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
       return;
     }
 
-    if (!/^\d\d:\d\d$/.test(newTime)) {
+    if (!newAllDay && !/^\d\d:\d\d$/.test(newTime)) {
       alert(isGerman ? "Bitte Start-Uhrzeit im Format HH:MM eingeben." : "Please enter a start time in HH:MM format.");
       return;
     }
 
-    if (!/^\d\d:\d\d$/.test(newEndTime)) {
+    if (!newAllDay && !/^\d\d:\d\d$/.test(newEndTime)) {
       alert(isGerman ? "Bitte End-Uhrzeit im Format HH:MM eingeben." : "Please enter an end time in HH:MM format.");
       return;
     }
 
-    const endDateKey = getEffectiveEndDateKey(selectedDateKey, newEndDate);
-    const startIso = makeLocalIso(selectedDateKey, newTime);
-    const endIso = makeLocalIso(endDateKey, newEndTime);
+    const endDateKey = getEffectiveEndDateKey(newStartDate, newEndDate);
+    const startIso = newAllDay
+      ? makeAllDayIso(newStartDate)
+      : makeLocalIso(newStartDate, newTime);
+    const endIso = newAllDay
+      ? newEndDate
+        ? makeAllDayIso(endDateKey)
+        : undefined
+      : makeLocalIso(endDateKey, newEndTime);
 
-    if (new Date(endIso) < new Date(startIso)) {
+    if (newAllDay ? endDateKey < newStartDate : new Date(endIso ?? "") < new Date(startIso)) {
       alert(isGerman ? "Das Ende darf nicht vor dem Start liegen." : "The end must not be before the start.");
       return;
     }
@@ -693,6 +764,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
         title: newTitle.trim(),
         startIso,
         endIso,
+        allDay: newAllDay,
         location: newLocation.trim(),
         notes: newNotes.trim(),
         requestParticipation: newRequestParticipation,
@@ -703,6 +775,8 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
       });
 
       setNewTitle("");
+      setNewStartDate(selectedDateKey);
+      setNewAllDay(false);
       setNewTime("19:00");
       setNewEndDate("");
       setNewEndTime("20:00");
@@ -732,22 +806,28 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
       return;
     }
 
-    if (!/^\d\d:\d\d$/.test(newTime)) {
+    if (!newAllDay && !/^\d\d:\d\d$/.test(newTime)) {
       alert(isGerman ? "Bitte Start-Uhrzeit im Format HH:MM eingeben." : "Please enter a start time in HH:MM format.");
       return;
     }
 
-    if (!/^\d\d:\d\d$/.test(newEndTime)) {
+    if (!newAllDay && !/^\d\d:\d\d$/.test(newEndTime)) {
       alert(isGerman ? "Bitte End-Uhrzeit im Format HH:MM eingeben." : "Please enter an end time in HH:MM format.");
       return;
     }
 
-    const startDateKey = getEventDateKey(editingEvent);
+    const startDateKey = newStartDate;
     const endDateKey = getEffectiveEndDateKey(startDateKey, newEndDate);
-    const startIso = makeLocalIso(startDateKey, newTime);
-    const endIso = makeLocalIso(endDateKey, newEndTime);
+    const startIso = newAllDay
+      ? makeAllDayIso(startDateKey)
+      : makeLocalIso(startDateKey, newTime);
+    const endIso = newAllDay
+      ? newEndDate
+        ? makeAllDayIso(endDateKey)
+        : undefined
+      : makeLocalIso(endDateKey, newEndTime);
 
-    if (new Date(endIso) < new Date(startIso)) {
+    if (newAllDay ? endDateKey < startDateKey : new Date(endIso ?? "") < new Date(startIso)) {
       alert(isGerman ? "Das Ende darf nicht vor dem Start liegen." : "The end must not be before the start.");
       return;
     }
@@ -757,6 +837,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
         title: newTitle.trim(),
         startIso,
         endIso,
+        allDay: newAllDay,
         location: newLocation.trim(),
         notes: newNotes.trim(),
         requestParticipation: newRequestParticipation,
@@ -795,6 +876,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
         title: event.title,
         startIso: event.start,
         endIso: event.end,
+        allDay: event.allDay,
         location: event.location,
         notes: meta.notes ?? "",
         requestParticipation: true,
@@ -899,7 +981,12 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
         : "";
 
     return (
-      <View key={event.id}>
+      <View key={event.id} style={styles.currentDayEvent}>
+        <View style={styles.currentDayBadgeRow}>
+          <Text variant="labelSmall" style={styles.currentDayBadge}>
+            {selectedEventBadgeLabel}
+          </Text>
+        </View>
         <List.Item
           title={event.title}
           description={`${getEventDateRangeLabel(event, locale)}${
@@ -971,7 +1058,9 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
       <View key={event.id}>
         <List.Item
           title={event.title}
-          description={`${getEventDateRangeLabel(event, locale)}${
+          description={`${getEventDateRangeLabel(event, locale, {
+            includeSingleDayDate: true,
+          })}${
             event.location ? `\n${isGerman ? "Ort" : "Location"}: ${event.location}` : ""
           }\n${creatorLine}${
             meta.requestParticipation
@@ -1068,53 +1157,28 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
         <View style={[layout.stack, isWide && layout.widePanel]}>
           <Card style={layout.card}>
             <Card.Title
-              title={`${isGerman ? "Agenda für" : "Agenda for"} ${formatDateKey(
-                selectedDateKey,
-                locale
-              )}`}
-              subtitle={`${selectedEvents.length} ${isGerman ? "Termin" : "event"}${
-                selectedEvents.length === 1 ? "" : isGerman ? "e" : "s"
-              } ${isGerman ? "an diesem Tag" : "on this day"}`}
-            />
-            <Card.Content style={layout.listCardContent}>
-              {selectedEvents.length === 0 && (
-                <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
-                  {isGerman ? "Keine Termine an diesem Tag." : "No events on this day."}
-                </Text>
-              )}
-
-              {selectedEvents.length > 0 && (
-                <ScrollView
-                  nestedScrollEnabled
-                  style={!isWide && styles.mobileCardList}
-                >
-                  {selectedEventViews}
-                </ScrollView>
-              )}
-            </Card.Content>
-          </Card>
-
-          <Card style={layout.card}>
-            <Card.Title
-              title={isGerman ? "Kommende Termine" : "Upcoming events"}
+              title={isGerman ? "Anstehende Termine" : "Upcoming events"}
               subtitle={
-                upcomingEvents.length > 0
-                  ? `${upcomingEvents.length} ${isGerman ? "bevorstehende Termine" : "upcoming events"}`
+                selectedEvents.length + upcomingEvents.length > 0
+                  ? `${selectedEvents.length + upcomingEvents.length} ${
+                      isGerman ? "anstehende Termine" : "upcoming events"
+                    }`
                   : (isGerman ? "Keine weiteren Termine" : "No further events")
               }
             />
             <Card.Content style={layout.listCardContent}>
-              {upcomingEvents.length === 0 && (
+              {selectedEvents.length + upcomingEvents.length === 0 && (
                 <Text variant="bodyMedium" style={{ paddingHorizontal: 16 }}>
                   {isGerman ? "Es stehen noch keine weiteren Termine an." : "There are no further events yet."}
                 </Text>
               )}
 
-              {upcomingEvents.length > 0 && (
+              {selectedEvents.length + upcomingEvents.length > 0 && (
                 <ScrollView
                   nestedScrollEnabled
                   style={!isWide && styles.mobileCardList}
                 >
+                  {selectedEventViews}
                   {upcomingEventViews}
                 </ScrollView>
               )}
@@ -1129,7 +1193,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
           onDismiss={() => setCreateDialogVisible(false)}
         >
           <Dialog.Title>
-            {isGerman ? "Neuer Termin am" : "New event on"} {formatDateKey(selectedDateKey, locale)}
+            {isGerman ? "Neuer Termin am" : "New event on"} {formatDateKey(newStartDate, locale)}
           </Dialog.Title>
 
           <Dialog.ScrollArea>
@@ -1142,23 +1206,44 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                 style={{ marginBottom: 12 }}
               />
 
-              <TextInput
-                label={isGerman ? "Startzeit" : "Start time"}
-                value={newTime}
-                onChangeText={setNewTime}
+              <Button
                 mode="outlined"
-                placeholder="19:00"
+                onPress={() => setStartDatePickerVisible(true)}
                 style={{ marginBottom: 12 }}
-              />
+              >
+                {isGerman ? "Startdatum:" : "Start date:"}{" "}
+                {formatDateKey(newStartDate, locale)}
+              </Button>
 
-              <TextInput
-                label={isGerman ? "Endzeit" : "End time"}
-                value={newEndTime}
-                onChangeText={setNewEndTime}
-                mode="outlined"
-                placeholder="20:00"
-                style={{ marginBottom: 12 }}
-              />
+              <View style={styles.toggleRow}>
+                <View style={styles.toggleTextBlock}>
+                  <Text variant="titleSmall">{isGerman ? "Ganztägig" : "All-day event"}</Text>
+                  <Text variant="bodySmall" style={{ opacity: 0.75 }}>
+                    {isGerman ? "Ohne Start- oder Endzeit speichern." : "Save without a start or end time."}
+                  </Text>
+                </View>
+                <Switch value={newAllDay} onValueChange={setNewAllDay} />
+              </View>
+
+              {!newAllDay && (
+                <>
+                  <Button
+                    mode="outlined"
+                    onPress={() => openTimePicker("start")}
+                    style={{ marginBottom: 12 }}
+                  >
+                    {isGerman ? "Startzeit:" : "Start time:"} {newTime}
+                  </Button>
+
+                  <Button
+                    mode="outlined"
+                    onPress={() => openTimePicker("end")}
+                    style={{ marginBottom: 12 }}
+                  >
+                    {isGerman ? "Endzeit:" : "End time:"} {newEndTime}
+                  </Button>
+                </>
+              )}
 
               <Button
                 mode="outlined"
@@ -1168,7 +1253,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                 {isGerman ? "Enddatum:" : "End date:"}{" "}
                 {newEndDate
                   ? formatDateKey(newEndDate, locale)
-                  : `${isGerman ? "gleicher Tag" : "same day"} (${formatDateKey(selectedDateKey, locale)})`}
+                  : `${isGerman ? "gleicher Tag" : "same day"} (${formatDateKey(newStartDate, locale)})`}
               </Button>
 
               {newEndDate !== "" && (
@@ -1252,23 +1337,44 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                 style={{ marginBottom: 12 }}
               />
 
-              <TextInput
-                label={isGerman ? "Startzeit" : "Start time"}
-                value={newTime}
-                onChangeText={setNewTime}
+              <Button
                 mode="outlined"
-                placeholder="19:00"
+                onPress={() => setEditStartDatePickerVisible(true)}
                 style={{ marginBottom: 12 }}
-              />
+              >
+                {isGerman ? "Startdatum:" : "Start date:"}{" "}
+                {formatDateKey(newStartDate, locale)}
+              </Button>
 
-              <TextInput
-                label={isGerman ? "Endzeit" : "End time"}
-                value={newEndTime}
-                onChangeText={setNewEndTime}
-                mode="outlined"
-                placeholder="20:00"
-                style={{ marginBottom: 12 }}
-              />
+              <View style={styles.toggleRow}>
+                <View style={styles.toggleTextBlock}>
+                  <Text variant="titleSmall">{isGerman ? "Ganztägig" : "All-day event"}</Text>
+                  <Text variant="bodySmall" style={{ opacity: 0.75 }}>
+                    {isGerman ? "Ohne Start- oder Endzeit speichern." : "Save without a start or end time."}
+                  </Text>
+                </View>
+                <Switch value={newAllDay} onValueChange={setNewAllDay} />
+              </View>
+
+              {!newAllDay && (
+                <>
+                  <Button
+                    mode="outlined"
+                    onPress={() => openTimePicker("start")}
+                    style={{ marginBottom: 12 }}
+                  >
+                    {isGerman ? "Startzeit:" : "Start time:"} {newTime}
+                  </Button>
+
+                  <Button
+                    mode="outlined"
+                    onPress={() => openTimePicker("end")}
+                    style={{ marginBottom: 12 }}
+                  >
+                    {isGerman ? "Endzeit:" : "End time:"} {newEndTime}
+                  </Button>
+                </>
+              )}
 
               <Button
                 mode="outlined"
@@ -1278,11 +1384,7 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
                 {isGerman ? "Enddatum:" : "End date:"}{" "}
                 {newEndDate
                   ? formatDateKey(newEndDate, locale)
-                  : `${isGerman ? "gleicher Tag" : "same day"} (${
-                      editingEvent
-                        ? formatDateKey(getEventDateKey(editingEvent), locale)
-                        : formatDateKey(selectedDateKey, locale)
-                    })`}
+                  : `${isGerman ? "gleicher Tag" : "same day"} (${formatDateKey(newStartDate, locale)})`}
               </Button>
 
               {newEndDate !== "" && (
@@ -1352,6 +1454,118 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
         </Dialog>
 
         <Dialog
+          visible={startDatePickerVisible}
+          onDismiss={() => setStartDatePickerVisible(false)}
+        >
+          <Dialog.Title>{isGerman ? "Startdatum auswählen" : "Choose start date"}</Dialog.Title>
+
+          <Dialog.Content>
+            <Calendar
+              key={theme.dark ? "dark" : "light"}
+              firstDay={1}
+              current={newStartDate}
+              markedDates={{
+                [newStartDate]: {
+                  selected: true,
+                  selectedColor: theme.colors.primary,
+                },
+              }}
+              onDayPress={(day) => {
+                changeNewStartDate(day.dateString);
+                setStartDatePickerVisible(false);
+              }}
+              theme={calendarTheme}
+            />
+          </Dialog.Content>
+
+          <Dialog.Actions>
+            <Button onPress={() => setStartDatePickerVisible(false)}>
+              {isGerman ? "Abbrechen" : "Cancel"}
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        <Dialog
+          visible={timePickerTarget !== null}
+          onDismiss={() => setTimePickerTarget(null)}
+        >
+          <Dialog.Title>
+            {timePickerTarget === "end"
+              ? isGerman
+                ? "Endzeit waehlen"
+                : "Choose end time"
+              : isGerman
+                ? "Startzeit waehlen"
+                : "Choose start time"}
+          </Dialog.Title>
+
+          <Dialog.Content>
+            <View style={styles.timePickerPanel}>
+              <Text variant="displaySmall" style={styles.timePickerValue}>
+                {draftTime}
+              </Text>
+
+              <View style={styles.timePickerControls}>
+                <View style={styles.timePickerColumn}>
+                  <Text variant="labelLarge">
+                    {isGerman ? "Stunde" : "Hour"}
+                  </Text>
+                  <Button
+                    mode="outlined"
+                    accessibilityLabel={`${
+                      timePickerTarget === "end" ? "Endzeit" : "Startzeit"
+                    } Stunde erhoehen`}
+                    onPress={() => setDraftTime((time) => shiftTimeInput(time, 60))}
+                  >
+                    +
+                  </Button>
+                  <Button
+                    mode="outlined"
+                    accessibilityLabel={`${
+                      timePickerTarget === "end" ? "Endzeit" : "Startzeit"
+                    } Stunde verringern`}
+                    onPress={() => setDraftTime((time) => shiftTimeInput(time, -60))}
+                  >
+                    -
+                  </Button>
+                </View>
+
+                <View style={styles.timePickerColumn}>
+                  <Text variant="labelLarge">
+                    {isGerman ? "Minute" : "Minute"}
+                  </Text>
+                  <Button
+                    mode="outlined"
+                    accessibilityLabel={`${
+                      timePickerTarget === "end" ? "Endzeit" : "Startzeit"
+                    } Minute erhoehen`}
+                    onPress={() => setDraftTime((time) => shiftTimeInput(time, 5))}
+                  >
+                    +5
+                  </Button>
+                  <Button
+                    mode="outlined"
+                    accessibilityLabel={`${
+                      timePickerTarget === "end" ? "Endzeit" : "Startzeit"
+                    } Minute verringern`}
+                    onPress={() => setDraftTime((time) => shiftTimeInput(time, -5))}
+                  >
+                    -5
+                  </Button>
+                </View>
+              </View>
+            </View>
+          </Dialog.Content>
+
+          <Dialog.Actions>
+            <Button onPress={() => setTimePickerTarget(null)}>
+              {isGerman ? "Abbrechen" : "Cancel"}
+            </Button>
+            <Button onPress={confirmTimePicker}>OK</Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        <Dialog
           visible={endDatePickerVisible}
           onDismiss={() => setEndDatePickerVisible(false)}
         >
@@ -1361,21 +1575,21 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
             <Calendar
               key={theme.dark ? "dark" : "light"}
               firstDay={1}
-              current={newEndDate || selectedDateKey}
-              minDate={selectedDateKey}
+              current={newEndDate || newStartDate}
+              minDate={newStartDate}
               markedDates={{
-                [selectedDateKey]: {
+                [newStartDate]: {
                   marked: true,
                   dotColor: theme.colors.primary,
                 },
-                [newEndDate || selectedDateKey]: {
+                [newEndDate || newStartDate]: {
                   selected: true,
                   selectedColor: theme.colors.primary,
                 },
               }}
               onDayPress={(day) => {
                 setNewEndDate(
-                  day.dateString === selectedDateKey ? "" : day.dateString
+                  day.dateString === newStartDate ? "" : day.dateString
                 );
                 setEndDatePickerVisible(false);
               }}
@@ -1399,6 +1613,38 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
         </Dialog>
 
         <Dialog
+          visible={editStartDatePickerVisible}
+          onDismiss={() => setEditStartDatePickerVisible(false)}
+        >
+          <Dialog.Title>{isGerman ? "Startdatum auswählen" : "Choose start date"}</Dialog.Title>
+
+          <Dialog.Content>
+            <Calendar
+              key={theme.dark ? "dark" : "light"}
+              firstDay={1}
+              current={newStartDate}
+              markedDates={{
+                [newStartDate]: {
+                  selected: true,
+                  selectedColor: theme.colors.primary,
+                },
+              }}
+              onDayPress={(day) => {
+                changeNewStartDate(day.dateString);
+                setEditStartDatePickerVisible(false);
+              }}
+              theme={calendarTheme}
+            />
+          </Dialog.Content>
+
+          <Dialog.Actions>
+            <Button onPress={() => setEditStartDatePickerVisible(false)}>
+              {isGerman ? "Abbrechen" : "Cancel"}
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        <Dialog
           visible={editEndDatePickerVisible}
           onDismiss={() => setEditEndDatePickerVisible(false)}
         >
@@ -1408,22 +1654,20 @@ export function CalendarScreen({ householdId }: CalendarScreenProps) {
             <Calendar
               key={theme.dark ? "dark" : "light"}
               firstDay={1}
-              current={newEndDate || (editingEvent ? getEventDateKey(editingEvent) : selectedDateKey)}
-              minDate={editingEvent ? getEventDateKey(editingEvent) : selectedDateKey}
+              current={newEndDate || newStartDate}
+              minDate={newStartDate}
               markedDates={{
-                [editingEvent ? getEventDateKey(editingEvent) : selectedDateKey]: {
+                [newStartDate]: {
                   marked: true,
                   dotColor: theme.colors.primary,
                 },
-                [newEndDate || (editingEvent ? getEventDateKey(editingEvent) : selectedDateKey)]: {
+                [newEndDate || newStartDate]: {
                   selected: true,
                   selectedColor: theme.colors.primary,
                 },
               }}
               onDayPress={(day) => {
-                const baseDateKey = editingEvent
-                  ? getEventDateKey(editingEvent)
-                  : selectedDateKey;
+                const baseDateKey = newStartDate;
                 setNewEndDate(day.dateString === baseDateKey ? "" : day.dateString);
                 setEditEndDatePickerVisible(false);
               }}
@@ -1543,6 +1787,42 @@ const styles = StyleSheet.create({
   requestChip: {
     marginRight: 4,
     marginBottom: 4,
+  },
+  timePickerPanel: {
+    alignItems: "center",
+    gap: 18,
+    paddingVertical: 8,
+  },
+  timePickerValue: {
+    fontVariant: ["tabular-nums"],
+  },
+  timePickerControls: {
+    flexDirection: "row",
+    gap: 18,
+    justifyContent: "center",
+  },
+  timePickerColumn: {
+    alignItems: "center",
+    gap: 8,
+    minWidth: 96,
+  },
+  currentDayEvent: {
+    borderLeftWidth: 3,
+    borderLeftColor: EXTERNAL_CALENDAR_COLOR,
+    backgroundColor: "rgba(15, 118, 110, 0.08)",
+  },
+  currentDayBadgeRow: {
+    alignItems: "flex-start",
+    paddingLeft: 16,
+    paddingTop: 10,
+  },
+  currentDayBadge: {
+    borderRadius: 6,
+    overflow: "hidden",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    backgroundColor: EXTERNAL_CALENDAR_COLOR,
+    color: "#ffffff",
   },
   colorRow: {
     flexDirection: "row",

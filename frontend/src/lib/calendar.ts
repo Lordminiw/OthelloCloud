@@ -153,6 +153,7 @@ export async function createCalendarEvent(input: {
   title: string;
   startIso: string;
   endIso?: string;
+  allDay?: boolean;
   location?: string;
   notes?: string;
   requestParticipation?: boolean;
@@ -164,6 +165,7 @@ export async function createCalendarEvent(input: {
     title: input.title,
     start: input.startIso,
     end: input.endIso || "",
+    allDay: Boolean(input.allDay),
     location: input.location || "",
     description: serializeCalendarEventMeta({
       notes: input.notes,
@@ -185,6 +187,7 @@ export async function updateCalendarEvent(
     title: string;
     startIso: string;
     endIso?: string;
+    allDay?: boolean;
     location?: string;
     notes?: string;
     requestParticipation?: boolean;
@@ -196,6 +199,7 @@ export async function updateCalendarEvent(
     title: input.title,
     start: input.startIso,
     end: input.endIso || "",
+    allDay: Boolean(input.allDay),
     location: input.location || "",
     description: serializeCalendarEventMeta({
       notes: input.notes,
