@@ -127,7 +127,7 @@ migrate((app) => {
     "idx_expenses_recurring_occurrence",
     true,
     "recurringExpense, scheduledFor",
-    "recurringExpense != '' && scheduledFor != ''"
+    "recurringExpense != '' AND scheduledFor != ''"
   )
 
   return app.save(expenses)
