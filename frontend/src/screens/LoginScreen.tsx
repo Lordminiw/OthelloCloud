@@ -108,24 +108,22 @@ export function LoginScreen({
   }
 
   const isLogin = mode === "login";
+  const title = isLogin ? t("auth.loginTitle") : t("auth.registerTitle");
+  const subtitle = isLogin
+    ? t("auth.loginDescription")
+    : t("auth.registerDescription");
 
   return (
     <AppScreen
-      title={t("app.brand")}
+      title={title}
+      subtitle={subtitle}
       centered
       maxWidth={460}
-      showBrand={false}
       browserTitle="Othello-Cloud"
     >
       <Card style={layout.card}>
-        <Card.Title title={isLogin ? t("auth.loginTitle") : t("auth.registerTitle")} />
-
         <Card.Content style={layout.formContent}>
-          <Text variant="bodyMedium">
-            {isLogin
-              ? t("auth.loginDescription")
-              : t("auth.registerDescription")}
-          </Text>
+          <Text variant="bodyMedium">{t("app.brand")}</Text>
 
           {!isLogin && (
             <TextInput

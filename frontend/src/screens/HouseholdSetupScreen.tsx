@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
-import { useWindowDimensions, View } from "react-native";
 import { Button, Card, Text, TextInput } from "react-native-paper";
 import { AppScreen, layout } from "@/components/app-screen";
+import { PageSection, SplitLayout } from "@/components/layout";
 import { createHousehold, joinHousehold } from "../lib/household";
 import { useLanguage } from "@/context/language-context";
+
+function normalizeInviteCode(value?: string) {
+  return (value ?? "").toUpperCase();
+}
 
 export function HouseholdSetupScreen({
   initialInviteCode,
@@ -13,20 +17,18 @@ export function HouseholdSetupScreen({
   onHouseholdReady: () => void;
 }) {
   const { t } = useLanguage();
-  const { width } = useWindowDimensions();
-  const isWide = width >= 820;
   const [newHouseholdName, setNewHouseholdName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (initialInviteCode) {
-      setInviteCode(initialInviteCode);
-    }
+    setInviteCode(normalizeInviteCode(initialInviteCode));
   }, [initialInviteCode]);
 
   async function handleCreateHousehold() {
-    if (!newHouseholdName.trim()) {
+    const normalizedHouseholdName = newHouseholdName.trim();
+
+    if (!normalizedHouseholdName) {
       alert(t("setup.householdNameRequired"));
       return;
     }
@@ -34,7 +36,7 @@ export function HouseholdSetupScreen({
     setBusy(true);
 
     try {
-      await createHousehold(newHouseholdName);
+      await createHousehold(normalizedHouseholdName);
       onHouseholdReady();
     } catch (error: any) {
       console.log("CREATE HOUSEHOLD ERROR:", error);
@@ -58,15 +60,18 @@ export function HouseholdSetupScreen({
   }
 
   async function handleJoinHousehold() {
-    if (!inviteCode.trim()) {
+    const normalizedInviteCode = normalizeInviteCode(inviteCode.trim());
+
+    if (!normalizedInviteCode) {
       alert(t("setup.inviteCodeRequired"));
       return;
     }
 
     setBusy(true);
+    setInviteCode(normalizedInviteCode);
 
     try {
-      await joinHousehold(inviteCode);
+      await joinHousehold(normalizedInviteCode);
       onHouseholdReady();
     } catch (error: any) {
       console.log("JOIN HOUSEHOLD ERROR:", error);
@@ -90,61 +95,59 @@ export function HouseholdSetupScreen({
   }
 
   return (
-    <AppScreen title={t("setup.title")} centered>
-      <View style={[layout.sectionGrid, isWide && layout.wideRow]}>
-      <Card style={[layout.card, layout.twoColumnCard]}>
-        <Card.Title title={t("setup.createHouseholdTitle")} />
-        <Card.Content style={layout.formContent}>
-          <Text variant="bodyMedium">
-            {t("setup.createDescription")}
-          </Text>
+    <AppScreen title={t("setup.title")} centered maxWidth={920}>
+      <PageSection>
+        <SplitLayout>
+          <Card style={[layout.card, layout.twoColumnCard]}>
+            <Card.Title title={t("setup.createHouseholdTitle")} />
+            <Card.Content style={layout.formContent}>
+              <Text variant="bodyMedium">{t("setup.createDescription")}</Text>
 
-          <TextInput
-            label={t("setup.householdNameLabel")}
-            value={newHouseholdName}
-            onChangeText={setNewHouseholdName}
-            mode="outlined"
-            placeholder={t("setup.householdNamePlaceholder")}
-          />
+              <TextInput
+                label={t("setup.householdNameLabel")}
+                value={newHouseholdName}
+                onChangeText={setNewHouseholdName}
+                mode="outlined"
+                placeholder={t("setup.householdNamePlaceholder")}
+              />
 
-          <Button
-            mode="contained"
-            onPress={handleCreateHousehold}
-            disabled={busy}
-            loading={busy}
-          >
-            {t("setup.createButton")}
-          </Button>
-        </Card.Content>
-      </Card>
+              <Button
+                mode="contained"
+                onPress={handleCreateHousehold}
+                disabled={busy}
+                loading={busy}
+              >
+                {t("setup.createButton")}
+              </Button>
+            </Card.Content>
+          </Card>
 
-      <Card style={[layout.card, layout.twoColumnCard]}>
-        <Card.Title title={t("setup.joinHouseholdTitle")} />
-        <Card.Content style={layout.formContent}>
-          <Text variant="bodyMedium">
-            {t("setup.joinDescription")}
-          </Text>
+          <Card style={[layout.card, layout.twoColumnCard]}>
+            <Card.Title title={t("setup.joinHouseholdTitle")} />
+            <Card.Content style={layout.formContent}>
+              <Text variant="bodyMedium">{t("setup.joinDescription")}</Text>
 
-          <TextInput
-            label={t("setup.inviteCodeLabel")}
-            value={inviteCode}
-            onChangeText={(value) => setInviteCode(value.toUpperCase())}
-            mode="outlined"
-            autoCapitalize="characters"
-            placeholder={t("setup.inviteCodePlaceholder")}
-          />
+              <TextInput
+                label={t("setup.inviteCodeLabel")}
+                value={inviteCode}
+                onChangeText={(value) => setInviteCode(normalizeInviteCode(value))}
+                mode="outlined"
+                autoCapitalize="characters"
+                placeholder={t("setup.inviteCodePlaceholder")}
+              />
 
-          <Button
-            mode="outlined"
-            onPress={handleJoinHousehold}
-            disabled={busy}
-            loading={busy}
-          >
-            {t("setup.joinButton")}
-          </Button>
-        </Card.Content>
-      </Card>
-      </View>
+              <Button
+                mode="outlined"
+                onPress={handleJoinHousehold}
+                disabled={busy}
+                loading={busy}
+              >
+                {t("setup.joinButton")}
+              </Button>
+            </Card.Content>
+          </Card>
+        </SplitLayout>
+      </PageSection>
     </AppScreen>
   );
 }
