@@ -94,8 +94,12 @@ jest.mock("react-native-paper", () => {
   );
 
   const Card = ({ children }: any) => <View>{children}</View>;
-  Card.Title = ({ title }: any) => <Text>{title}</Text>;
-  Card.Content = ({ children }: any) => <View>{children}</View>;
+  Card.Title = function MockCardTitle({ title }: any) {
+    return <Text>{title}</Text>;
+  };
+  Card.Content = function MockCardContent({ children }: any) {
+    return <View>{children}</View>;
+  };
 
   return {
     Button,
