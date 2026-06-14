@@ -186,9 +186,27 @@ const mockCreateCalendarEvent = jest.mocked(createCalendarEvent);
 const mockLoadHouseholdMembers = jest.mocked(loadHouseholdMembers);
 const mockLoadAccessibleCalendarSubscriptions = jest.mocked(loadAccessibleCalendarSubscriptions);
 const mockLoadUserUnsubscribes = jest.mocked(loadUserUnsubscribes);
+const RealDate = Date;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  class MockDate extends RealDate {
+    constructor(...args: any[]) {
+      if (args.length === 0) {
+        super("2026-06-13T12:00:00.000Z");
+        return;
+      }
+
+      super(...args as ConstructorParameters<typeof Date>);
+    }
+
+    static now() {
+      return new RealDate("2026-06-13T12:00:00.000Z").valueOf();
+    }
+  }
+
+  // Keep calendar-relative assertions stable regardless of the machine date.
+  global.Date = MockDate as DateConstructor;
   Object.defineProperty(window, "localStorage", {
     configurable: true,
     value: {
@@ -221,6 +239,10 @@ beforeEach(() => {
   ]);
   mockLoadAccessibleCalendarSubscriptions.mockResolvedValue([]);
   mockLoadUserUnsubscribes.mockResolvedValue([]);
+});
+
+afterEach(() => {
+  global.Date = RealDate;
 });
 
 it("shows date and weekday for upcoming calendar events", async () => {
