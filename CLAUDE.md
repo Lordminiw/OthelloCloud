@@ -26,6 +26,8 @@ npx jest -t "name of test"                   # single test by name
 
 The frontend needs `EXPO_PUBLIC_POCKETBASE_URL` in `frontend/.env`, for example `http://localhost:8090`. `src/lib/pocketbase.ts` throws at import time if it is missing.
 
+`main` and `app` share one `frontend/node_modules` but have different dependencies; `app` has no jest/testing-library. After switching from `app`, run `npm install` before `npm test`, `npm run lint` or `tsc`. Otherwise they fail on unresolved `@testing-library/*` and missing jest globals.
+
 The backend hook tests are plain Node tests with no PocketBase runtime:
 
 ```bash
